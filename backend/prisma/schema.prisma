@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model  Block {
+  BlockId       String @id @default(uuid())
+  blockBy       User   @relation("BlockedBy",fields: [blockedById], references: [UserId])
+  blockedById   String
+  blocked       User   @relation("Blocked",fields: [blockedId], references: [UserId])
+  blockedId     String
+  BlockeddAt     DateTime @default(now())
+}
+
+model Conversation {
+  ConvId          String @id @default(uuid())
+  sender          User   @relation("conversationA", fields: [senderId], references: [UserId])
+  senderId        String
+  receiver        User   @relation("conversationB", fields: [receiverId], references: [UserId])
+  receiverId      String
+  messages        Message[]
+}
+
+model Status {
+  statusId   String    @id @default(uuid())
+  user       User      @relation("userStatus", fields: [userId], references: [UserId])
+  userId     String    @unique
+  isOnline   Boolean   @default(false)
+  inGame     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now())
+}
+
+model Message {
+  MsgId           String @id @default(uuid())
+  content         String
+  sendAt          DateTime  @default(now())
+  conversation    Conversation @relation(fields: [conversationId], references: [ConvId])
+  conversationId  String       
+}
+
+model Friend {
+  FriendshipId        String @id @default(uuid())
+  userA               User @relation("relationA",fields: [userAId], references: [UserId]) // user that requested friendship first
+  userAId             String
+
+  userB               User @relation("relationB",fields: [userBId], references: [UserId])
+  userBId             String
+
+  isFriends           Boolean @default(false)
+}
+
+model User {
+  UserId              String @id @default(uuid())
+  username            String @unique
+  email               String @unique
+  photo               String
+
+  // Friends
+  friendsAddedUser    Friend[] @relation("relationA")
+  friendsAddeBydUser  Friend[] @relation("relationB")
+
+  // Block
+  blockedBy             Block[] @relation("BlockedBy")
+  blocked               Block[] @relation("Blocked")
+
+  // conversations
+  conversationsA        Conversation[]  @relation("conversationA")
+  conversationsB        Conversation[]  @relation("conversationB")
+
+  // status
+  status   Status?      @relation("userStatus")
+
+  // channel
+  memberships     MembershipChannel[] @relation("Membership")
+}
+
+// channel Models
+
+model channel {
+  ChannelId      String @id @default(uuid())
+  messages       MsgChannel[] @relation("MessagesChannel")
+  members        MembershipChannel[] @relation("MembersChannel")
+  password       String?
+}
+
+model MembershipChannel {
+  MembershipId      String @id @default(uuid())
+  nickname          String?
+  channel           channel @relation("MembersChannel",fields: [channelId], references: [ChannelId])
+  channelId         String  
+  user              User  @relation("Membership",fields: [userId], references: [UserId])
+  userId            String  @unique
+}
+
+model MsgChannel {
+  MsgChannelId        String @id @default(uuid())
+  senderUsername      String              
+  content             String
+  channel             channel @relation("MessagesChannel",fields: [channelId], references: [ChannelId])
+  channelId           String
+}
