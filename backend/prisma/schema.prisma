@@ -10,8 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 model  Block {
   BlockId       String @id @default(uuid())
   blockBy       User   @relation("BlockedBy",fields: [blockedById], references: [UserId])
@@ -88,6 +86,8 @@ model User {
 
 model channel {
   ChannelId      String @id @default(uuid())
+  channelName    String @unique
+  createdAt      DateTime  @default(now())
   messages       MsgChannel[] @relation("MessagesChannel")
   members        MembershipChannel[] @relation("MembersChannel")
   password       String?
@@ -95,8 +95,10 @@ model channel {
 
 model MembershipChannel {
   MembershipId      String @id @default(uuid())
+  createdAt         DateTime  @default(now())
   nickname          String?
   channel           channel @relation("MembersChannel",fields: [channelId], references: [ChannelId])
+  channelName       String
   channelId         String  
   user              User  @relation("Membership",fields: [userId], references: [UserId])
   userId            String  @unique
@@ -106,6 +108,7 @@ model MsgChannel {
   MsgChannelId        String @id @default(uuid())
   senderUsername      String              
   content             String
+  sendAt              DateTime  @default(now())
   channel             channel @relation("MessagesChannel",fields: [channelId], references: [ChannelId])
   channelId           String
 }
