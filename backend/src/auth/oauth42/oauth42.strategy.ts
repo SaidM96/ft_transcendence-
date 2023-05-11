@@ -10,6 +10,7 @@ export class QuaranteDeuxStrategy extends PassportStrategy(Strategy, '42') {
           clientID: "u-s4t2ud-6f968b7e5f1f18f8927e0139e0d4acfe4793233914f338b0b22c52bdbac0776a",
           clientSecret: "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",
           callbackURL: 'http://localhost:5000/auth/callback',
+        
         });
       }
 

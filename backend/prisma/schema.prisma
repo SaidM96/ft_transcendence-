@@ -59,10 +59,11 @@ model Friend {
 
 model User {
   UserId              String @id @default(uuid())
+  login               String @unique
   username            String @unique
   email               String @unique
-  photo               String
-
+  photo               String?
+  refreshToken        String?
   // Friends
   friendsAddedUser    Friend[] @relation("relationA")
   friendsAddeBydUser  Friend[] @relation("relationB")

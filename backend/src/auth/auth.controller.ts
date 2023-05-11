@@ -2,15 +2,12 @@ import { Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport'
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwtStrategy/jwt.strategy';
+import { JwtGuard } from './jwtStrategy/jwt.guard';
+import { JwtMiddleware } from './jwtStrategy/jwt.middelware';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly jwtService:JwtStrategy, private readonly authService:AuthService){}
-
-    // @UseGuards(AuthGuard('jwt'))
-    // @Post('jwt')
-    // async login(@Req() req:Request){
-    // }
+    constructor(private readonly authService:AuthService){}
 
     @Get('42')
     @UseGuards(AuthGuard('42'))
