@@ -20,4 +20,10 @@ export class AuthController {
         return await this.authService.login42(req);
     }
 
+    @UseGuards(AuthGuard('jwt'))
+    @Post('waw')
+    async protectedRoute(@Req() req: any) {
+      // req.user contains the authenticated user object
+      return { message: `Hello, ikhan!` };
+    }
 }

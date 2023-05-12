@@ -63,7 +63,6 @@ model User {
   username            String @unique
   email               String @unique
   photo               String?
-  refreshToken        String?
   // Friends
   friendsAddedUser    Friend[] @relation("relationA")
   friendsAddeBydUser  Friend[] @relation("relationB")

@@ -27,31 +27,15 @@ export class AuthService {
                 await this.userService.createUser(loginDto);
             }
             const payload = {login:user.login, username:user.username, sub:user.UserId }
-            const accessToken = this.jwtService.sign(payload, {expiresIn: '15m'});
-            // const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-            // await this.prisma.client.user.update({
-            //     where:{
-            //         UserId: payload.sub,
-            //     },
-            //     data: {
-            //         refreshToken:refreshToken
-            //     }
-            // })
-            return {payload, accessToken};
+            const accessToken = this.jwtService.sign(payload, {expiresIn: '60s'});
+            const refreshTocken = this.jwtService.sign(payload, {expiresIn: '7d'});
+            return {payload, accessToken, refreshTocken};
         }
+    }
 
-
-        // async refreshTocken(){
-        //     const payload = {
-        //         username:user.email,
-        //         sub:{
-        //             name:user.name,
-        //         }
-        //     }
-    
-        //     return {
-        //             accessTocken: this.jwtService.sign(payload),
-        //         }
-        // }
+    async refreshTocken(payload:any){
+        return {
+                accessTocken: this.jwtService.sign(payload),
+            }
     }
 }
