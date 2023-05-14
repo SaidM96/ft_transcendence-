@@ -70,5 +70,6 @@ constructor(private readonly userSrevice:UserService){}
         return await this.userSrevice.getBlockedList(login);
     }
 
-// 
+// status
+
 }

@@ -16,13 +16,23 @@ export class UserService {
     }
 
     async createUser(loginDto:LoginDto){
-        return  await this.prisma.client.user.create({
+        const user =  await this.prisma.client.user.create({
             data:{
                 login: loginDto.login,
                 username: loginDto.username,
                 email:  loginDto.email,
             }
         });
+        await this.prisma.client.status.create({
+            data:{
+                user:{
+                    connect:{
+                        UserId:user.UserId,
+                    }
+                }
+            }
+        });
+        return user;
     }
 
     async deleteUser(login:string){
@@ -218,6 +228,7 @@ export class UserService {
             }
         })
     }
-
+// status
+    // modify status of user
 }
 

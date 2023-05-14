@@ -59,6 +59,7 @@ model  Block {
   blockedLogin  String
   BlockeddAt     DateTime @default(now())
 }
+
 model User {
   UserId              String @id @default(uuid())
   login               String @unique

@@ -1,7 +1,10 @@
-import { Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Express } from 'express'
-@Controller('upload')
+import { Controller, Post, UseGuards} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Controller('chat')
 export class ChatController {
     
+    // @UseGuards(AuthGuard('jwt'))
+    // @Post(':login/')
+
 }
