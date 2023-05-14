@@ -16,6 +16,7 @@ export class RefreshJwtMiddleware implements NestMiddleware {
       return next();
     }
     try {
+      console.log("ikhan*******")
       const decoded = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_TOKEN_SECRET,
       })
@@ -24,9 +25,7 @@ export class RefreshJwtMiddleware implements NestMiddleware {
           UserId: decoded.sub,
         },
       });
-      if (!user || user.refreshToken !== refreshToken) {
-        return next();
-      }
+      
       req.user = user;
       return next();
     } catch (err) {

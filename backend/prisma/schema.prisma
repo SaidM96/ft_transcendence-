@@ -10,14 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model  Block {
-  BlockId       String @id @default(uuid())
-  blockBy       User   @relation("BlockedBy",fields: [blockedById], references: [UserId])
-  blockedById   String
-  blocked       User   @relation("Blocked",fields: [blockedId], references: [UserId])
-  blockedId     String
-  BlockeddAt     DateTime @default(now())
-}
 
 model Conversation {
   ConvId          String @id @default(uuid())
@@ -47,25 +39,36 @@ model Message {
 }
 
 model Friend {
-  FriendshipId        String @id @default(uuid())
-  userA               User @relation("relationA",fields: [userAId], references: [UserId]) // user that requested friendship first
-  userAId             String
-
-  userB               User @relation("relationB",fields: [userBId], references: [UserId])
-  userBId             String
-
-  isFriends           Boolean @default(false)
+  FriendshipId       String @id @default(uuid())
+  userA              User @relation("relationA",fields: [userAId], references: [UserId]) // user that requested friendship first
+  userAId            String
+  loginA             String 
+  userB              User @relation("relationB",fields: [userBId], references: [UserId])
+  userBId            String
+  loginB             String 
+  isFriends          Boolean @default(false)
 }
 
+model  Block {
+  BlockId       String @id @default(uuid())
+  blockBy       User   @relation("BlockedBy",fields: [blockedById], references: [UserId])
+  blockedById   String
+  blockByLogin  String
+  blocked       User   @relation("Blocked",fields: [blockedId], references: [UserId])
+  blockedId     String
+  blockedLogin  String
+  BlockeddAt     DateTime @default(now())
+}
 model User {
   UserId              String @id @default(uuid())
   login               String @unique
   username            String @unique
   email               String @unique
   photo               String?
+  url                 String?
   // Friends
-  friendsAddedUser    Friend[] @relation("relationA")
-  friendsAddeBydUser  Friend[] @relation("relationB")
+  friendsAddedUser         Friend[] @relation("relationA")
+  friendsAddeBydUser       Friend[] @relation("relationB")
 
   // Block
   blockedBy             Block[] @relation("BlockedBy")

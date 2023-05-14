@@ -24,6 +24,6 @@ export class AuthController {
     @Post('waw')
     async protectedRoute(@Req() req: any) {
       // req.user contains the authenticated user object
-      return { message: `Hello, ikhan!` };
+      return { message: `Hello, ikhan  hmed!` };
     }
 }

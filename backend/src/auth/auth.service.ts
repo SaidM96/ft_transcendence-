@@ -1,5 +1,5 @@
 import { Injectable, Req } from '@nestjs/common';
-import { LoginDto } from 'src/user/dto/login.dto';
+import { LoginDto } from 'src/user/dto/user.dto';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'prisma/prisma.service';
@@ -18,15 +18,15 @@ export class AuthService {
         }
         else
         {
-            const  { login, displayname, email,   } = req.user._json;
-            const userInfo = {login:login, username:displayname, email:email,}
-            const user = await this.userService.findUser(userInfo.login)
+            const  { login, displayname, email   } = req.user._json;
+            const userInfo = {login:login, username:displayname, email:email,};
+            const user = await this.userService.findUser(userInfo.login);
             if (!user)
             {
                 const loginDto:LoginDto = userInfo;
                 await this.userService.createUser(loginDto);
             }
-            const payload = {login:user.login, username:user.username, sub:user.UserId }
+            const payload = { login:user.login, username:user.username, sub:user.UserId };
             const accessToken = this.jwtService.sign(payload, {expiresIn: '60s'});
             const refreshTocken = this.jwtService.sign(payload, {expiresIn: '7d'});
             return {payload, accessToken, refreshTocken};
