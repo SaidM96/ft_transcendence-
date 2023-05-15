@@ -116,6 +116,7 @@ Response:</br>
 This endpoint is used to retrieve a status of user (login).</br>
 Request:</br>
     Header: Authorization: Bearer <JWT Token>.</br>
+    Status Code: 200.</br>
     Body: status of user.</br>
 
 
