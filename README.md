@@ -15,7 +15,7 @@ Response:</br>
 
 
 ## Users</br>
-### GET /user/all.</br>
+### GET /user/all</br>
 
 This endpoint is used to retrieve a list of all users.</br>
 
@@ -111,7 +111,7 @@ Request:</br>
 Response:</br>
     Status Code: 200</br>
 
-### GET /user/blocks/
+### GET /user/blocks
 This endpoint is used to retrieve a list of a user's blocked users.
 Request:</br>
     Header: Authorization: Bearer <JWT Token></br>
@@ -124,7 +124,7 @@ Response:</br>
     Body: List of blocked users.</br>
 
 ## Status
-### GET /user/status/:login</br>
+### GET /user/status</br>
 This endpoint is used to retrieve a status of user (login).</br>
 Request:</br>
     Header: Authorization: Bearer <JWT Token>.</br>
