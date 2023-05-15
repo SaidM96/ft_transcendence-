@@ -17,15 +17,15 @@ constructor(private readonly userSrevice:UserService){}
     }
     
     @UseGuards(AuthGuard('jwt'))
-    @Get(':login')
-    async findOne(@Param('login') login:string){
-        return await this.userSrevice.findUser(login);
+    @Get('find')
+    async findOne(@Body() findUser:findUserDto){
+        return await this.userSrevice.findUser(findUser);
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Delete(':login')
-    async deleteUser(@Param('login') login:string){
-        return await this.userSrevice.deleteUser(login);
+    @Delete('delete')
+    async deleteUser(@Body() findUser:findUserDto){
+        return await this.userSrevice.deleteUser(findUser);
     }
 
 //friends
@@ -33,20 +33,21 @@ constructor(private readonly userSrevice:UserService){}
     @UseGuards(AuthGuard('jwt'))
     @Post('friendship')
     async newFriendshi(@Body() friendDto:FriendDto){
+        
         return await this.userSrevice.createFriendship(friendDto);
     }
 
     // get friends
     @UseGuards(AuthGuard('jwt'))
-    @Get(':login/friends')
-    async getUserFriends(@Param('login') login:string){
-        return await this.userSrevice.getUserFriends(login);
+    @Get('friends')
+    async getUserFriends(@Body() findUser:findUserDto){
+        return await this.userSrevice.getUserFriends(findUser);
     }
     // remove friends
     @UseGuards(AuthGuard('jwt'))
-    @Delete('friendship')
-    async removeFriend(@Body() friendDto:FriendDto){
-        return await this.userSrevice.removeFriend(friendDto);
+    @Delete('rmfriend')
+    async removeFriend(@Body() rmfriendDto:FriendDto){
+        return await this.userSrevice.removeFriend(rmfriendDto);
     }
 
 // block
@@ -66,15 +67,15 @@ constructor(private readonly userSrevice:UserService){}
 
     // get list of blocked users
     @UseGuards(AuthGuard('jwt'))
-    @Get('block/:login')
-    async getListBlocked(@Param('login') login:string){
-        return await this.userSrevice.getBlockedList(login);
+    @Get('blocks')
+    async getListBlocked(@Body() findUser:findUserDto){
+        return await this.userSrevice.getBlockedList(findUser);
     }
 
 // status
     @UseGuards(AuthGuard('jwt'))
-    @Get('status/:login')
-    async getUserStatus(@Param('login') login:string){
-        return await this.userSrevice.getStatusUser(login); 
+    @Get('status')
+    async getUserStatus(@Body() findUser:findUserDto){
+        return await this.userSrevice.getStatusUser(findUser); 
     }
 }

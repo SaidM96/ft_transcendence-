@@ -12,7 +12,6 @@ export class JwtMiddleware implements NestMiddleware {
       return res.status(401).send({ message: 'Unauthorized' });
     }
     const token = authHeader.split(' ')[1];
-    console.log('extract token: ', token);
     try {
       const payload = this.jwtService.verify(token, { secret: 'said@123' });
       // Check if the payload contains a refresh token

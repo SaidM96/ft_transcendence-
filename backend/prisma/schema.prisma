@@ -22,7 +22,7 @@ model Conversation {
 
 model Status {
   statusId   String    @id @default(uuid())
-  user       User      @relation("userStatus", fields: [userId], references: [UserId])
+  user       User      @relation("userStatus", fields: [userId], references: [UserId], onDelete: Cascade)
   userId     String    @unique
   isOnline   Boolean   @default(false)
   inGame     Boolean   @default(false)
@@ -40,10 +40,10 @@ model Message {
 
 model Friend {
   FriendshipId       String @id @default(uuid())
-  userA              User @relation("relationA",fields: [userAId], references: [UserId]) // user that requested friendship first
+  userA              User @relation("relationA",fields: [userAId], references: [UserId], onDelete: Cascade) // user that requested friendship first
   userAId            String
   loginA             String 
-  userB              User @relation("relationB",fields: [userBId], references: [UserId])
+  userB              User @relation("relationB",fields: [userBId], references: [UserId], onDelete: Cascade)
   userBId            String
   loginB             String 
   isFriends          Boolean @default(false)
@@ -51,10 +51,10 @@ model Friend {
 
 model  Block {
   BlockId       String @id @default(uuid())
-  blockBy       User   @relation("BlockedBy",fields: [blockedById], references: [UserId])
+  blockBy       User   @relation("BlockedBy",fields: [blockedById], references: [UserId], onDelete: Cascade)
   blockedById   String
   blockByLogin  String
-  blocked       User   @relation("Blocked",fields: [blockedId], references: [UserId])
+  blocked       User   @relation("Blocked",fields: [blockedId], references: [UserId], onDelete: Cascade)
   blockedId     String
   blockedLogin  String
   BlockeddAt     DateTime @default(now())

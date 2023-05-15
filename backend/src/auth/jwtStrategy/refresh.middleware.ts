@@ -16,7 +16,6 @@ export class RefreshJwtMiddleware implements NestMiddleware {
       return next();
     }
     try {
-      console.log("ikhan*******")
       const decoded = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_TOKEN_SECRET,
       })

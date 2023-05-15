@@ -11,7 +11,8 @@ export class UserService {
         const resuslt = await this.prisma.client.user.findMany();
         return resuslt;
     }
-    async findUser(login:string) {
+    async findUser(findUser:findUserDto) {
+        const {login} = findUser;
         return await this.prisma.client.user.findUnique({where:{login:login}});
     }
 
@@ -35,7 +36,11 @@ export class UserService {
         return user;
     }
 
-    async deleteUser(login:string){
+    async deleteUser(findUser:findUserDto){
+        const {login} = findUser;
+        const user = await this.findUser(findUser);
+        if (!user)
+            return new NotFoundException();
         return await this.prisma.client.user.delete({where:{login:login}})
     }
 
@@ -51,10 +56,9 @@ export class UserService {
     }
 
     async createFriendship(friendDto:FriendDto){
-
         const {loginA, loginB} = friendDto;
-        const userA = await this.findUser(loginA)
-        const userB = await this.findUser(loginB)
+        const userA = await this.findUser({login:loginA})
+        const userB = await this.findUser({login:loginB})
         if (!userA || !userB)
             return new NotFoundException(`cannot find ${loginA} or ${loginB}`);
         //check if userA added userB
@@ -97,8 +101,9 @@ export class UserService {
         });
     }
 
-    async getUserFriends(login:string){
-        const user = await  this.findUser(login);
+    async getUserFriends(findUser:findUserDto){
+        const {login} = findUser;
+        const user = await  this.findUser(findUser);
         if(!user)
             return new NotFoundException();
         // list of friendship that added user(login)
@@ -119,10 +124,12 @@ export class UserService {
 
     // delete a friend 
     async removeFriend(friendDto:FriendDto){
-        const login = friendDto.loginA;
-        const removedLogin = friendDto.loginB;
-        const user = await  this.findUser(login);
-        const removedUser = await  this.findUser(removedLogin);
+        
+        const {loginA, loginB} = friendDto;
+        const login = loginA;
+        const removedLogin = loginB;
+        const user = await  this.findUser({login:login});
+        const removedUser = await  this.findUser({login:removedLogin});
         if(!user || !removedUser)
             return new NotFoundException();
         const friendshipA = await this.IsfriendOf(login, removedLogin);
@@ -165,8 +172,8 @@ export class UserService {
     async blockUser(blockDto:BlockDto){
         const login = blockDto.login;
         const blocked = blockDto.blockedLogin;
-        const user = await  this.findUser(login);
-        const blockedUser = await  this.findUser(blocked);
+        const user = await  this.findUser({login:login});
+        const blockedUser = await  this.findUser({login:blocked});
         if(!user || !blockedUser)
             return new NotFoundException();
         const block = await this.prisma.client.block.findFirst({
@@ -200,8 +207,8 @@ export class UserService {
 
     // remove block
     async removeBlock(login:string, blocked:string){
-        const user = await  this.findUser(login);
-        const blockedUser = await  this.findUser(blocked);
+        const user = await  this.findUser({login:login});
+        const blockedUser = await  this.findUser({login:blocked});
         if(!user || !blockedUser)
             return new NotFoundException();
         const block = await this.prisma.client.block.findFirst({
@@ -221,8 +228,8 @@ export class UserService {
     }
 
     // get list of blocked users by  a user
-    async getBlockedList(login:string){
-        const user = await  this.findUser(login);
+    async getBlockedList(findUser:findUserDto){
+        const user = await  this.findUser(findUser);
         if(!user)
             return new NotFoundException();
         return await this.prisma.client.block.findMany({
@@ -238,8 +245,8 @@ export class UserService {
     }
 
     // get status of user
-    async getStatusUser(login:string){
-        const user = await  this.findUser(login);
+    async getStatusUser(findUser:findUserDto){
+        const user = await  this.findUser(findUser);
         if(!user)
             return new NotFoundException();
         return await this.prisma.client.status.findUnique({
