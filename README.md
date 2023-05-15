@@ -25,21 +25,27 @@ Response:</br>
     Status Code: 200</br>
     Body: All users.</br>
 
-### GET /user/:login</br>
+### GET /user/find</br>
 
 This endpoint is used to retrieve a specific user by their login.</br>
 Request:</br>
     Header: Authorization: Bearer <JWT Token></br>
-    Param: login - the user's login</br>
+    body:     
+    {</br>
+        "login": string,</br>
+    }</br>
 Response:</br>
     Status Code: 200</br>
     Body: User.</br>
 
-### DELETE /user/:login</br>
+### DELETE /user/delete</br>
 This endpoint is used to delete a user by their login.</br>
 Request:</br>
     Header: Authorization: Bearer <JWT Token></br>
-    Param: login - the user's login</br>
+    body:     
+    {</br>
+        "login": string,</br>
+    }</br>
 Response:</br>
     Status Code: 200</br>
     Body: User.</br>
@@ -58,11 +64,14 @@ Request:</br>
 Response:</br>  
     Status Code: 200</br>
 
-### GET /user/:login/friends</br>
+### GET /user/friends</br>
 This endpoint is used to retrieve a list of a user's friends.</br>
 Request:</br>
     Header: Authorization: Bearer <JWT Token></br>
-    Param: login - the user's login</br>
+    body:     
+    {</br>
+        "login": string,</br>
+    }</br>
 Response:</br>
     Status Code: 200</br>
     Body: Friendship.</br>
@@ -90,7 +99,7 @@ Request:</br>
 Response:</br>
     Status Code: 200</br>   
 
-### DELETE /user/block.</br>
+### DELETE /user/block</br>
 This endpoint is used to unblock a user.</br>
 Request:</br>
     Header: Authorization: Bearer <JWT Token></br>
@@ -102,11 +111,14 @@ Request:</br>
 Response:</br>
     Status Code: 200</br>
 
-### GET /user/block/:login
+### GET /user/blocks/
 This endpoint is used to retrieve a list of a user's blocked users.
 Request:</br>
     Header: Authorization: Bearer <JWT Token></br>
-    Param: login - the user's login</br>
+    body:     
+    {</br>
+        "login": string,</br>
+    }</br>
 Response:</br>
     Status Code: 200</br>
     Body: List of blocked users.</br>
