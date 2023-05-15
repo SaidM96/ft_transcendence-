@@ -15,7 +15,7 @@ Header: Authorization: Bearer <JWT Token>
 
 
 ##Users
-###GET /user/all
+###GET /user/all.
 
 This endpoint is used to retrieve a list of all users.
 
@@ -90,7 +90,7 @@ Body:
 Response:
 Status Code: 200
 
-###DELETE /user/block
+###DELETE /user/block.
 This endpoint is used to unblock a user.
 Request:
 Header: Authorization: Bearer <JWT Token>
