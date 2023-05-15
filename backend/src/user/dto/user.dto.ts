@@ -5,7 +5,6 @@ export class LoginDto {
     login:      string;
     username:   string;
     email:      string;
-    // photo:      string;
 }
 
 
@@ -20,4 +19,12 @@ export class FriendDto {
     loginA: string;
     @IsNotEmpty()
     loginB: string;
+}
+
+export class BlockDto {
+
+    @IsNotEmpty()
+    login: string;
+    @IsNotEmpty()
+    blockedLogin: string;
 }

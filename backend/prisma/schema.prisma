@@ -116,3 +116,8 @@ model MsgChannel {
   channel             channel @relation("MessagesChannel",fields: [channelId], references: [ChannelId])
   channelId           String
 }
+
+model match {
+  MatchId        String @id @default(uuid())
+  
+}

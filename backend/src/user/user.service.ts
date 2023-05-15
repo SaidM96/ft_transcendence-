@@ -1,4 +1,4 @@
-import { FriendDto, LoginDto, findUserDto } from './dto/user.dto';
+import { BlockDto, FriendDto, LoginDto, findUserDto } from './dto/user.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, PrismaClient  } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
@@ -118,12 +118,13 @@ export class UserService {
     }
 
     // delete a friend 
-    async removeFriend(login:string, removedLogin:string){
+    async removeFriend(friendDto:FriendDto){
+        const login = friendDto.loginA;
+        const removedLogin = friendDto.loginB;
         const user = await  this.findUser(login);
         const removedUser = await  this.findUser(removedLogin);
         if(!user || !removedUser)
             return new NotFoundException();
-
         const friendshipA = await this.IsfriendOf(login, removedLogin);
         if (friendshipA)
         {
@@ -161,7 +162,9 @@ export class UserService {
     }
 
     // block user
-    async blockUser(login:string, blocked:string){
+    async blockUser(blockDto:BlockDto){
+        const login = blockDto.login;
+        const blocked = blockDto.blockedLogin;
         const user = await  this.findUser(login);
         const blockedUser = await  this.findUser(blocked);
         if(!user || !blockedUser)
@@ -230,5 +233,23 @@ export class UserService {
     }
 // status
     // modify status of user
+    async modifyStatusUser(){
+
+    }
+
+    // get status of user
+    async getStatusUser(login:string){
+        const user = await  this.findUser(login);
+        if(!user)
+            return new NotFoundException();
+        return await this.prisma.client.status.findUnique({
+            where:{
+                userId:user.UserId,
+            },
+        });
+    }
+
+
+// match
 }
 

@@ -2,7 +2,7 @@ import { UserService } from 'src/user/user.service';
 import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtGuard } from 'src/auth/jwtStrategy/jwt.guard';
-import { FriendDto, findUserDto } from './dto/user.dto';
+import { BlockDto, FriendDto, findUserDto } from './dto/user.dto';
 import { find } from 'rxjs';
 
 @Controller('user')
@@ -23,7 +23,7 @@ constructor(private readonly userSrevice:UserService){}
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Delete(':login/delete')
+    @Delete(':login')
     async deleteUser(@Param('login') login:string){
         return await this.userSrevice.deleteUser(login);
     }
@@ -35,6 +35,7 @@ constructor(private readonly userSrevice:UserService){}
     async newFriendshi(@Body() friendDto:FriendDto){
         return await this.userSrevice.createFriendship(friendDto);
     }
+
     // get friends
     @UseGuards(AuthGuard('jwt'))
     @Get(':login/friends')
@@ -43,33 +44,37 @@ constructor(private readonly userSrevice:UserService){}
     }
     // remove friends
     @UseGuards(AuthGuard('jwt'))
-    @Delete(':login/friendship/:removedFriend')
-    async removeFriend(@Param('login') login:string, @Param('removedFriend') removedFriend:string){
-        return await this.userSrevice.removeFriend(login, removedFriend);
+    @Delete('friendship')
+    async removeFriend(@Body() friendDto:FriendDto){
+        return await this.userSrevice.removeFriend(friendDto);
     }
 
 // block
     // block user
     @UseGuards(AuthGuard('jwt'))
-    @Post(':login/block/:blockedLogin')
-    async blockUser(@Param('login') login:string, @Param('blockedLogin') blockedLogin:string){
-        return await this.userSrevice.blockUser(login, blockedLogin);
+    @Post('block')
+    async blockUser(@Body() blockDto:BlockDto){
+        return await this.userSrevice.blockUser(blockDto);
     }
 
     // remove Block
     @UseGuards(AuthGuard('jwt'))
-    @Delete(':login/rmblock/:blockedLogin')
-    async removeBlock(@Param('login') login:string, @Param('blockedLogin') blockedLogin:string){
-        return await this.userSrevice.removeBlock(login, blockedLogin);
+    @Delete('block')
+    async removeBlock(@Body() blockDto:BlockDto){
+        return await this.userSrevice.removeBlock(blockDto.login, blockDto.blockedLogin);
     }
 
     // get list of blocked users
     @UseGuards(AuthGuard('jwt'))
-    @Get(':login/block')
+    @Get('block/:login')
     async getListBlocked(@Param('login') login:string){
         return await this.userSrevice.getBlockedList(login);
     }
 
 // status
-
+    @UseGuards(AuthGuard('jwt'))
+    @Get('status/:login')
+    async getUserStatus(@Param('login') login:string){
+        return await this.userSrevice.getStatusUser(login); 
+    }
 }
