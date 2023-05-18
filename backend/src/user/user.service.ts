@@ -11,9 +11,11 @@ export class UserService {
         const resuslt = await this.prisma.client.user.findMany();
         return resuslt;
     }
+
+
     async findUser(findUser:findUserDto) {
         const {login} = findUser;
-        return await this.prisma.client.user.findUnique({where:{login:login}});
+        return await this.prisma.client.user.findFirst({where:{login:login}});
     }
 
     async createUser(loginDto:LoginDto){
