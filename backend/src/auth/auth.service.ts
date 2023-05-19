@@ -26,16 +26,9 @@ export class AuthService {
                 const loginDto:LoginDto = userInfo;
                 user = await this.userService.createUser(loginDto);
             }
-            const payload = { login:user.login, username:user.username, sub:user.UserId };
-            const accessToken = this.jwtService.sign(payload, {expiresIn: '60s'});
-            const refreshTocken = this.jwtService.sign(payload, {expiresIn: '7d'});
-            return {payload, accessToken, refreshTocken};
+            const payload = { login:user.login, sub:user.UserId };
+            const accessToken = this.jwtService.signAsync(payload);
+            return accessToken;
         }
-    }
-
-    async refreshTocken(payload:any){
-        return {
-                accessTocken: this.jwtService.sign(payload),
-            }
     }
 }

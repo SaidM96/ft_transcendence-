@@ -9,7 +9,6 @@ import { ftAuthGuard } from './oauth42/oauth.guard';
 import { UserService } from 'src/user/user.service';
 import { UserModule } from 'src/user/user.module';
 import { PrismaService } from 'prisma/prisma.service';
-import { RefreshJwtStrategy } from './jwtStrategy/refreshJwt.strategy';
 
 @Module({
   imports: [
@@ -18,7 +17,7 @@ import { RefreshJwtStrategy } from './jwtStrategy/refreshJwt.strategy';
     UserModule,
 
   ],
-  providers: [AuthService,JwtStrategy,RefreshJwtStrategy,QuaranteDeuxStrategy,ftAuthGuard, UserService,PrismaService ],
+  providers: [AuthService,JwtStrategy,QuaranteDeuxStrategy,ftAuthGuard, UserService,PrismaService ],
   controllers: [AuthController]
 })
 export class AuthModule {}
