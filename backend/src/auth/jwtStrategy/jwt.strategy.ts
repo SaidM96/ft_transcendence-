@@ -11,6 +11,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt'){
                   if(!data){
                       return null;
                   }
+                  // decoder data.token
                   return data.token
             }]),
             ignoreExpiration: false,
@@ -21,6 +22,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt'){
     async validate(payload:any){
         if (payload == null)
           throw new UnauthorizedException();
+
+        // 
         return payload;
     }
-} 
+}

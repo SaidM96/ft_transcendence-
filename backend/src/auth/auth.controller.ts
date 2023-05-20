@@ -16,13 +16,15 @@ export class AuthController {
   
     @Get('callback')
     @UseGuards(AuthGuard('42'))
-    @Redirect('https://google.com',200)
     async QuaranteDeuxCallback(@Req() req, @Res({passthrough:true}) response:Response) {
       const accessToken =  await this.authService.login42(req);
       const secretData = {
         token:accessToken,
       }
       response.cookie('jwt-cookie', secretData, {httpOnly:true,},);
+      response.redirect('http://localhost:3000/Home');
+
+      
     }
 
     @UseGuards(AuthGuard('jwt'))
