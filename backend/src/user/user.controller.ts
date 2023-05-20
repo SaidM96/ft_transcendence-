@@ -1,5 +1,5 @@
 import { UserService } from 'src/user/user.service';
-import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get,Req, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtGuard } from 'src/auth/jwtStrategy/jwt.guard';
 import { BlockDto, FriendDto, findUserDto } from './dto/user.dto';
@@ -15,7 +15,16 @@ constructor(private readonly userSrevice:UserService){}
     async findAll(){
         return await this.userSrevice.findAllUsers();
     }
-    
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('me')
+    async findMe(@Req() req:any){
+        console.log(req.user);
+        const {login, id} = req.user;
+        const findUser:findUserDto = login;
+        return await this.userSrevice.findUser(findUser);
+    }
+
     @UseGuards(AuthGuard('jwt'))
     @Get('find')
     async findOne(@Body() findUser:findUserDto){
@@ -33,7 +42,6 @@ constructor(private readonly userSrevice:UserService){}
     @UseGuards(AuthGuard('jwt'))
     @Post('friendship')
     async newFriendshi(@Body() friendDto:FriendDto){
-        
         return await this.userSrevice.createFriendship(friendDto);
     }
 
@@ -43,6 +51,7 @@ constructor(private readonly userSrevice:UserService){}
     async getUserFriends(@Body() findUser:findUserDto){
         return await this.userSrevice.getUserFriends(findUser);
     }
+
     // remove friends
     @UseGuards(AuthGuard('jwt'))
     @Delete('rmfriend')

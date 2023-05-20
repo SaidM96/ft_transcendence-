@@ -18,6 +18,7 @@ export class AuthService {
         }
         else
         {
+            
             const  { login, displayname, email   } = req.user._json;
             const userInfo = {login:login, username:displayname, email:email,};
             let user = await this.userService.findUser(userInfo.login);

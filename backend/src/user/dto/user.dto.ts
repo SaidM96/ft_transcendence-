@@ -28,3 +28,8 @@ export class BlockDto {
     @IsNotEmpty()
     blockedLogin: string;
 }
+
+
+export class UpdateUserDto {
+    
+}
