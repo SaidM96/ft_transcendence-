@@ -130,6 +130,7 @@ constructor(private readonly userSrevice:UserService){}
     @UseGuards(AuthGuard('jwt'))
     @Get('historyFriend')
     async getHistoryOneVsOne(@Body() friendDto:FriendDto){
+        
         return await this.userSrevice.getHistoryOneVsOne(friendDto);
     }
 }
