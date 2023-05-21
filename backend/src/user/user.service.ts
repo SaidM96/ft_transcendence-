@@ -1,4 +1,4 @@
-import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto } from './dto/user.dto';
+import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, PrismaClient  } from '@prisma/client';
 import { stat } from 'fs';
@@ -339,7 +339,74 @@ export class UserService {
             },
         });
     }
+// match
+    
+    //store New finished match
+    async storeMatch(matchDto:storeMatchDto){
+        const {loginA, loginB, scoreA, scoreB, winner} = matchDto;
+        const userA = await  this.findUser({login:loginA});
+        const userB = await  this.findUser({login:loginB});
+        if(!userA || !userB)
+            return new NotFoundException();
+        return await this.prisma.client.match.create({
+            data:{
+                userA:{
+                    connect:{
+                        UserId:userA.UserId,
+                    },
+                },
+                scoreA:scoreA,
+                userB:{
+                    connect:{
+                        UserId:userB.UserId,
+                    },
+                },
+                scoreB:scoreB,
+                winner:winner,
+            }
+        })
+    }
 
+    // get history match 
+    async getHistoryMatch(findUser:findUserDto){
+        const user = await  this.findUser(findUser);
+        if(!user)
+            return new NotFoundException();
+        const matchsA =  await this.prisma.client.match.findMany({
+            where:{
+                userAId:user.UserId,
+            },
+        });
+        const matchsB =  await this.prisma.client.match.findMany({
+            where:{
+                userBId:user.UserId,
+            },
+        });
+        return {...matchsA, ...matchsB};
+    }
+
+    // get history match one vs one
+    async getHistoryOneVsOne(friendDto:FriendDto){
+        const {loginA, loginB} = friendDto;
+        const userA = await  this.findUser({login:loginA});
+        const userB = await  this.findUser({login:loginB});
+        if(!userA || !userB)
+            return new NotFoundException();
+        const matchsA = await this.prisma.client.match.findMany({
+            where:{
+                userAId:userA.UserId,
+                userBId:userB.UserId,
+            },
+        });
+
+        const matchsB = await this.prisma.client.match.findMany({
+            where:{
+                userAId:userB.UserId,
+                userBId:userA.UserId,
+            },
+        });
+        return {...matchsA, ...matchsB};
+    }
 
 }
 

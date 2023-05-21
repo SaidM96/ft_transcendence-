@@ -119,6 +119,10 @@ model User {
 
   // Stats
   stats           Stats? @relation("userStats")
+
+  //matches
+  matchhistoryA   match[] @relation("matchA")
+  matchhistoryB   match[] @relation("matchB")
 }
 
 
@@ -129,12 +133,18 @@ model Stats {
   wins       Int       @default(0)
   losses     Int       @default(0)
   ladder     Int       @default(0)
-
 }
 
-// model matchHistory {
-//   historyId     String    @id @default(uuid())
-//   user          User      @relation("userStats", fields: [userId], references: [UserId], onDelete: Cascade)
-//   userId        String    @unique
-//   matches        
-// }
+model match {
+  matchyId     String    @id @default(uuid())
+  userA        User      @relation("matchA",fields: [userAId], references: [UserId], onDelete: Cascade)
+  userAId      String
+  scoreA       Int
+  userB        User      @relation("matchB",fields: [userBId], references: [UserId], onDelete: Cascade)
+  userBId      String
+  scoreB       Int      @default(0)
+  winner       Int      @default(0)   // userA :0  , userB:1
+  finishedAt   DateTime @default(now())
+}
+
+

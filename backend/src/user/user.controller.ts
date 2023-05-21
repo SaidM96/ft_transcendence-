@@ -2,7 +2,7 @@ import { UserService } from 'src/user/user.service';
 import { Body, Controller, Delete, Get,Req, Param, Post, UseGuards, Patch } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtGuard } from 'src/auth/jwtStrategy/jwt.guard';
-import { BlockDto, FriendDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto } from './dto/user.dto';
+import { BlockDto, FriendDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
 import { find } from 'rxjs';
 
 @Controller('user')
@@ -113,5 +113,23 @@ constructor(private readonly userSrevice:UserService){}
         return await this.userSrevice.modifyStatsUser(updateStats); 
     }
 
-// 
+// matches
+    @UseGuards(AuthGuard('jwt'))
+    @Post('match')
+    async storeNewMatch(@Body() matchDto:storeMatchDto){
+        return await this.userSrevice.storeMatch(matchDto);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('historyMatch')
+    async getHistoryMatch(@Body() findUser:findUserDto){
+        return await this.userSrevice.getHistoryMatch(findUser);
+    }
+
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('historyFriend')
+    async getHistoryOneVsOne(@Body() friendDto:FriendDto){
+        return await this.userSrevice.getHistoryOneVsOne(friendDto);
+    }
 }

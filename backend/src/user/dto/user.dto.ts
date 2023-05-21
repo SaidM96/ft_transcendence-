@@ -55,3 +55,17 @@ export class UpdateStats{
     @IsNumber()
     ladder: number;
 }
+
+
+export class storeMatchDto {
+    @IsString()
+    loginA:string;
+    @IsString()
+    loginB:string;
+    @IsNumber()
+    scoreA: number;
+    @IsNumber()
+    scoreB: number;
+    @IsNumber()
+    winner: number;
+}
