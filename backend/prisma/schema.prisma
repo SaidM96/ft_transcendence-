@@ -60,31 +60,6 @@ model  Block {
   BlockeddAt     DateTime @default(now())
 }
 
-model User {
-  UserId              String @id @default(uuid())
-  login               String @unique
-  username            String @unique
-  email               String @unique
-  photo               String?
-  url                 String?
-  // Friends
-  friendsAddedUser         Friend[] @relation("relationA")
-  friendsAddeBydUser       Friend[] @relation("relationB")
-
-  // Block
-  blockedBy             Block[] @relation("BlockedBy")
-  blocked               Block[] @relation("Blocked")
-
-  // conversations
-  conversationsA        Conversation[]  @relation("conversationA")
-  conversationsB        Conversation[]  @relation("conversationB")
-
-  // status
-  status   Status?      @relation("userStatus")
-
-  // channel
-  memberships     MembershipChannel[] @relation("Membership")
-}
 
 // channel Models
 
@@ -117,7 +92,49 @@ model MsgChannel {
   channelId           String
 }
 
-model match {
-  MatchId        String @id @default(uuid())
-  
+model User {
+  UserId              String @id @default(uuid())
+  login               String @unique
+  username            String @unique
+  email               String @unique
+  photo               String?
+  url                 String?
+  // Friends
+  friendsAddedUser         Friend[] @relation("relationA")
+  friendsAddeBydUser       Friend[] @relation("relationB")
+
+  // Block
+  blockedBy             Block[] @relation("BlockedBy")
+  blocked               Block[] @relation("Blocked")
+
+  // conversations
+  conversationsA        Conversation[]  @relation("conversationA")
+  conversationsB        Conversation[]  @relation("conversationB")
+
+  // status
+  status   Status?      @relation("userStatus")
+
+  // channel
+  memberships     MembershipChannel[] @relation("Membership")
+
+  // Stats
+  stats           Stats? @relation("userStats")
 }
+
+
+model Stats {
+  StatsId    String    @id @default(uuid())
+  user       User      @relation("userStats", fields: [userId], references: [UserId], onDelete: Cascade)
+  userId     String    @unique
+  wins       Int       @default(0)
+  losses     Int       @default(0)
+  ladder     Int       @default(0)
+
+}
+
+// model matchHistory {
+//   historyId     String    @id @default(uuid())
+//   user          User      @relation("userStats", fields: [userId], references: [UserId], onDelete: Cascade)
+//   userId        String    @unique
+//   matches        
+// }

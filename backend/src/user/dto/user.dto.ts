@@ -1,7 +1,6 @@
 import { IsNotEmpty } from "class-validator";
 
 export class LoginDto {
-    
     login:      string;
     username:   string;
     email:      string;
@@ -14,7 +13,6 @@ export class findUserDto {
 }
 
 export class FriendDto {
-
     @IsNotEmpty()
     loginA: string;
     @IsNotEmpty()
@@ -22,14 +20,12 @@ export class FriendDto {
 }
 
 export class BlockDto {
-
     @IsNotEmpty()
     login: string;
     @IsNotEmpty()
     blockedLogin: string;
 }
 
-
 export class UpdateUserDto {
-    
+
 }
