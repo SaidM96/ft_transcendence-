@@ -8,7 +8,7 @@ import { PrismaService } from 'prisma/prisma.service';
 export class AuthService {
     constructor(private readonly jwtService:JwtService, 
         private readonly userService:UserService,
-        private prisma:PrismaService,){}
+        private prisma:PrismaService){}
 
 
 
@@ -18,18 +18,17 @@ export class AuthService {
         }
         else
         {
-            
             const  { login, displayname, email   } = req.user._json;
             const userInfo = {login:login, username:displayname, email:email,};
-            let user = await this.userService.findUser(userInfo.login);
+            const loginDto:LoginDto = userInfo;
+            let user = await this.userService.findUser({login:login});
             if (!user)
             {
-                const loginDto:LoginDto = userInfo;
                 user = await this.userService.createUser(loginDto);
             }
             const payload = { login:user.login, sub:user.UserId };
             const accessToken = await this.jwtService.signAsync(payload);
-            return accessToken;
+            return {...payload, accessToken};
         }
     }
 }

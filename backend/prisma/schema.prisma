@@ -94,7 +94,7 @@ model MsgChannel {
 
 model User {
   UserId              String @id @default(uuid())
-  login               String @unique
+  login               String @unique()
   username            String @unique
   email               String @unique
   photo               String?

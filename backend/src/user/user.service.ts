@@ -19,6 +19,10 @@ export class UserService {
         return await this.prisma.client.user.findFirst({where:{login:login}});
     }
 
+    async findUserById(id:string) {
+        return await this.prisma.client.user.findUnique({where:{UserId:id}});
+    }
+
     async createUser(loginDto:LoginDto){
         const user =  await this.prisma.client.user.create({
             data:{
@@ -407,6 +411,5 @@ export class UserService {
         });
         return {...matchsA, ...matchsB};
     }
-
 }
 
