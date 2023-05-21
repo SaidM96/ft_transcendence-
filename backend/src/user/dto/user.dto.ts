@@ -1,31 +1,57 @@
-import { IsNotEmpty } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class LoginDto {
+    @IsString()
     login:      string;
+    @IsString()
     username:   string;
+    @IsString()
     email:      string;
 }
 
 
 export class findUserDto {
-    @IsNotEmpty()
+    @IsString()
     login:      string;
 }
 
 export class FriendDto {
-    @IsNotEmpty()
+    @IsString()
     loginA: string;
-    @IsNotEmpty()
+    @IsString()
     loginB: string;
 }
 
 export class BlockDto {
-    @IsNotEmpty()
+    @IsString()
     login: string;
-    @IsNotEmpty()
+    @IsString()
     blockedLogin: string;
 }
 
 export class UpdateUserDto {
+    @IsString()
+    login:      string;
+    @IsString()
+    username:string;
+}
 
+export class UpdateStatus {
+    @IsString()
+    login:string;
+    @IsBoolean()
+    isOnline: boolean;
+    @IsBoolean()
+    inGame: boolean;
+}
+
+export class UpdateStats{
+    @IsString()
+    login:string;
+    @IsNumber()
+    wins: number;
+    @IsNumber()
+    losses: number;
+    @IsNumber()
+    ladder: number;
 }

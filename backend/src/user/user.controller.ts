@@ -1,8 +1,8 @@
 import { UserService } from 'src/user/user.service';
-import { Body, Controller, Delete, Get,Req, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get,Req, Param, Post, UseGuards, Patch } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtGuard } from 'src/auth/jwtStrategy/jwt.guard';
-import { BlockDto, FriendDto, findUserDto } from './dto/user.dto';
+import { BlockDto, FriendDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto } from './dto/user.dto';
 import { find } from 'rxjs';
 
 @Controller('user')
@@ -35,6 +35,12 @@ constructor(private readonly userSrevice:UserService){}
     @Delete('delete')
     async deleteUser(@Body() findUser:findUserDto){
         return await this.userSrevice.deleteUser(findUser);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Patch('update')
+    async updateUser(@Body() updateUser:UpdateUserDto){
+        return await this.userSrevice.updateUser(updateUser);
     }
 
 //friends
@@ -87,4 +93,25 @@ constructor(private readonly userSrevice:UserService){}
     async getUserStatus(@Body() findUser:findUserDto){
         return await this.userSrevice.getStatusUser(findUser); 
     }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Patch('status')
+    async modifyStatusUser(@Body() updateStatus:UpdateStatus){
+        return await this.userSrevice.modifyStatusUser(updateStatus); 
+    }
+
+// stats
+    @UseGuards(AuthGuard('jwt'))
+    @Get('stats')
+    async getUserStats(@Body() findUser:findUserDto){
+        return await this.userSrevice.getStatsUser(findUser); 
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Patch('stats')
+    async modifyStatsUser(@Body() updateStats:UpdateStats){
+        return await this.userSrevice.modifyStatsUser(updateStats); 
+    }
+
+// 
 }

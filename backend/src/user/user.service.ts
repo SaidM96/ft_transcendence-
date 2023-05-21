@@ -1,6 +1,7 @@
-import { BlockDto, FriendDto, LoginDto, findUserDto } from './dto/user.dto';
+import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto } from './dto/user.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, PrismaClient  } from '@prisma/client';
+import { stat } from 'fs';
 import { PrismaService,  } from 'prisma/prisma.service';
 
 @Injectable()
@@ -35,6 +36,16 @@ export class UserService {
                 }
             }
         });
+        
+        await this.prisma.client.stats.create({
+            data:{
+                user:{
+                    connect:{
+                        UserId:user.UserId,
+                    },
+                },
+            }
+        });
         return user;
     }
 
@@ -46,6 +57,20 @@ export class UserService {
         return await this.prisma.client.user.delete({where:{login:login}})
     }
 
+    async updateUser(updateUser:UpdateUserDto){
+        const {login:login, username:newUsername} = updateUser;
+        const user = await this.findUser({login:login});
+        if (!user)
+            return new NotFoundException();
+        return await this.prisma.client.user.update({
+            where:{
+                login:user.login,
+            },
+            data:{
+                username:newUsername,
+            }
+        });
+    }
 
     // friendship
     async IsfriendOf(loginA:string, loginB:string){
@@ -242,8 +267,27 @@ export class UserService {
     }
 // status
     // modify status of user
-    async modifyStatusUser(){
-
+    async modifyStatusUser(updateStatus:UpdateStatus){
+        const {login, isOnline, inGame} = updateStatus;
+        const user = await this.findUser({login});
+        if (!user)
+            return new NotFoundException();
+        const status = await this.prisma.client.status.findFirst({
+            where:{
+                userId:user.UserId,
+            },
+        });
+        if (!status)
+            return new NotFoundException();
+        return await this.prisma.client.status.update({
+            where:{
+                statusId:status.statusId,
+            },
+            data:{
+                isOnline:isOnline,
+                inGame:inGame,
+            },
+        });
     }
 
     // get status of user
@@ -258,7 +302,44 @@ export class UserService {
         });
     }
 
-// match
+// stats
+    // modify stats of user
+    async modifyStatsUser(updateStats:UpdateStats){
+        const {login, wins, losses, ladder} = updateStats;
+        const user = await this.findUser({login});
+        if (!user)
+            return new NotFoundException();
+        const stats = await this.prisma.client.stats.findFirst({
+            where:{
+                userId:user.UserId,
+            },
+        });
+        if (!stats)
+            return new NotFoundException();
+        return await this.prisma.client.stats.update({
+            where:{
+                StatsId:stats.StatsId,
+            },
+            data:{
+                wins:wins,
+                losses:losses,
+                ladder:ladder,
+            },
+        });
+    }
+
+    // get stats of user
+    async getStatsUser(findUser:findUserDto){
+        const user = await  this.findUser(findUser);
+        if(!user)
+            return new NotFoundException();
+        return await this.prisma.client.stats.findUnique({
+            where:{
+                userId:user.UserId,
+            },
+        });
+    }
+
 
 }
 
