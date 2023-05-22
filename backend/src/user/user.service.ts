@@ -13,7 +13,6 @@ export class UserService {
         return resuslt;
     }
 
-
     async findUser(findUser:findUserDto) {
         const {login} = findUser;
         return await this.prisma.client.user.findFirst({where:{login:login}});

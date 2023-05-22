@@ -1,7 +1,6 @@
 import { UserService } from 'src/user/user.service';
 import { Body, Controller, Delete, Get,Req, Param, Post, UseGuards, Patch } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtGuard } from 'src/auth/jwtStrategy/jwt.guard';
 import { BlockDto, FriendDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
 import { find } from 'rxjs';
 
@@ -19,8 +18,8 @@ constructor(private readonly userSrevice:UserService){}
     @UseGuards(AuthGuard('jwt'))
     @Get('me')
     async findMe(@Req() req:any){
-        console.log(req.user);
-        return await this.userSrevice.findUser(req.user);
+        const  { login} = req.user;
+        return await this.userSrevice.findUser({login:login});
     }
 
     @UseGuards(AuthGuard('jwt'))
