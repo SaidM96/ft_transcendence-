@@ -10,14 +10,13 @@ export class AuthController {
     @Get('42')
     @UseGuards(AuthGuard('42'))
     async login(@Req() req) {
-    }  
+    }
 
     @Get('call')
     @UseGuards(AuthGuard('42'))
-    async QuaranteDeuxCallback(@Req() req:any) {
-        return   await this.authService.login42(req);
-        // return accessToken;
-      // response.redirect(`http://localhost:3000/callback?token=${accessToken}?`) 
+    async QuaranteDeuxCallback(@Req() req:any, @Res() response:Response) {
+      const accessToken = await this.authService.login42(req);
+      response.redirect(`http://localhost:3000/${accessToken}`)
     }
 
     @UseGuards(AuthGuard('jwt'))
