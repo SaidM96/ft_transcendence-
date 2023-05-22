@@ -20,9 +20,7 @@ constructor(private readonly userSrevice:UserService){}
     @Get('me')
     async findMe(@Req() req:any){
         console.log(req.user);
-        const {login, id} = req.user;
-        const findUser:findUserDto = login;
-        return await this.userSrevice.findUser(findUser);
+        return await this.userSrevice.findUser(req.user);
     }
 
     @UseGuards(AuthGuard('jwt'))

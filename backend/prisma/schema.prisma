@@ -11,14 +11,7 @@ datasource db {
 }
 
 
-model Conversation {
-  ConvId          String @id @default(uuid())
-  sender          User   @relation("conversationA", fields: [senderId], references: [UserId])
-  senderId        String
-  receiver        User   @relation("conversationB", fields: [receiverId], references: [UserId])
-  receiverId      String
-  messages        Message[]
-}
+
 
 model Status {
   statusId   String    @id @default(uuid())
@@ -30,13 +23,6 @@ model Status {
   updatedAt  DateTime  @default(now())
 }
 
-model Message {
-  MsgId           String @id @default(uuid())
-  content         String
-  sendAt          DateTime  @default(now())
-  conversation    Conversation @relation(fields: [conversationId], references: [ConvId])
-  conversationId  String       
-}
 
 model Friend {
   FriendshipId       String @id @default(uuid())
@@ -100,8 +86,8 @@ model User {
   photo               String?
   url                 String?
   // Friends
-  friendsAddedUser         Friend[] @relation("relationA")
-  friendsAddeBydUser       Friend[] @relation("relationB")
+  friendsAddedUser     Friend[] @relation("relationA")
+  friendsAddeBydUser   Friend[] @relation("relationB")
 
   // Block
   blockedBy             Block[] @relation("BlockedBy")
@@ -112,13 +98,13 @@ model User {
   conversationsB        Conversation[]  @relation("conversationB")
 
   // status
-  status   Status?      @relation("userStatus")
+  status                 Status?      @relation("userStatus")
 
   // channel
-  memberships     MembershipChannel[] @relation("Membership")
+  memberships            MembershipChannel[] @relation("Membership")
 
   // Stats
-  stats           Stats? @relation("userStats")
+  stats                  Stats? @relation("userStats")
 
   //matches
   matchhistoryA   match[] @relation("matchA")
@@ -147,4 +133,21 @@ model match {
   finishedAt   DateTime @default(now())
 }
 
+model Conversation {
+  ConvId          String @id @default(uuid())
+  sender          User   @relation("conversationA", fields: [senderId], references: [UserId])
+  senderId        String
+  receiver        User   @relation("conversationB", fields: [receiverId], references: [UserId])
+  receiverId      String
+  messages        Message[]
+}
+
+model Message {
+  MsgId           String @id @default(uuid())
+  content         String
+  sendAt          DateTime  @default(now())
+  fromSender      Boolean // to know who send the msg (sender or receiver) of conversation
+  conversation    Conversation @relation(fields: [conversationId], references: [ConvId])
+  conversationId  String 
+}
 
