@@ -8,6 +8,8 @@ export class ChatService {
 
 
 
+    
+
     // async addNewMessage(msgDto:sendMsgDto){
         
     //     // check if sender or receiver exist in  database 
