@@ -66,6 +66,6 @@ export class storeMatchDto {
     scoreA: number;
     @IsNumber()
     scoreB: number;
-    @IsNumber()
-    winner: number;
+    @IsBoolean()
+    winner: boolean;
 }

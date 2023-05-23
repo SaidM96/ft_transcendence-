@@ -1,7 +1,6 @@
 import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, PrismaClient  } from '@prisma/client';
-import { stat } from 'fs';
 import { PrismaService,  } from 'prisma/prisma.service';
 
 @Injectable()
@@ -370,8 +369,8 @@ export class UserService {
         })
     }
 
-    // get history match 
-    async getHistoryMatch(findUser:findUserDto){
+    // get user's matchs history 
+    async getHistoryUserMatchs(findUser:findUserDto){
         const user = await  this.findUser(findUser);
         if(!user)
             return new NotFoundException();

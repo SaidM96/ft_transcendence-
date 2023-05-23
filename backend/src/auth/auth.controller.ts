@@ -15,8 +15,8 @@ export class AuthController {
     @Get('call')
     @UseGuards(AuthGuard('42'))
     async QuaranteDeuxCallback(@Req() req:any, @Res() response:Response) {
-      const accessToken = await this.authService.login42(req);
-      response.redirect(`http://localhost:3000/${accessToken}`)
+      return await this.authService.login42(req);
+      // response.redirect(`http://localhost:3000/${accessToken}`)
     }
 
     @UseGuards(AuthGuard('jwt'))

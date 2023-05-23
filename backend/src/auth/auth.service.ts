@@ -10,8 +10,6 @@ export class AuthService {
         private readonly userService:UserService,
         private prisma:PrismaService){}
 
-
-
     async login42(req:any) {
         if (!req.user) {
             return {message:"user didnt authenticate"};
