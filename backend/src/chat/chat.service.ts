@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, getConvDto, msgChannelDto, sendMsgDto, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, channeDto, deleteChannelDto, getConvDto, msgChannelDto, sendMsgDto, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import * as bcrypt from 'bcrypt'
+import { findUserDto } from 'src/user/dto/user.dto';
 @Injectable()
 export class ChatService {
     constructor(private readonly userService:UserService,
@@ -206,7 +207,7 @@ export class ChatService {
             });
         }
 
-    // update channel
+    // update channel : turne it public or private , change Owner , or password
     async updateChannel(updateCh:updateChannelDto){
         const {userLogin, channelName, isPrivate, newLoginOwner, ispassword, newPassword} = updateCh;
 
@@ -497,10 +498,63 @@ export class ChatService {
     }
 
 
+    // get all channels
+    async getAllChannels(){
+        return await this.prisma.client.channel.findMany({
+            where:{
+                isPrivate:false,
+            }
+        });
+    }
+
+    // members of a channel
+    async getMembersOfChannel(chDto:channeDto){
+        const {channelName} = chDto;
+        const channel = await this.prisma.client.channel.findFirst({
+            where:{
+                channelName:channelName,
+            },
+        });
+        if (!channel)
+            throw new NotFoundException(`no such channel with the name ${channelName}`);
+        return await this.prisma.client.membershipChannel.findMany({
+            where:{
+                channelName:channel.channelName,
+            },
+        });
+    }
+
+    // get conversation  channel 
+    async getConversationChannel(chDto:channeDto){
+        const {channelName} = chDto;
+        const channel = await this.prisma.client.channel.findFirst({
+            where:{
+                channelName:channelName,
+            },
+        });
+
+        if (!channel)
+            throw new NotFoundException(`no such channel with the name ${channelName}`);
+        return await this.prisma.client.msgChannel.findMany({
+            where:{
+                channelName:channel.channelName,
+            },
+        });
+    }
+
+    // user's memberShips
+    async getUserChannels(userDto:findUserDto){
+        const {login} = userDto;
+        const user = await this.userService.findUser({login:login});
+        if (!user)
+            throw new NotFoundException(`no such user with Login: ${login}`);
+        return await this.prisma.client.membershipChannel.findMany({
+            where:{
+                login:user.login,
+            },
+        });
+    }
 
 
-
-
-    
 
 }

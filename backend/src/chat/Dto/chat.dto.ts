@@ -69,7 +69,6 @@ export class DeleteMemberChannelDto {
     loginDeleted:string; 
 }
 
-
 // update channel
 export class updateChannelDto {
     @IsString()
@@ -113,4 +112,9 @@ export class updateMemberShipDto{
     @IsOptional()
     @IsString()
     nickname:string;  
+}
+
+export class channeDto {
+    @IsString()
+    channelName:string;
 }
