@@ -27,6 +27,7 @@ export class UserService {
                 login: loginDto.login,
                 username: loginDto.username,
                 email:  loginDto.email,
+                bioGra: "",
             }
         });
         await this.prisma.client.status.create({
@@ -60,18 +61,43 @@ export class UserService {
     }
 
     async updateUser(updateUser:UpdateUserDto){
-        const {login:login, username:newUsername} = updateUser;
-        const user = await this.findUser({login:login});
+        const {login, username, bioGra, avatar} = updateUser;
+        let user = await this.findUser({login:login});
         if (!user)
             return new NotFoundException();
-        return await this.prisma.client.user.update({
-            where:{
-                login:user.login,
-            },
-            data:{
-                username:newUsername,
-            }
-        });
+        if (bioGra !== undefined)
+        {
+            user = await this.prisma.client.user.update({
+                where:{
+                    login:user.login,
+                },
+                data:{
+                    bioGra:bioGra,
+                }
+            });
+        }
+        if (avatar !== undefined)
+        {
+            user = await this.prisma.client.user.update({
+                where:{
+                    login:user.login,
+                },
+                data:{
+                    avatar:avatar,
+                }
+            });
+        }
+        if (username !== undefined)
+        {
+            user = await this.prisma.client.user.update({
+                where:{
+                    login:user.login,
+                },
+                data:{
+                    username:username,
+                }
+            });
+        }
     }
 
     // friendship

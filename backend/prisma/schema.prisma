@@ -11,8 +11,6 @@ datasource db {
 }
 
 
-
-
 model Status {
   statusId   String    @id @default(uuid())
   user       User      @relation("userStatus", fields: [userId], references: [UserId], onDelete: Cascade)
@@ -92,8 +90,10 @@ model User {
   login               String @unique()
   username            String @unique
   email               String @unique
-  photo               String?
-  url                 String?
+  avatar              String @default("0")
+  enableTwoFa         Boolean @default(false)
+  twoFactorSecret     String?
+  bioGra              String
   // Friends
   friendsAddedUser     Friend[] @relation("relationA")
   friendsAddeBydUser   Friend[] @relation("relationB")

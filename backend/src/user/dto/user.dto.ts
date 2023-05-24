@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class LoginDto {
     @IsString()
@@ -32,8 +32,16 @@ export class BlockDto {
 export class UpdateUserDto {
     @IsString()
     login:      string;
+    @IsOptional()
     @IsString()
     username:string;
+    @IsOptional()
+    @IsString()
+    bioGra:string;
+    @IsOptional()
+    @IsString()
+    avatar:string;
+
 }
 
 export class UpdateStatus {
