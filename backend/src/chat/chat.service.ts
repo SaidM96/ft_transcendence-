@@ -368,8 +368,8 @@ export class ChatService {
 
         const user = await this.userService.findUser({login:userLogin});
         const userAffected = await this.userService.findUser({login:loginMemberAffected});
-        if (!user || !userAffected)
-            throw new NotFoundException(`no such user with Login: ${userLogin} , ${userAffected}`);
+        if (!userAffected)
+            throw new NotFoundException(`no such user with Login: ${userAffected}`);
 
         const channel = await this.prisma.client.channel.findFirst({
             where:{
@@ -387,12 +387,53 @@ export class ChatService {
         });
         let userAffectedMemberShip = await this.prisma.client.membershipChannel.findFirst({
             where:{
-                login:userLogin,
+                login:loginMemberAffected,
                 channelName:channel.channelName,
             },
         });
-        if ((!userMemberShip || !userAffectedMemberShip) && userMemberShip.isAdmin && userAffectedMemberShip.isOwner)
-            throw new NotFoundException(`${userLogin} , ${loginMemberAffected} are not members , or ${userLogin} is not admin, or ${loginMemberAffected} is owner `);
+
+        if (!userAffectedMemberShip)
+            throw new NotFoundException(`${loginMemberAffected} are not member`);
+
+        if (isOwner !== undefined)
+        {
+            if (isOwner)
+            {
+                await this.prisma.client.channel.update({
+                    where:{
+                        ChannelId:channel.ChannelId,
+                    },
+                    data:{
+                        LoginOwner:userAffected.login,
+                    },
+                });
+                if (user && userMemberShip)
+                {
+                    await this.prisma.client.membershipChannel.update({
+                        where:{
+                            MembershipId:userMemberShip.MembershipId,
+                        },
+                        data:{
+                            isOwner:false
+                        }
+                    })
+                }
+            }
+            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                where:{
+                    MembershipId:userAffectedMemberShip.MembershipId,
+                },
+                data:{
+                    isOwner:isOwner,
+                },
+            });
+        }
+        if (!user)
+            throw new NotFoundException(`no such user with Login: ${userLogin}`);
+        if (!userMemberShip)
+            throw new NotFoundException(`${userLogin} are not member`);
+        if  (!userMemberShip.isAdmin && userAffectedMemberShip.isOwner)
+            throw new NotFoundException(`${userLogin} is not admin, or ${loginMemberAffected} is owner `);
         if (isMute !== undefined)
         {
             userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
@@ -417,17 +458,7 @@ export class ChatService {
             });
         }
 
-        if (isOwner !== undefined)
-        {
-            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
-                where:{
-                    MembershipId:userAffectedMemberShip.MembershipId,
-                },
-                data:{
-                    isOwner:isOwner,
-                },
-            });
-        }
+        
 
         if (isAdmin !== undefined)
         {
