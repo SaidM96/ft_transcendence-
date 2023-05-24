@@ -7,16 +7,17 @@ import { Response } from 'express';
 export class AuthController {
     constructor(private readonly authService:AuthService){}
 
-    @Get('42')
     @UseGuards(AuthGuard('42'))
+    @Get('42')
     async login(@Req() req) {
     }
 
-    @Get('call')
     @UseGuards(AuthGuard('42'))
+    @Get('callback')
     async QuaranteDeuxCallback(@Req() req:any, @Res() response:Response) {
-      return await this.authService.login42(req);
-      // response.redirect(`http://localhost:3000/${accessToken}`)
+      const access = await this.authService.login42(req);
+      console.log(access);
+      response.redirect(`https://google.com`)
     }
 
     @UseGuards(AuthGuard('jwt'))
