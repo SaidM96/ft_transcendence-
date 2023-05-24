@@ -7,8 +7,8 @@ import { Strategy, VerifyCallback} from 'passport-42';
 export class QuaranteDeuxStrategy extends PassportStrategy(Strategy, '42') {
     constructor() {
         super({
-          clientID: "u-s4t2ud-d5f8b8c38e94365049ab68de8ffb2a0e41941a16a29953daa646c062dfbd5117",
-          clientSecret: "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",
+          clientID: "u-s4t2ud-51340767cb8254629829cb51adf1a424ae1c7f4d8ba33071ffa228f9d0a834f3",
+          clientSecret: "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",
           callbackURL: 'http://localhost:5000/auth/call',
         });
       }

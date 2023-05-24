@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, MemberChannelDto, getConvDto, msgChannelDto, sendMsgDto } from './Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, getConvDto, msgChannelDto, sendMsgDto, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import * as bcrypt from 'bcrypt'
 @Injectable()
@@ -131,7 +131,7 @@ export class ChatService {
 
     // create new channel
     async createNewChannel(channelDto:ChannelDto){
-        const {channelName, nickname, LoginOwner, ispassword, password} = channelDto;
+        const {channelName, nickname,isPrivate , LoginOwner, ispassword, password} = channelDto;
         let pass =  "0000";
         if (ispassword)
         {
@@ -156,6 +156,7 @@ export class ChatService {
                 LoginOwner:LoginOwner,
                 ispassword:ispassword,
                 password:pass,
+                isPrivate:isPrivate,
             },
         });
 
@@ -180,6 +181,97 @@ export class ChatService {
 
             },
         });
+        return channel;
+    }
+
+    // delete a channel
+    async deleteChannel(deleteChannel:deleteChannelDto){
+            const {channelName, LoginOwner} = deleteChannel;
+            const user = await this.userService.findUser({login:LoginOwner});
+            if (!user)
+                throw new NotFoundException(`no such user with Login: ${LoginOwner}`)
+            const channel = await this.prisma.client.channel.findFirst({
+                where:{
+                    channelName:channelName,
+                },
+            });
+            if (!channel)
+                throw new NotFoundException(`no such channel: ${channelName}`);
+            if (channel.LoginOwner !== LoginOwner)
+                throw new NotFoundException(` ${LoginOwner} is not Owner of channel: ${channelName}`);
+            return await this.prisma.client.channel.delete({
+                where:{
+                    ChannelId:channel.ChannelId,
+                },
+            });
+        }
+
+    // update channel
+    async updateChannel(updateCh:updateChannelDto){
+        const {userLogin, channelName, isPrivate, newLoginOwner, ispassword, newPassword} = updateCh;
+
+        const user = await this.userService.findUser({login:userLogin});
+        if (!user)
+            throw new NotFoundException(`no such user with Login: ${userLogin}`);
+
+        let channel = await this.prisma.client.channel.findFirst({
+            where:{
+                channelName:channelName,
+            },
+        });
+        if (!channel)
+            throw new NotFoundException(`no such channel: ${channelName}`);
+        if (channel.LoginOwner !== userLogin)
+            throw new NotFoundException(`only owner can update his channel`);
+
+        if (isPrivate !== undefined)
+        {
+            channel = await this.prisma.client.channel.update({
+                where:{
+                    ChannelId:channel.ChannelId,
+                },
+                data:{
+                    isPrivate:isPrivate,
+                },
+            });
+        }
+        if (newLoginOwner)
+        {
+            channel = await this.prisma.client.channel.update({
+                where:{
+                    ChannelId:channel.ChannelId,
+                },
+                data:{
+                    LoginOwner:newLoginOwner,
+                },
+            });
+
+            // !!!!!!!!!!!  dont forget to update memberShip 
+            // of newLoginOwner to set it isOwner and IsAdmin
+        }
+        if (ispassword !== undefined)
+        {
+            channel = await this.prisma.client.channel.update({
+                where:{
+                    ChannelId:channel.ChannelId,
+                },
+                data:{
+                    ispassword:ispassword,
+                },
+            });
+        }
+        if (newPassword && channel.ispassword)
+        {
+            const pass = await bcrypt.hashSync(newPassword,10); 
+            channel = await this.prisma.client.channel.update({
+                where:{
+                    ChannelId:channel.ChannelId,
+                },
+                data:{
+                    password:pass,
+                },
+            });
+        }
         return channel;
     }
  
@@ -229,12 +321,144 @@ export class ChatService {
         });
     }
 
+    // delete a memberShip
+    async  deleteMemberShip(deleteMember:DeleteMemberChannelDto){
+        const {channelName, login, loginDeleted} = deleteMember;
+        const user = await this.userService.findUser({login:login});
+        if (!user)
+            throw new NotFoundException(`no such user with Login: ${login}`);
+        const userDeleted = await this.userService.findUser({login:loginDeleted});
+        if (!user)
+            throw new NotFoundException(`no such user with Login: ${loginDeleted}`);
+        const channel = await this.prisma.client.channel.findFirst({
+                where:{
+                    channelName:channelName,
+                },
+            });
+        if (!channel)
+            throw new NotFoundException(`no such channel: ${channelName}`);
+        const LoginMember = await this.prisma.client.membershipChannel.findFirst({
+            where:{
+                login:login,
+                channelName:channelName,
+            },
+        });
+        const memberDeleted = await this.prisma.client.membershipChannel.findFirst({
+            where:{
+                login:loginDeleted,
+                channelName:channelName,
+            },
+        });
+
+        if (!memberDeleted || !LoginMember)
+            throw new NotFoundException(`no such member on channel: ${channelName}`);
+        if ((LoginMember.isAdmin  && !memberDeleted.isAdmin) || LoginMember.isOwner)
+            return await this.prisma.client.membershipChannel.delete({
+                where:{
+                    MembershipId:memberDeleted.channelId,
+                },
+            });
+        throw new NotFoundException(`cannot delete memberShip of  ${loginDeleted}`);
+    }
+
+    // update memberShip , you can mute , blacklist , change nickName , set member an admin
+    async updateMemberShip(updateMember:updateMemberShipDto){
+        const {userLogin, channelName, loginMemberAffected , isMute, isBlacklist, isOwner, isAdmin, nickname } = updateMember;
+
+        const user = await this.userService.findUser({login:userLogin});
+        const userAffected = await this.userService.findUser({login:loginMemberAffected});
+        if (!user || !userAffected)
+            throw new NotFoundException(`no such user with Login: ${userLogin} , ${userAffected}`);
+
+        const channel = await this.prisma.client.channel.findFirst({
+            where:{
+                channelName:channelName,
+            },
+        });
+        if (!channel)
+            throw new NotFoundException(`no such channel with the name ${channelName}`)
+
+        const userMemberShip = await this.prisma.client.membershipChannel.findFirst({
+            where:{
+                login:userLogin,
+                channelName:channel.channelName,
+            },
+        });
+        let userAffectedMemberShip = await this.prisma.client.membershipChannel.findFirst({
+            where:{
+                login:userLogin,
+                channelName:channel.channelName,
+            },
+        });
+        if ((!userMemberShip || !userAffectedMemberShip) && userMemberShip.isAdmin && userAffectedMemberShip.isOwner)
+            throw new NotFoundException(`${userLogin} , ${loginMemberAffected} are not members , or ${userLogin} is not admin, or ${loginMemberAffected} is owner `);
+        if (isMute !== undefined)
+        {
+            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                where:{
+                    MembershipId:userAffectedMemberShip.MembershipId,
+                },
+                data:{
+                    isMute:isMute,
+                },
+            });
+        }
+
+        if (isBlacklist !== undefined)
+        {
+            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                where:{
+                    MembershipId:userAffectedMemberShip.MembershipId,
+                },
+                data:{
+                    isBlacklist:isBlacklist,
+                },
+            });
+        }
+
+        if (isOwner !== undefined)
+        {
+            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                where:{
+                    MembershipId:userAffectedMemberShip.MembershipId,
+                },
+                data:{
+                    isOwner:isOwner,
+                },
+            });
+        }
+
+        if (isAdmin !== undefined)
+        {
+            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                where:{
+                    MembershipId:userAffectedMemberShip.MembershipId,
+                },
+                data:{
+                    isAdmin:isAdmin,
+                },
+            });
+        }
+        if (nickname)
+        {
+            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                where:{
+                    MembershipId:userAffectedMemberShip.MembershipId,
+                },
+                data:{
+                    nickname:nickname,
+                },
+            });
+        }
+        return userAffectedMemberShip;
+    }
+
     // new messsage channel
     async newMsgChannel(msgDto:msgChannelDto){
         const {login, content, channelName} = msgDto;
         const user = await this.userService.findUser({login:login});
         if (!user)
-            throw new NotFoundException();
+            throw new NotFoundException(`no such user with Login: ${login}`);
 
         // check if there already an channel with same channelName
         const channel = await this.prisma.client.channel.findFirst({
@@ -272,9 +496,11 @@ export class ChatService {
         });
     }
 
-    
+
+
+
+
 
     
-
 
 }

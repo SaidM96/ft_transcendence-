@@ -51,6 +51,7 @@ model  Block {
 
 model channel {
   ChannelId      String @id @default(uuid())
+  isPrivate      Boolean
   channelName    String @unique
   createdAt      DateTime  @default(now())
   LoginOwner     String     
@@ -68,11 +69,11 @@ model MembershipChannel {
   isBlacklist       Boolean  @default(false)
   isOwner           Boolean  @default(false)
   isAdmin           Boolean  @default(false)
-  channel           channel @relation("MembersChannel",fields: [channelId], references: [ChannelId], onDelete: Cascade)
+  channel           channel  @relation("MembersChannel",fields: [channelId], references: [ChannelId], onDelete: Cascade)
   channelName       String
   channelId         String
   login             String
-  user              User  @relation("Membership",fields: [userId], references: [UserId], onDelete: Cascade)
+  user              User    @relation("Membership",fields: [userId], references: [UserId], onDelete: Cascade)
   userId            String  @unique
 }
 
