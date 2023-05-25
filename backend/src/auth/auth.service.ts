@@ -39,7 +39,11 @@ export class AuthService {
             throw new NotFoundException("cant find user");
         if (!(user.enableTwoFa))
             throw new NotFoundException("user had not enable twoFA");
-        const secret = await speakeasy.generateSecret();
+        const secret = await speakeasy.generateSecret({
+            length: 20,
+            name: 'PigPonG',
+            expires: 30000,
+        });
         await this.prisma.client.user.update({
             where:{
                 UserId:user.UserId,
@@ -47,9 +51,9 @@ export class AuthService {
             data:{
                 twoFactorSecret:secret.base32,
             }
-        })
+        });
         const otpAuthUrl = await speakeasy.otpauthURL({
-            label:'PigPongGame',
+            label:'PigPonG',
             secret:secret.base32,
         });
         const qrCodeImage = await QRCode.toDataURL(otpAuthUrl);
@@ -60,11 +64,15 @@ export class AuthService {
         const {login, code} = twoFA;
         let user = await this.userService.findUser({login:login});
         if (!user)
-            return new NotFoundException();
-        return await speakeasy.totp.verify({
-            secret: user.twoFactorSecret,
+        return new NotFoundException("no such user");
+        const secret = user.twoFactorSecret;
+        console.log(code, secret);
+        const isValid = await speakeasy.totp.verify({
+            secret: secret,
             encoding: 'base32',
             token: code,
-        })
+        }); 
+        return {isValid:isValid};
     }
 }
+// ENNFIL3HOVWUGRTJOMZTQSJJNFQS4VKTPMWDA5SCFYUUUPBDIAZA
