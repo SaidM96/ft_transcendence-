@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Redirect, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Redirect, Req, Res, UseGuards } from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport'
 import { AuthService } from './auth.service';
 import { Response } from 'express';
-import { findUserDto } from 'src/user/dto/user.dto';
+import { TwoFADto, findUserDto } from 'src/user/dto/user.dto';
 import { use } from 'passport';
 
 @Controller('auth')
@@ -29,14 +29,15 @@ export class AuthController {
       console.log(req.user);
     }
 
-        
-    @Get('awaw')
-    async awa(userDto:findUserDto){
-       return userDto;
-    }
-    @Get('2-FA')
-    async generateNewQrCode(userDto:findUserDto){
+
+    @Get('QR')
+    async generateNewQrCode(@Body() userDto:findUserDto){
        return await this.authService.generateNewQrCode(userDto);
+    }
+
+    @Post('2-FA')
+    async validateAthenticaion(@Body() twoFA:TwoFADto){
+      return await this.authService.validateCode2FA(twoFA);
     }
 
 }

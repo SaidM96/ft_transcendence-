@@ -1,5 +1,12 @@
 import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
+
+export class TwoFADto{
+    @IsString()
+    login:string;
+    @IsString()
+    code:string;
+}
 export class LoginDto {
     @IsString()
     login:      string;
@@ -31,7 +38,7 @@ export class BlockDto {
 
 export class UpdateUserDto {
     @IsString()
-    login:      string;
+    login:string;
     @IsOptional()
     @IsString()
     username:string;
@@ -41,7 +48,9 @@ export class UpdateUserDto {
     @IsOptional()
     @IsString()
     avatar:string;
-
+    @IsOptional()
+    @IsBoolean()
+    enableTwoFa:boolean;
 }
 
 export class UpdateStatus {

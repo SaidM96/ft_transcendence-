@@ -61,7 +61,7 @@ export class UserService {
     }
 
     async updateUser(updateUser:UpdateUserDto){
-        const {login, username, bioGra, avatar} = updateUser;
+        const {login, username, bioGra, avatar, enableTwoFa } = updateUser;
         let user = await this.findUser({login:login});
         if (!user)
             return new NotFoundException();
@@ -95,6 +95,17 @@ export class UserService {
                 },
                 data:{
                     username:username,
+                }
+            });
+        }
+        if (enableTwoFa !== undefined)
+        {
+            user = await this.prisma.client.user.update({
+                where:{
+                    login:user.login,
+                },
+                data:{
+                    enableTwoFa:enableTwoFa,
                 }
             });
         }
