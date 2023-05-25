@@ -2,6 +2,8 @@ import { Controller, Get, Post, Redirect, Req, Res, UseGuards } from '@nestjs/co
 import {AuthGuard} from '@nestjs/passport'
 import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { findUserDto } from 'src/user/dto/user.dto';
+import { use } from 'passport';
 
 @Controller('auth')
 export class AuthController {
@@ -26,4 +28,15 @@ export class AuthController {
       // req.user contains the authenticated user object
       console.log(req.user);
     }
+
+        
+    @Get('awaw')
+    async awa(userDto:findUserDto){
+       return userDto;
+    }
+    @Get('2-FA')
+    async generateNewQrCode(userDto:findUserDto){
+       return await this.authService.generateNewQrCode(userDto);
+    }
+
 }

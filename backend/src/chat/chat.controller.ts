@@ -37,7 +37,7 @@ export class ChatController {
     @UseGuards(AuthGuard('jwt'))
     @Get('channel/message/all')
     async getConversationChannel(@Body() chDto:channeDto){
-        return await this.getConversationChannel(chDto);
+        return await this.chatService.getConversationChannel(chDto);
     }
 
     // get all public channels
@@ -48,7 +48,7 @@ export class ChatController {
     }
     
     // creaate new channel
-    @UseGuards(AuthGuard('jwt'))
+    @UseGuards(AuthGuard(   'jwt'))
     @Post('channel/new')
     async createNewChannel(@Body() channelDto: ChannelDto){
         return await this.chatService.createNewChannel(channelDto);
@@ -71,7 +71,7 @@ export class ChatController {
     // memberShip
     @UseGuards(AuthGuard('jwt'))
     @Get('user/channel/all')
-    async getUserChannels(userDto:findUserDto){
+    async getUserChannels(@Body() userDto:findUserDto){
         return await this.chatService.getUserChannels(userDto);
     }
 
@@ -92,14 +92,14 @@ export class ChatController {
     @UseGuards(AuthGuard('jwt'))
     @Patch('channel/member/update')
     async updateMemberShip(@Body() updateMember:updateMemberShipDto){
-        return await this.updateMemberShip(updateMember);
+        return await this.chatService.updateMemberShip(updateMember);
     }
 
     // delete a memberShip
     @UseGuards(AuthGuard('jwt'))
     @Delete('channel/member/delete')
     async deleteMemberShip(@Body() deleteMember:DeleteMemberChannelDto){
-        return await this.deleteMemberShip(deleteMember);
+        return await this.chatService.deleteMemberShip(deleteMember);
     }
 
 }

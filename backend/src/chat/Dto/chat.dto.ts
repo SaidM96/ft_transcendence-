@@ -36,11 +36,14 @@ export class ChannelDto {
 
 export class MemberChannelDto {
     @IsString()
-    nickname:string;
-    @IsString()
     channelName:string;
     @IsString()
     login:string;
+    @IsString()
+    nickname:string;
+    @IsOptional()
+    @IsString()
+    password:string;
 }
 
 export class msgChannelDto {
@@ -94,7 +97,6 @@ export class updateMemberShipDto{
     userLogin:string;
     @IsString()
     channelName:string;
-    @IsOptional()
     @IsString()
     loginMemberAffected:string;
     @IsOptional()

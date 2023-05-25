@@ -1,9 +1,10 @@
-import { Injectable, Req } from '@nestjs/common';
-import { LoginDto } from 'src/user/dto/user.dto';
+import { Injectable, NotFoundException, Req } from '@nestjs/common';
+import { LoginDto, findUserDto } from 'src/user/dto/user.dto';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'prisma/prisma.service';
-
+import * as speakeasy from 'speakeasy';
+import * as QRCode from 'qrcode';
 @Injectable()
 export class AuthService {
     constructor(private readonly jwtService:JwtService, 
@@ -27,5 +28,24 @@ export class AuthService {
             const payload = { login:user.login, sub:user.UserId };
             return await this.jwtService.signAsync(payload);
         }
+    }
+
+
+    // 2-FA Google Authenticator
+
+    async generateNewQrCode(userDto:findUserDto){
+        const user = await this.userService.findUser(userDto);
+        if (!user)
+            throw new NotFoundException("cant find user");
+        if (!(user.enableTwoFa))
+            throw new NotFoundException("user had not enable twoFA");
+        const secret = await speakeasy.generateSecret();
+        const otpAuthUrl = await speakeasy.otpauthURL({
+            label:'PigPongGame',
+            secret:secret.base32,
+        });
+
+        const qrCodeImage = await QRCode.toDataURL(otpAuthUrl);
+        return {secret:secret.base32, qrCode:qrCodeImage};
     }
 }

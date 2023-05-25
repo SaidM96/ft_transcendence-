@@ -16,8 +16,10 @@ export class ChatService {
         // check if sender or receiver exist in  database 
         const userA = await this.userService.findUser({login:sender});
         const userB = await this.userService.findUser({login:receiver});
-        if ((!userA || !userB) && (userA.login == userB.login))
+        if (!userA || !userB)
             throw new NotFoundException();
+        if (userA.login == userB.login)
+            throw new NotFoundException("user cant send msg to himself");
         // know we check if sender and receiver have already an conversation
         const convA = await this.prisma.client.conversation.findFirst({
             where:{
@@ -236,7 +238,7 @@ export class ChatService {
                 },
             });
         }
-        if (newLoginOwner)
+        if (newLoginOwner !== undefined)
         {
             channel = await this.prisma.client.channel.update({
                 where:{
@@ -249,6 +251,7 @@ export class ChatService {
 
             // !!!!!!!!!!!  dont forget to update memberShip 
             // of newLoginOwner to set it isOwner and IsAdmin
+            
         }
         if (ispassword !== undefined)
         {
@@ -261,7 +264,7 @@ export class ChatService {
                 },
             });
         }
-        if (newPassword && channel.ispassword)
+        if (newPassword !== undefined && channel.ispassword)
         {
             const pass = await bcrypt.hashSync(newPassword,10); 
             channel = await this.prisma.client.channel.update({
@@ -278,7 +281,7 @@ export class ChatService {
  
     // create new MemberChannel
     async createMemberChannel(memberChannelDto:MemberChannelDto){
-        const {nickname, channelName, login} = memberChannelDto;
+        const {nickname, channelName, login, password} = memberChannelDto;
         const user = await this.userService.findUser({login:login});
         if (!user)
             throw new NotFoundException();
@@ -301,7 +304,17 @@ export class ChatService {
         });
         if (memberShip)
             throw new NotFoundException(`${nickname} is already a member of channel: ${channelName}`);
-
+        if (channel.ispassword)
+        {
+            if (password !== undefined)
+            {
+                const bool = await  bcrypt.compare(channel.password,password)
+                if (!bool)
+                    throw new NotFoundException(`uncorrect password`);
+            }
+            else
+                throw new NotFoundException(`channel require a password to join`);
+        }
         // create new memberShip
         return await this.prisma.client.membershipChannel.create({
             data:{
@@ -356,7 +369,7 @@ export class ChatService {
         if ((LoginMember.isAdmin  && !memberDeleted.isAdmin) || LoginMember.isOwner)
             return await this.prisma.client.membershipChannel.delete({
                 where:{
-                    MembershipId:memberDeleted.channelId,
+                    MembershipId:memberDeleted.MembershipId,
                 },
             });
         throw new NotFoundException(`cannot delete memberShip of  ${loginDeleted}`);
@@ -458,7 +471,6 @@ export class ChatService {
             });
         }
 
-        
 
         if (isAdmin !== undefined)
         {
@@ -471,6 +483,7 @@ export class ChatService {
                 },
             });
         }
+
         if (nickname)
         {
             userAffectedMemberShip = await this.prisma.client.membershipChannel.update({

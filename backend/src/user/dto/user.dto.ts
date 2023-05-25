@@ -12,7 +12,7 @@ export class LoginDto {
 
 export class findUserDto {
     @IsString()
-    login:      string;
+    login:string;
 }
 
 export class FriendDto {
