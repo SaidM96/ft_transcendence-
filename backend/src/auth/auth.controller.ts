@@ -22,14 +22,6 @@ export class AuthController {
       response.redirect(`https://google.com`)
     }
 
-    @UseGuards(AuthGuard('jwt'))
-    @Get('waw')
-    async protectedRoute(@Req() req: any) {
-      // req.user contains the authenticated user object
-      console.log(req.user);
-    }
-
-
     @Get('QR')
     async generateNewQrCode(@Body() userDto:findUserDto){
        return await this.authService.generateNewQrCode(userDto);
