@@ -3,11 +3,12 @@ import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { UserService } from 'src/user/user.service';
 import { PrismaService } from 'prisma/prisma.service';
-import { ChatGateWay } from './chat.gateway';
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
+import { JwtService } from '@nestjs/jwt';
+import { UserGateWay } from 'src/chat/chat.gateway';
 
 @Module({
   controllers: [ChatController],
-  providers: [ChatService, UserService, PrismaService, ChatGateWay, JwtStrategy]
+  providers: [ChatService,UserGateWay, UserService, PrismaService, JwtStrategy, JwtService]
 })
 export class ChatModule {}
