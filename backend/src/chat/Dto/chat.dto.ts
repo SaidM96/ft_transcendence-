@@ -120,3 +120,21 @@ export class channeDto {
     @IsString()
     channelName:string;
 }
+
+
+// Socket
+
+export class sendMsgSocket {
+    @IsString()
+    receiver:string;
+    @IsString()
+    content:string;
+}
+
+
+export class sendChannelMsgSocket {
+    @IsString()
+    channelName:string;
+    @IsString()
+    content:string;
+}

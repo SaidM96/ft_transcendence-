@@ -19,7 +19,7 @@ export class AuthController {
     async QuaranteDeuxCallback(@Req() req:any, @Res() response:Response) {
       const access = await this.authService.login42(req);
       console.log(access);
-      response.redirect(`https://google.com`)
+      response.redirect(`https://www.realmadrid.com/en`)
     }
 
     @Get('QR')

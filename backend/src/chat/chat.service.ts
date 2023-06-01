@@ -599,6 +599,13 @@ export class ChatService {
         });
     }
 
-
-
+    // find channel
+    async findChannel(dto:channeDto){
+        const {channelName} = dto;
+        return await this.prisma.client.channel.findFirst({
+            where:{
+                channelName:channelName,
+            },
+        });
+    }
 }

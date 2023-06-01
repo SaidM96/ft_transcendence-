@@ -9,11 +9,11 @@ export class ChatController {
     constructor(private readonly chatService:ChatService){}
 
     // add new msg to database and rely it to conversation that belongs to
-    @UseGuards(AuthGuard('jwt'))
-    @Post('message/new')
-    async addNewMessage(@Body() msgDto:sendMsgDto){
-        return await this.chatService.addNewMessage(msgDto);
-    }
+    // @UseGuards(AuthGuard('jwt'))
+    // @Post('message/new')
+    // async addNewMessage(@Body() msgDto:sendMsgDto){
+    //     return await this.chatService.addNewMessage(msgDto);
+    // }
 
     // get conversation between two users
     @UseGuards(AuthGuard('jwt'))
@@ -24,6 +24,12 @@ export class ChatController {
 
 // channel
 
+    // creaate new channel
+    @UseGuards(AuthGuard(   'jwt'))
+    @Post('channel/new')
+    async createNewChannel(@Body() channelDto: ChannelDto){
+        return await this.chatService.createNewChannel(channelDto);
+    }
 
     // MSG Channel
     // add new msg to database and rely it to channelConversation that belongs to
@@ -47,12 +53,6 @@ export class ChatController {
         return await this.chatService.getAllChannels();
     }
     
-    // creaate new channel
-    @UseGuards(AuthGuard(   'jwt'))
-    @Post('channel/new')
-    async createNewChannel(@Body() channelDto: ChannelDto){
-        return await this.chatService.createNewChannel(channelDto);
-    }
     
     // update channel : turne it public or private , change Owner , or password
     @UseGuards(AuthGuard('jwt'))
