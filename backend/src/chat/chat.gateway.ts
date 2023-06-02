@@ -1,12 +1,12 @@
-import { User } from '.prisma/client';
+import { User, channel } from '.prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
 import { Socket, Server} from 'socket.io'
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
-import { sendChannelMsgSocket, sendMsgDto, sendMsgSocket } from './Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, msgChannelDto, sendChannelMsgSocket, sendMsgDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
 import { ChatService } from './chat.service';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 
 @WebSocketGateway(3333)
 export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
@@ -17,7 +17,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     server:Server;
 
     connectedUsers:Map<string, User> = new Map();
-
+    existChannels:Map<string, channel> = new Map();
     // handle connection user
     // Socket should contain a user's jwt to connect him succefully 
     async handleConnection(client: Socket) {
@@ -70,6 +70,101 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     // async addMemberChannel(@ConnectedSocket() client:Socket, @MessageBody() body:any){
         
     // }
+
+    // create new channel
+    @SubscribeMessage('newChannel')
+    async createNewChannel(@ConnectedSocket() client:Socket, @MessageBody() body:ChannelDto){
+        // const {channelName, nickname,isPrivate , LoginOwner, ispassword, password} = body;
+        if (this.existChannels.has(body.channelName))
+            throw new ConflictException('Channel already exists');
+        const user = this.connectedUsers.get(client.id)
+        if (!user)
+            throw new NotFoundException('no such user');
+        const ch = await this.chatService.createNewChannel(body);
+        this.existChannels.set(ch.channelName,ch);
+        client.join(ch.channelName);
+        client.emit(`your Channel: ${ch.channelName} has been created`);
+    }
+
+    // add new Member to a channel
+    @SubscribeMessage('joinChannel')
+    async joinChannel(@ConnectedSocket() client:Socket, @MessageBody() body:MemberChannelDto){
+        if (!this.existChannels.has(body.channelName))
+            throw new ConflictException('no such Channel');
+        const user = this.connectedUsers.get(client.id)
+        if (!user)
+            throw new NotFoundException('no such user');
+        // add client as member to  database
+        const memberShip = await this.chatService.createMemberChannel(body);
+        client.join(memberShip.channelName);
+        client.emit(`you have been Joined to ${memberShip.channelName} channel`);
+    }
+
+
+    // delete member from a channel
+    @SubscribeMessage('kickChannel')
+    async kickMemberFromChannel(@ConnectedSocket() client:Socket, @MessageBody() body:DeleteMemberChannelDto){
+        if (!this.existChannels.has(body.channelName))
+            throw new ConflictException('no such Channel');
+        const user = this.connectedUsers.get(client.id)
+        if (!user)
+            throw new NotFoundException('no such user');
+        await this.chatService.deleteMemberShip(body);
+        client.leave(body.channelName);
+        client.emit(`you have been kicked from ${body.channelName} channel`);
+    }
+
+    // update a member
+    @SubscribeMessage('updateMember')
+    async updateUser(@ConnectedSocket() client:Socket, @MessageBody() body:updateMemberShipDto){
+        if (!this.existChannels.has(body.channelName))
+            throw new ConflictException('no such Channel');
+        const user = this.connectedUsers.get(client.id)
+        if (!user)
+            throw new NotFoundException('no such user');
+        body.userLogin = user.login;
+        const memberShip = await this.chatService.updateMemberShip(body);
+    }
+
+    // msg channel
+    @SubscribeMessage('msgChannel')
+    async newMsgChannel(@ConnectedSocket() client:Socket, @MessageBody() body:msgChannelDto){
+        if (!this.existChannels.has(body.channelName))
+            throw new ConflictException('no such Channel');
+        const user = this.connectedUsers.get(client.id)
+        if (!user)
+            throw new NotFoundException('no such user');
+        const msg = await this.chatService.newMsgChannel(body);
+        if (msg)
+            this.server.to(body.channelName).emit(msg.content);
+        else
+            client.emit('cant send a msg to this channel');
+    }
+
+    // update channel  : turne it public or private , change Owner , or password
+    @SubscribeMessage('updateChannel')
+    async updateChannel(@ConnectedSocket() client:Socket, @MessageBody() body:updateChannelDto){
+        if (!this.existChannels.has(body.channelName))
+            throw new ConflictException('no such Channel');
+        const user = this.connectedUsers.get(client.id)
+        if (!user)
+            throw new NotFoundException('no such user');
+        await this.chatService.updateChannel(body);
+        client.emit('changes have been sauvegardeded');
+    }
+
+    // update channel  : turne it public or private , change Owner , or password
+    @SubscribeMessage('updateChannel')
+    async deleteChannel(@ConnectedSocket() client:Socket, @MessageBody() body:deleteChannelDto){
+        if (!this.existChannels.has(body.channelName))
+            throw new ConflictException('no such Channel');
+        const user = this.connectedUsers.get(client.id)
+        if (!user)
+            throw new NotFoundException('no such user');
+        await this.chatService.deleteChannel(body);
+        client.emit(`you have been delete ${body.channelName} channel`);
+        
+    }
 
     @SubscribeMessage('channelMsg')
     async handleChannelmessage(@ConnectedSocket() client:Socket, @MessageBody() body:sendChannelMsgSocket){

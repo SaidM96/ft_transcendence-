@@ -93,6 +93,7 @@ export class updateChannelDto {
 }
 
 export class updateMemberShipDto{
+    @IsOptional()
     @IsString()
     userLogin:string;
     @IsString()

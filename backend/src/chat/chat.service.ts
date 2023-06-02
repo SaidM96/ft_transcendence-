@@ -226,7 +226,6 @@ export class ChatService {
             throw new NotFoundException(`no such channel: ${channelName}`);
         if (channel.LoginOwner !== userLogin)
             throw new NotFoundException(`only owner can update his channel`);
-
         if (isPrivate !== undefined)
         {
             channel = await this.prisma.client.channel.update({
