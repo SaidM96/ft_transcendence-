@@ -146,10 +146,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     @SubscribeMessage('updateMember')
     async updateUser(@ConnectedSocket() client:Socket, @MessageBody() body:updateMemberShipDto){
         if (!this.existChannels.has(body.channelName))
-            client.emit('no such Channel')
+            client.emit('updateMember','no such Channel')
         const user = this.connectedUsers.get(client.id)
         if (!user)
-            client.emit('no such user')
+            client.emit('updateMember','no such user')
         const memberShip = await this.chatService.updateMemberShip(body);
         // this.server.to()
     }
@@ -172,5 +172,5 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     }
 
     // event to change case of a user
-
+    
 }

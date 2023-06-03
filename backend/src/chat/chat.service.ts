@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, channeDto, deleteChannelDto, getConvDto, msgChannelDto, sendMsgDto, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
 import { PrismaService } from 'prisma/prisma.service';
@@ -119,9 +119,9 @@ export class ChatService {
         const userA = await this.userService.findUser({login:loginA});
         const userB = await this.userService.findUser({login:loginB});
         if ((!userA || !userB))
-            throw new NotFoundException();
+            throw new NotFoundException('no such user');
         if ((userA.login == userB.login))
-            throw new NotFoundException();
+            throw new BadRequestException('');
         const convA = await this.getConv(loginA,loginB);
         if (convA)
             return convA;
@@ -600,5 +600,23 @@ export class ChatService {
             arr.push(memberShip.channelName);
         });
         return arr;
+    }
+
+    async getConversationsOfUser(dto:findUserDto){
+        const {login} = dto;
+        const user = await this.userService.findUser({login:login});
+        if (!user)
+            throw new NotFoundException(`no such user with Login: ${login}`);
+        const convA = await this.prisma.client.conversation.findMany({
+            where:{
+                loginA:login
+            }
+        });
+        const convB = await this.prisma.client.conversation.findMany({
+            where:{
+                loginB:login
+            }
+        });
+        return {...convA,...convB};
     }
 }

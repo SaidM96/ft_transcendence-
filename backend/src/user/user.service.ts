@@ -14,7 +14,10 @@ export class UserService {
 
     async findUser(findUser:findUserDto) {
         const {login} = findUser;
-        return await this.prisma.client.user.findFirst({where:{login:login}});
+        const user = await this.prisma.client.user.findFirst({where:{login:login}});
+        if (!user)
+            throw new NotFoundException(`no such user with login ${login}`);
+        return user;
     }
 
     async findUserById(id:string) {

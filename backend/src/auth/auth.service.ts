@@ -13,11 +13,6 @@ export class AuthService {
         private prisma:PrismaService){}
 
     async login42(req:any) {
-        if (!req.user) {
-            return {message:"user didnt authenticate"};
-        }
-        else
-        {
             const  { login, displayname, email   } = req.user._json;
             const userInfo = {login:login, username:displayname, email:email,};
             const loginDto:LoginDto = userInfo;
@@ -28,7 +23,6 @@ export class AuthService {
             }
             const payload = { login:user.login, sub:user.UserId };
             return await this.jwtService.signAsync(payload);
-        }
     }
 
 
@@ -61,7 +55,6 @@ export class AuthService {
         if (!user)
             return new NotFoundException("no such user");
         const secret = user.twoFactorSecret;
-        console.log('code: ',code, 'secret: ',secret)
         return await authenticator.verify({
             token: code,
             secret: secret,

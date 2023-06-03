@@ -1,9 +1,8 @@
-import { Body, Controller, Get, Post, Redirect, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport'
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { TwoFADto, findUserDto } from 'src/user/dto/user.dto';
-import { use } from 'passport';
 
 @Controller('auth')
 export class AuthController {
@@ -19,17 +18,30 @@ export class AuthController {
     async QuaranteDeuxCallback(@Req() req:any, @Res() response:Response) {
       const access = await this.authService.login42(req);
       console.log(access);
-      response.redirect(`https://www.realmadrid.com/en`)
+      response.redirect(`https://www.realmadrid.com/en`);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get('QR')
-    async generateNewQrCode(@Body() userDto:findUserDto){
-       return await this.authService.generateNewQrCode(userDto);
+    async generateNewQrCode(@Body() userDto:findUserDto, @Res() response:Response){
+      try{
+          const result = await this.authService.generateNewQrCode(userDto);
+          response.status(200).json(result);
+      }
+      catch(error){
+        response.status(400).json(error);
+      }
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post('2-FA')
-    async validateAthenticaion(@Body() twoFA:TwoFADto){
-      return await this.authService.validateCode2FA(twoFA);
+    async validateAthenticaion(@Body() twoFA:TwoFADto, @Res() response:Response){
+      try {
+          const result = await this.authService.validateCode2FA(twoFA);
+          response.status(200).json(result);
+      }
+      catch(error){
+        response.status(400).json(error);
+      }
     }
-
 }

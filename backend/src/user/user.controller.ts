@@ -1,8 +1,8 @@
 import { UserService } from 'src/user/user.service';
-import { Body, Controller, Delete, Get,Req, Param, Post, UseGuards, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get,Req, Post, UseGuards, Patch, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { BlockDto, FriendDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
-import { find } from 'rxjs';
+import { Response } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -17,17 +17,32 @@ constructor(private readonly userSrevice:UserService){}
 
     @UseGuards(AuthGuard('jwt'))
     @Get('me')
-    async findMe(@Req() req:any){
-        const  { login} = req.user;
-        return await this.userSrevice.findUser({login:login});
+    async findMe(@Req() req:any, @Res() response:Response){
+        try{
+            const  { login} = req.user;
+            const result = await this.userSrevice.findUser({login:login});
+            response.status(200).json(result);
+        }
+        catch(e){
+            response.status(400).json(e);
+        }
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Get('find')
-    async findOne(@Body() findUser:findUserDto){
-        return await this.userSrevice.findUser(findUser);
+    async findOne(@Body() findUser:findUserDto, @Res() response:Response){
+        try{
+            const result = await this.userSrevice.findUser(findUser);
+            response.status(200).json(result);
+        }
+        catch(e){
+            response.status(400).json(e);
+        }
+        return 
     }
 
+
+    // do it in gateway
     @UseGuards(AuthGuard('jwt'))
     @Delete('delete')
     async deleteUser(@Body() findUser:findUserDto){
