@@ -597,7 +597,7 @@ export class ChatService {
         let arr:string[] = [];
         const memberShips = await this.getUserChannels(login);
         memberShips.forEach((memberShip) => {
-            arr.push(memberShip.channelId);
+            arr.push(memberShip.channelName);
         });
         return arr;
     }
