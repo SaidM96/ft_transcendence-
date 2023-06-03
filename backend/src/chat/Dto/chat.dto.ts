@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, isBoolean } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, isBoolean, isNotEmpty } from "class-validator";
 
 export class sendMsgDto {
     @IsString()
@@ -20,9 +20,8 @@ export class getConvDto {
 // create new
 export class ChannelDto {
     @IsString()
+    @IsNotEmpty()
     channelName:string;
-    @IsString()
-    nickname:string;
     @IsBoolean()
     isPrivate:boolean;
     @IsString()
@@ -33,14 +32,25 @@ export class ChannelDto {
     @IsOptional()
     password:string;
 }
+export class newChannelDto {
+    @IsString()
+    @IsNotEmpty()
+    channelName:string;
+    @IsBoolean()
+    isPrivate:boolean;
+    @IsBoolean()
+    ispassword:boolean;
+    @IsString()
+    @IsOptional()
+    password:string;
+}
 
 export class MemberChannelDto {
     @IsString()
+    @IsNotEmpty()
     channelName:string;
     @IsString()
     login:string;
-    @IsString()
-    nickname:string;
     @IsOptional()
     @IsString()
     password:string;
@@ -52,6 +62,7 @@ export class msgChannelDto {
     @IsString()
     content:string;
     @IsString()
+    @IsNotEmpty()
     channelName:string;
 }
 
@@ -69,7 +80,7 @@ export class DeleteMemberChannelDto {
     @IsString()
     login:string;
     @IsString()
-    loginDeleted:string; 
+    loginDeleted:string;
 }
 
 // update channel
@@ -93,9 +104,8 @@ export class updateChannelDto {
 }
 
 export class updateMemberShipDto{
-    @IsOptional()
     @IsString()
-    userLogin:string;
+    userLogin:string
     @IsString()
     channelName:string;
     @IsString()
@@ -111,10 +121,7 @@ export class updateMemberShipDto{
     isOwner:boolean;
     @IsOptional()
     @IsBoolean()
-    isAdmin:boolean;  
-    @IsOptional()
-    @IsString()
-    nickname:string;  
+    isAdmin:boolean;
 }
 
 export class channeDto {
@@ -139,3 +146,5 @@ export class sendChannelMsgSocket {
     @IsString()
     content:string;
 }
+
+

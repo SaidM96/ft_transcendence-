@@ -62,7 +62,6 @@ model channel {
 model MembershipChannel {
   MembershipId      String @id @default(uuid())
   createdAt         DateTime  @default(now())
-  nickname          String
   isMute            Boolean  @default(false)
   isBlacklist       Boolean  @default(false)
   isOwner           Boolean  @default(false)
@@ -72,7 +71,7 @@ model MembershipChannel {
   channelId         String
   login             String
   user              User    @relation("Membership",fields: [userId], references: [UserId], onDelete: Cascade)
-  userId            String  @unique
+  userId            String
 }
 
 model MsgChannel {

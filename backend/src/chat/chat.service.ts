@@ -134,7 +134,7 @@ export class ChatService {
 
     // create new channel
     async createNewChannel(channelDto:ChannelDto){
-        const {channelName, nickname,isPrivate , LoginOwner, ispassword, password} = channelDto;
+        const {channelName,isPrivate , LoginOwner, ispassword, password} = channelDto;
         let pass =  "0000";
         if (ispassword)
         {
@@ -166,7 +166,6 @@ export class ChatService {
         // now creating an MembershipChannel for the owner
         const memerShip = await this.prisma.client.membershipChannel.create({
             data:{
-                nickname:nickname,
                 isOwner:true,
                 isAdmin:true,
                 channel:{
@@ -280,7 +279,7 @@ export class ChatService {
  
     // create new MemberChannel
     async createMemberChannel(memberChannelDto:MemberChannelDto){
-        const {nickname, channelName, login, password} = memberChannelDto;
+        const { channelName, login, password} = memberChannelDto;
         const user = await this.userService.findUser({login:login});
         if (!user)
             throw new NotFoundException();
@@ -302,7 +301,7 @@ export class ChatService {
             },
         });
         if (memberShip)
-            throw new NotFoundException(`${nickname} is already a member of channel: ${channelName}`);
+            throw new NotFoundException(` already a member of channel: ${channelName}`);
         if (channel.ispassword)
         {
             if (password !== undefined)
@@ -317,7 +316,6 @@ export class ChatService {
         // create new memberShip
         return await this.prisma.client.membershipChannel.create({
             data:{
-                nickname:nickname,
                 channel:{
                     connect:{
                         ChannelId:channel.ChannelId,
@@ -376,7 +374,7 @@ export class ChatService {
 
     // update memberShip , you can mute , blacklist , change nickName , set member an admin
     async updateMemberShip(updateMember:updateMemberShipDto){
-        const {userLogin, channelName, loginMemberAffected , isMute, isBlacklist, isOwner, isAdmin, nickname } = updateMember;
+        const {userLogin, channelName, loginMemberAffected , isMute, isBlacklist, isOwner, isAdmin } = updateMember;
 
         const user = await this.userService.findUser({login:userLogin});
         const userAffected = await this.userService.findUser({login:loginMemberAffected});
@@ -470,7 +468,6 @@ export class ChatService {
             });
         }
 
-
         if (isAdmin !== undefined)
         {
             userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
@@ -479,18 +476,6 @@ export class ChatService {
                 },
                 data:{
                     isAdmin:isAdmin,
-                },
-            });
-        }
-
-        if (nickname)
-        {
-            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
-                where:{
-                    MembershipId:userAffectedMemberShip.MembershipId,
-                },
-                data:{
-                    nickname:nickname,
                 },
             });
         }
@@ -606,5 +591,14 @@ export class ChatService {
                 channelName:channelName,
             },
         });
+    }
+
+    async getUserNameChannels(login:findUserDto):Promise<string[]>{
+        let arr:string[] = [];
+        const memberShips = await this.getUserChannels(login);
+        memberShips.forEach((memberShip) => {
+            arr.push(memberShip.channelId);
+        });
+        return arr;
     }
 }

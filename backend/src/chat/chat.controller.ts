@@ -25,7 +25,7 @@ export class ChatController {
 // channel
 
     // creaate new channel
-    @UseGuards(AuthGuard(   'jwt'))
+    @UseGuards(AuthGuard('jwt'))
     @Post('channel/new')
     async createNewChannel(@Body() channelDto: ChannelDto){
         return await this.chatService.createNewChannel(channelDto);
