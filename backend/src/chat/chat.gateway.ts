@@ -30,7 +30,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     async handleConnection(client: Socket) {
         try{
             const token = client.handshake.headers.authorization;
-            const decodedToken = await this.jwtService.verify(token,{secret:'said@123'})
+            const decodedToken = await this.jwtService.verify(token,{secret:`${process.env.jwt_secret}`});
             const login = decodedToken.login;
             const user = await this.userService.findUser({login:login});
             this.connectedUsers.set(client.id,user);
@@ -41,6 +41,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             console.log(`${this.connectedUsers.get(client.id).username} is connected succefully`);
         }
         catch(e){
+            this.connectedUsers.delete(client.id);
             client.disconnect();
         }
     }
