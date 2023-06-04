@@ -58,16 +58,12 @@ export class UserService {
     async deleteUser(findUser:findUserDto){
         const {login} = findUser;
         const user = await this.findUser(findUser);
-        if (!user)
-            return new NotFoundException();
         return await this.prisma.client.user.delete({where:{login:login}})
     }
 
     async updateUser(updateUser:UpdateUserDto){
         const {login, username, bioGra, avatar, enableTwoFa } = updateUser;
         let user = await this.findUser({login:login});
-        if (!user)
-            return new NotFoundException();
         if (bioGra !== undefined)
         {
             user = await this.prisma.client.user.update({
@@ -126,10 +122,8 @@ export class UserService {
 
     async createFriendship(friendDto:FriendDto){
         const {loginA, loginB} = friendDto;
-        const userA = await this.findUser({login:loginA})
-        const userB = await this.findUser({login:loginB})
-        if (!userA || !userB)
-            return new NotFoundException(`cannot find ${loginA} or ${loginB}`);
+        const userA = await this.findUser({login:loginA});
+        const userB = await this.findUser({login:loginB});
         //check if userA added userB
         const frienda = await this.IsfriendOf(loginA, loginB);
         if (frienda)
@@ -173,8 +167,6 @@ export class UserService {
     async getUserFriends(findUser:findUserDto){
         const {login} = findUser;
         const user = await  this.findUser(findUser);
-        if(!user)
-            return new NotFoundException();
         // list of friendship that added user(login)
         const friendAddedUser = await this.prisma.client.friend.findMany({
             where:{
@@ -199,8 +191,6 @@ export class UserService {
         const removedLogin = loginB;
         const user = await  this.findUser({login:login});
         const removedUser = await  this.findUser({login:removedLogin});
-        if(!user || !removedUser)
-            return new NotFoundException();
         const friendshipA = await this.IsfriendOf(login, removedLogin);
         if (friendshipA)
         {
@@ -243,8 +233,6 @@ export class UserService {
         const blocked = blockDto.blockedLogin;
         const user = await  this.findUser({login:login});
         const blockedUser = await  this.findUser({login:blocked});
-        if(!user || !blockedUser)
-            return new NotFoundException();
         const block = await this.prisma.client.block.findFirst({
             where:{
                 blockedById:user.UserId,
@@ -278,8 +266,6 @@ export class UserService {
     async removeBlock(login:string, blocked:string){
         const user = await  this.findUser({login:login});
         const blockedUser = await  this.findUser({login:blocked});
-        if(!user || !blockedUser)
-            return new NotFoundException();
         const block = await this.prisma.client.block.findFirst({
             where:{
                 blockedById:user.UserId,
@@ -299,8 +285,6 @@ export class UserService {
     // get list of blocked users by  a user
     async getBlockedList(findUser:findUserDto){
         const user = await  this.findUser(findUser);
-        if(!user)
-            return new NotFoundException();
         return await this.prisma.client.block.findMany({
             where:{
                 blockedById:user.UserId,
@@ -312,8 +296,6 @@ export class UserService {
     async modifyStatusUser(updateStatus:UpdateStatus){
         const {login, isOnline, inGame} = updateStatus;
         const user = await this.findUser({login});
-        if (!user)
-            return new NotFoundException();
         const status = await this.prisma.client.status.findFirst({
             where:{
                 userId:user.UserId,
@@ -335,8 +317,6 @@ export class UserService {
     // get status of user
     async getStatusUser(findUser:findUserDto){
         const user = await  this.findUser(findUser);
-        if(!user)
-            return new NotFoundException();
         return await this.prisma.client.status.findUnique({
             where:{
                 userId:user.UserId,
@@ -349,8 +329,6 @@ export class UserService {
     async modifyStatsUser(updateStats:UpdateStats){
         const {login, wins, losses, ladder} = updateStats;
         const user = await this.findUser({login});
-        if (!user)
-            return new NotFoundException();
         const stats = await this.prisma.client.stats.findFirst({
             where:{
                 userId:user.UserId,
@@ -373,8 +351,6 @@ export class UserService {
     // get stats of user
     async getStatsUser(findUser:findUserDto){
         const user = await  this.findUser(findUser);
-        if(!user)
-            return new NotFoundException();
         return await this.prisma.client.stats.findUnique({
             where:{
                 userId:user.UserId,
@@ -388,8 +364,6 @@ export class UserService {
         const {loginA, loginB, scoreA, scoreB, winner} = matchDto;
         const userA = await  this.findUser({login:loginA});
         const userB = await  this.findUser({login:loginB});
-        if(!userA || !userB)
-            return new NotFoundException();
         return await this.prisma.client.match.create({
             data:{
                 userA:{
@@ -412,8 +386,6 @@ export class UserService {
     // get user's matchs history 
     async getHistoryUserMatchs(findUser:findUserDto){
         const user = await  this.findUser(findUser);
-        if(!user)
-            return new NotFoundException();
         const matchsA =  await this.prisma.client.match.findMany({
             where:{
                 userAId:user.UserId,
@@ -432,8 +404,6 @@ export class UserService {
         const {loginA, loginB} = friendDto;
         const userA = await  this.findUser({login:loginA});
         const userB = await  this.findUser({login:loginB});
-        if(!userA || !userB)
-            return new NotFoundException();
         const matchsA = await this.prisma.client.match.findMany({
             where:{
                 userAId:userA.UserId,

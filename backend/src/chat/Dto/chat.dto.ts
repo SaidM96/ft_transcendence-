@@ -93,9 +93,6 @@ export class updateChannelDto {
     @IsBoolean()
     isPrivate:boolean
     @IsOptional()
-    @IsString()
-    newLoginOwner:string;
-    @IsOptional()
     @IsBoolean()
     ispassword:boolean;
     @IsString()

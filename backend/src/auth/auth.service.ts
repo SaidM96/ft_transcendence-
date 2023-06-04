@@ -13,10 +13,10 @@ export class AuthService {
         private prisma:PrismaService){}
 
     async login42(req:any) {
-            const  { login, displayname, email   } = req.user._json;
-            const userInfo = {login:login, username:displayname, email:email,};
+            const  { login, displayname, email} = req.user._json;
+            const userInfo = {login:login, username:displayname, email:email};
             const loginDto:LoginDto = userInfo;
-            let user = await this.userService.findUser({login:login});
+            let user = await this.prisma.client.user.findFirst({where:{login:login}});
             if (!user)
             {
                 user = await this.userService.createUser(loginDto);
@@ -30,8 +30,6 @@ export class AuthService {
 
     async generateNewQrCode(userDto:findUserDto){
         const user = await this.userService.findUser(userDto);
-        if (!user)
-            throw new NotFoundException("cant find user");
         if (!(user.enableTwoFa))
             throw new NotFoundException("user had not enable twoFA");
         const secret = await authenticator.generateSecret();
@@ -52,8 +50,6 @@ export class AuthService {
     async validateCode2FA(twoFA:TwoFADto){
         const {login, code} = twoFA;
         let user = await this.userService.findUser({login:login});
-        if (!user)
-            return new NotFoundException("no such user");
         const secret = user.twoFactorSecret;
         return await authenticator.verify({
             token: code,

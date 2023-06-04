@@ -15,11 +15,7 @@ export class ChatService {
         const {sender, receiver, content} = msgDto;
         // check if sender or receiver exist in  database 
         const userA = await this.userService.findUser({login:sender});
-        const userB = await this.userService.findUser({login:receiver});
-        if (!userA || !userB)
-            throw new NotFoundException();
-        if (userA.login == userB.login)
-            throw new NotFoundException("user cant send msg to himself");
+        const userB = await this.userService.findUser({login:receiver});            
         // know we check if sender and receiver have already an conversation
         const convA = await this.prisma.client.conversation.findFirst({
             where:{
@@ -118,10 +114,8 @@ export class ChatService {
         // check if sender or receiver exist in  database 
         const userA = await this.userService.findUser({login:loginA});
         const userB = await this.userService.findUser({login:loginB});
-        if ((!userA || !userB))
-            throw new NotFoundException('no such user');
         if ((userA.login == userB.login))
-            throw new BadRequestException('');
+            throw new BadRequestException('sender and receiver cant be same');
         const convA = await this.getConv(loginA,loginB);
         if (convA)
             return convA;
@@ -142,8 +136,6 @@ export class ChatService {
         }
         // check if loginOwner exist in database;
         const user = await this.userService.findUser({login:LoginOwner});
-        if (!user)
-            throw new NotFoundException();
         // check if there already an channel with same channelName
         const ch = await this.prisma.client.channel.findFirst({
             where:{
@@ -190,8 +182,6 @@ export class ChatService {
     async deleteChannel(deleteChannel:deleteChannelDto){
             const {channelName, LoginOwner} = deleteChannel;
             const user = await this.userService.findUser({login:LoginOwner});
-            if (!user)
-                throw new NotFoundException(`no such user with Login: ${LoginOwner}`)
             const channel = await this.prisma.client.channel.findFirst({
                 where:{
                     channelName:channelName,
@@ -210,12 +200,9 @@ export class ChatService {
 
     // update channel : turne it public or private , change Owner , or password
     async updateChannel(updateCh:updateChannelDto){
-        const {userLogin, channelName, isPrivate, newLoginOwner, ispassword, newPassword} = updateCh;
+        const {userLogin, channelName, isPrivate, ispassword, newPassword} = updateCh;
 
         const user = await this.userService.findUser({login:userLogin});
-        if (!user)
-            throw new NotFoundException(`no such user with Login: ${userLogin}`);
-
         let channel = await this.prisma.client.channel.findFirst({
             where:{
                 channelName:channelName,
@@ -235,21 +222,6 @@ export class ChatService {
                     isPrivate:isPrivate,
                 },
             });
-        }
-        if (newLoginOwner !== undefined)
-        {
-            channel = await this.prisma.client.channel.update({
-                where:{
-                    ChannelId:channel.ChannelId,
-                },
-                data:{
-                    LoginOwner:newLoginOwner,
-                },
-            });
-
-            // !!!!!!!!!!!  dont forget to update memberShip 
-            // of newLoginOwner to set it isOwner and IsAdmin
-            
         }
         if (ispassword !== undefined)
         {
@@ -281,9 +253,6 @@ export class ChatService {
     async createMemberChannel(memberChannelDto:MemberChannelDto){
         const { channelName, login, password} = memberChannelDto;
         const user = await this.userService.findUser({login:login});
-        if (!user)
-            throw new NotFoundException();
-
         // check if there already an channel with same channelName
         const channel = await this.prisma.client.channel.findFirst({
             where:{
@@ -336,11 +305,7 @@ export class ChatService {
     async  deleteMemberShip(deleteMember:DeleteMemberChannelDto){
         const {channelName, login, loginDeleted} = deleteMember;
         const user = await this.userService.findUser({login:login});
-        if (!user)
-            throw new NotFoundException(`no such user with Login: ${login}`);
         const userDeleted = await this.userService.findUser({login:loginDeleted});
-        if (!user)
-            throw new NotFoundException(`no such user with Login: ${loginDeleted}`);
         const channel = await this.prisma.client.channel.findFirst({
                 where:{
                     channelName:channelName,
@@ -378,9 +343,6 @@ export class ChatService {
 
         const user = await this.userService.findUser({login:userLogin});
         const userAffected = await this.userService.findUser({login:loginMemberAffected});
-        if (!userAffected)
-            throw new NotFoundException(`no such user with Login: ${userAffected}`);
-
         const channel = await this.prisma.client.channel.findFirst({
             where:{
                 channelName:channelName,
@@ -438,8 +400,6 @@ export class ChatService {
                 },
             });
         }
-        if (!user)
-            throw new NotFoundException(`no such user with Login: ${userLogin}`);
         if (!userMemberShip)
             throw new NotFoundException(`${userLogin} are not member`);
         if  (!userMemberShip.isAdmin && userAffectedMemberShip.isOwner)
@@ -486,9 +446,6 @@ export class ChatService {
     async newMsgChannel(msgDto:msgChannelDto){
         const {login, content, channelName} = msgDto;
         const user = await this.userService.findUser({login:login});
-        if (!user)
-            throw new NotFoundException(`no such user with Login: ${login}`);
-
         // check if there already an channel with same channelName
         const channel = await this.prisma.client.channel.findFirst({
             where:{
@@ -574,8 +531,6 @@ export class ChatService {
     async getUserChannels(userDto:findUserDto){
         const {login} = userDto;
         const user = await this.userService.findUser({login:login});
-        if (!user)
-            throw new NotFoundException(`no such user with Login: ${login}`);
         return await this.prisma.client.membershipChannel.findMany({
             where:{
                 login:user.login,
@@ -605,8 +560,6 @@ export class ChatService {
     async getConversationsOfUser(dto:findUserDto){
         const {login} = dto;
         const user = await this.userService.findUser({login:login});
-        if (!user)
-            throw new NotFoundException(`no such user with Login: ${login}`);
         const convA = await this.prisma.client.conversation.findMany({
             where:{
                 loginA:login
