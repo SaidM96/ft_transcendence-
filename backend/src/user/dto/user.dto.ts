@@ -56,8 +56,10 @@ export class UpdateUserDto {
 export class UpdateStatus {
     @IsString()
     login:string;
+    @IsOptional()
     @IsBoolean()
     isOnline: boolean;
+    @IsOptional()
     @IsBoolean()
     inGame: boolean;
 }
@@ -85,4 +87,12 @@ export class storeMatchDto {
     scoreB: number;
     @IsBoolean()
     winner: boolean;
+}
+
+// for Socket
+export class newBlockDto {
+    @IsString()
+    blockedLogin:string;
+    @IsBoolean()
+    stillEnemy:boolean;
 }

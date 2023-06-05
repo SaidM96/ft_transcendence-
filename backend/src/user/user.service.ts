@@ -1,5 +1,5 @@
 import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, PrismaClient  } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
 
@@ -259,7 +259,7 @@ export class UserService {
             })
         }
         else
-            return {message:`${login} is already blo9 ${blocked}`};
+            throw new BadRequestException(`${login} already block ${blocked}`);
     }
 
     // remove block
@@ -279,39 +279,87 @@ export class UserService {
                 }
             })
         else
-            return {message:`${login} had not blo9 ${blocked}`};
+            throw new BadRequestException(`${login} didn't block ${blocked}`);
     }
 
     // get list of blocked users by  a user
     async getBlockedList(findUser:findUserDto){
         const user = await  this.findUser(findUser);
-        return await this.prisma.client.block.findMany({
+        const blockedList = await this.prisma.client.block.findMany({
             where:{
                 blockedById:user.UserId,
             }
-        })
+        });
+
+    }
+
+    // get haters  (blocked by users)
+    async getHaters(dto:findUserDto){
+        const user = await  this.findUser({login:dto.login});
+        return await this.prisma.client.block.findMany({
+            where:{
+                blockedId:user.UserId
+            }
+        });
+    }
+
+    // check if user blocked another user;
+    async isBlockedMe(dto:FriendDto):Promise<boolean>{
+        const userA = await this.findUser({login:dto.loginA});
+        const userB = await this.findUser({login:dto.loginB});
+        let block =  await this.prisma.client.block.findFirst({
+            where:{
+                blockedById:userA.UserId,
+                blockedId:userB.UserId,
+            },
+        });
+        if (!block){
+            block =  await this.prisma.client.block.findFirst({
+                where:{
+                    blockedById:userB.UserId,
+                    blockedId:userA.UserId,
+                },
+            });
+        }
+        if (!block){
+            return false;
+        }
+        return true;
+
     }
 // status
     // modify status of user
     async modifyStatusUser(updateStatus:UpdateStatus){
         const {login, isOnline, inGame} = updateStatus;
         const user = await this.findUser({login});
-        const status = await this.prisma.client.status.findFirst({
+        let status = await this.prisma.client.status.findFirst({
             where:{
                 userId:user.UserId,
             },
         });
         if (!status)
-            return new NotFoundException();
-        return await this.prisma.client.status.update({
+            return new NotFoundException('rfed');
+        if (isOnline !== undefined){
+            status = await this.prisma.client.status.update({
             where:{
                 statusId:status.statusId,
             },
             data:{
                 isOnline:isOnline,
+            },
+        });
+        }
+        if (inGame !== undefined){
+            status = await this.prisma.client.status.update({
+            where:{
+                statusId:status.statusId,
+            },
+            data:{
                 inGame:inGame,
             },
         });
+        }
+        return status;
     }
 
     // get status of user

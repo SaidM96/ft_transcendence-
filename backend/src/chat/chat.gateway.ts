@@ -6,8 +6,10 @@ import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
 import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
 import { ChatService } from './chat.service';
-import { BadRequestException, ConflictException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './socketException';
+import { UpdateStatus, newBlockDto } from 'src/user/dto/user.dto';
+import { BlockDto } from 'src/user/dto/user.dto';
 
 
 @WebSocketGateway(3333)
@@ -41,6 +43,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             roomsToJoin.forEach((channelName) => {
                 client.join(channelName);
             });
+            // set status online in database
+            const dto:UpdateStatus = {login:user.login, isOnline:true, inGame:undefined};
+            await this.userService.modifyStatusUser(dto);
             client.emit('message',`welcome ${this.connectedUsers.get(client.id).username} you have connected succefully`);
         }
         catch(error){
@@ -51,9 +56,19 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     }
 
     // handle disconnection user
-    handleDisconnect(client: Socket) {
-        client.emit('errorMessage', `${this.connectedUsers.get(client.id).username} is disconnected`);
-        this.connectedUsers.delete(client.id);
+    async handleDisconnect(client: Socket) {
+        try {
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new NotFoundException(`cant find sender User`);
+            // set status offline in database
+            const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:undefined};
+            await this.userService.modifyStatusUser(dto);
+            this.connectedUsers.delete(client.id);
+        }
+        catch(error){
+            client.emit(error);
+        }
     }
 
     findKeyByLogin(login: string): string | undefined {
@@ -76,6 +91,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             const userReceiver = await this.userService.findUser({login:receiver});
             if (userReceiver.login == userSender.login)
                 throw new BadRequestException(`${receiver} cant send msg to ${receiver}`);
+            // check if receiver had blocked client or opposite
+            const IsEnemy = await this.userService.isBlockedMe({loginA:userSender.login,loginB:receiver});
+            if (IsEnemy)
+                throw new BadRequestException(`cant send any msg to ${receiver}`)
             const receiverSocketId = this.findKeyByLogin(userReceiver.login);
             if (receiverSocketId)
                 this.server.to(receiverSocketId).emit('PrivateMessage', {sender:userSender.login,content:content});
@@ -246,6 +265,27 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
         }
     }
 
-    // event to change case of a user
-    
+    // event to blo9 someone remove block
+    @SubscribeMessage('block')
+    async blo9User(@ConnectedSocket() client:Socket, @MessageBody() body:newBlockDto){
+        try{
+            const user = this.connectedUsers.get(client.id)
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:BlockDto = {login:user.login, blockedLogin:body.blockedLogin}
+            if (body.stillEnemy)
+            {
+                await this.userService.blockUser(dto);
+                client.emit('message',` you have blocked ${body.blockedLogin}`);
+            }
+            else
+            {
+                await this.userService.removeBlock(user.login,body.blockedLogin);
+                client.emit('message',` you have deblocked ${body.blockedLogin}`);
+            }
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
 }

@@ -15,7 +15,8 @@ export class ChatService {
         const {sender, receiver, content} = msgDto;
         // check if sender or receiver exist in  database 
         const userA = await this.userService.findUser({login:sender});
-        const userB = await this.userService.findUser({login:receiver});            
+        const userB = await this.userService.findUser({login:receiver});
+                    
         // know we check if sender and receiver have already an conversation
         const convA = await this.prisma.client.conversation.findFirst({
             where:{

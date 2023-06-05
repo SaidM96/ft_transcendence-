@@ -21,6 +21,14 @@ model Status {
   updatedAt  DateTime  @default(now())
 }
 
+model Stats {
+  StatsId    String    @id @default(uuid())
+  user       User      @relation("userStats", fields: [userId], references: [UserId], onDelete: Cascade)
+  userId     String    @unique
+  wins       Int       @default(0)
+  losses     Int       @default(0)
+  ladder     Int       @default(0)
+}
 
 model Friend {
   FriendshipId       String @id @default(uuid())
@@ -120,14 +128,7 @@ model User {
 }
 
 
-model Stats {
-  StatsId    String    @id @default(uuid())
-  user       User      @relation("userStats", fields: [userId], references: [UserId], onDelete: Cascade)
-  userId     String    @unique
-  wins       Int       @default(0)
-  losses     Int       @default(0)
-  ladder     Int       @default(0)
-}
+
 
 model match {
   matchyId     String    @id @default(uuid())
