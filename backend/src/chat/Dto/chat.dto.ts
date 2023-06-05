@@ -115,9 +115,6 @@ export class updateMemberShipDto{
     isBlacklist:boolean;
     @IsOptional()
     @IsBoolean()
-    isOwner:boolean;
-    @IsOptional()
-    @IsBoolean()
     isAdmin:boolean;
 }
 
@@ -126,6 +123,12 @@ export class channeDto {
     channelName:string;
 }
 
+export class leaveChannel{
+    @IsString()
+    channelName:string;
+    @IsString()
+    login:string;
+}
 
 // Socket
 
@@ -145,3 +148,25 @@ export class sendChannelMsgSocket {
 }
 
 
+export class newLeaveChannel{
+    @IsString()
+    channelName:string;
+}
+
+
+export class newMemberChannelDto {
+    @IsString()
+    @IsNotEmpty()
+    channelName:string;
+    @IsOptional()
+    @IsString()
+    password:string;
+}
+
+export class newMsgChannelDto {
+    @IsString()
+    @IsNotEmpty()
+    channelName:string;
+    @IsString()
+    content:string;
+}

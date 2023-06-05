@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, channeDto, deleteChannelDto, getConvDto, msgChannelDto, sendMsgDto, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, channeDto, deleteChannelDto, getConvDto, leaveChannel, msgChannelDto, sendMsgDto, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import * as bcrypt from 'bcrypt'
 import { findUserDto } from 'src/user/dto/user.dto';
@@ -129,10 +129,10 @@ export class ChatService {
     // create new channel
     async createNewChannel(channelDto:ChannelDto){
         const {channelName,isPrivate , LoginOwner, ispassword, password} = channelDto;
-        let pass =  "0000";
-        if (ispassword)
+        let pass = await bcrypt.hashSync(`${process.env.default_pass_channel}`,10);
+        if (password !== undefined)
         {
-            pass = await bcrypt.hashSync(password,10)
+            pass = await bcrypt.hashSync(password,10);
         }
         // check if loginOwner exist in database;
         const user = await this.userService.findUser({login:LoginOwner});
@@ -269,18 +269,43 @@ export class ChatService {
                 channelId:channel.ChannelId,
             },
         });
+        if (memberShip?.isBlacklist)
+            throw new BadRequestException(`${login} is blacklisted from ${channelName}`);
         if (memberShip)
             throw new NotFoundException(` already a member of channel: ${channelName}`);
+        if (channel.isPrivate)
+            throw new BadRequestException(`${channelName} is a private channel cant join without an admin permission`);
         if (channel.ispassword)
         {
             if (password !== undefined)
             {
-                const bool = await  bcrypt.compare(channel.password,password)
+                const bool = await  bcrypt.compare(password,channel.password);
                 if (!bool)
                     throw new NotFoundException(`uncorrect password`);
             }
             else
                 throw new NotFoundException(`channel require a password to join`);
+        }
+        // check if channel has no owner
+        if (channel.LoginOwner === "no one"){
+            return await this.prisma.client.membershipChannel.create({
+                data:{
+                    channel:{
+                        connect:{
+                            ChannelId:channel.ChannelId,
+                        },
+                    },
+                    channelName:channel.channelName,
+                    login:user.login,
+                    user:{
+                        connect:{
+                            UserId:user.UserId
+                        },
+                    },
+                    isAdmin:true,
+                    isOwner:true,
+                },
+            });
         }
         // create new memberShip
         return await this.prisma.client.membershipChannel.create({
@@ -300,7 +325,79 @@ export class ChatService {
             },
         });
     }
-
+    // leave channel
+    async leaveChannel(dto:leaveChannel){
+        const {channelName, login} = dto;
+        const user = await this.userService.findUser({login:login});
+        const channel = await this.prisma.client.channel.findFirst({
+            where:{
+                channelName:channelName,
+            },
+        });
+        if (!channel)
+            throw new NotFoundException(`no such channel: ${channelName}`);
+        const LoginMember = await this.prisma.client.membershipChannel.findFirst({
+            where:{
+                login:login,
+                channelName:channelName,
+            },
+        });
+        if (!LoginMember)
+            throw new NotFoundException(`${login} is not a member on ${channelName}`);
+        if (LoginMember.isOwner)
+        {
+            let successor = await this.prisma.client.membershipChannel.findFirst({
+                where:{
+                    channelName:channelName,
+                    isAdmin:true,
+                    isOwner:false,
+                },
+            });
+            if (!successor)
+                successor = await this.prisma.client.membershipChannel.findFirst({
+                    where:{
+                        channelName:channelName,
+                        isOwner:false
+                    }
+                });
+            if (successor)
+            {
+                await this.prisma.client.membershipChannel.update({
+                    where:{
+                        MembershipId:successor.MembershipId,
+                    },
+                    data:{
+                        isOwner:true,
+                        isAdmin:true,
+                    }
+                })
+                await this.prisma.client.channel.update({
+                    where:{
+                        ChannelId:channel.ChannelId,
+                    },
+                    data:{
+                        LoginOwner:successor.login
+                    }
+                })
+            }
+            else
+            {
+                await this.prisma.client.channel.update({
+                    where:{
+                        ChannelId:channel.ChannelId,
+                    },
+                    data:{
+                        LoginOwner:"no one",
+                    }
+                });
+            }
+        }
+        return await this.prisma.client.membershipChannel.delete({
+            where:{
+                MembershipId:LoginMember.MembershipId
+            },
+        });
+    }
     // delete a memberShip
     async  deleteMemberShip(deleteMember:DeleteMemberChannelDto){
         const {channelName, login, loginDeleted} = deleteMember;
@@ -325,22 +422,23 @@ export class ChatService {
                 channelName:channelName,
             },
         });
-
         if (!memberDeleted || !LoginMember)
-            throw new NotFoundException(`no such member on channel: ${channelName}`);
-        if ((LoginMember.isAdmin  && !memberDeleted.isAdmin) || LoginMember.isOwner)
-            return await this.prisma.client.membershipChannel.delete({
+            throw new NotFoundException(`a member is not on ${channelName}`);
+        if (memberDeleted.isOwner)
+            throw new NotFoundException(`${loginDeleted} is owner you cannot delete it`);
+        if (!LoginMember.isAdmin)
+            throw new BadRequestException('only admin can kick members');
+        return await this.prisma.client.membershipChannel.delete({
                 where:{
                     MembershipId:memberDeleted.MembershipId,
                 },
             });
-        throw new NotFoundException(`cannot delete memberShip of  ${loginDeleted}`);
     }
 
     // update memberShip , you can mute , blacklist , change nickName , set member an admin
     async updateMemberShip(updateMember:updateMemberShipDto){
-        const {userLogin, channelName, loginMemberAffected , isMute, isBlacklist, isOwner, isAdmin } = updateMember;
-
+        const {userLogin, channelName, loginMemberAffected , isMute, isBlacklist, isAdmin } = updateMember;
+        let array:string[] = [];
         const user = await this.userService.findUser({login:userLogin});
         const userAffected = await this.userService.findUser({login:loginMemberAffected});
         const channel = await this.prisma.client.channel.findFirst({
@@ -366,46 +464,16 @@ export class ChatService {
 
         if (!userAffectedMemberShip)
             throw new NotFoundException(`${loginMemberAffected} are not member`);
-
-        if (isOwner !== undefined)
-        {
-            if (isOwner)
-            {
-                await this.prisma.client.channel.update({
-                    where:{
-                        ChannelId:channel.ChannelId,
-                    },
-                    data:{
-                        LoginOwner:userAffected.login,
-                    },
-                });
-                if (user && userMemberShip)
-                {
-                    await this.prisma.client.membershipChannel.update({
-                        where:{
-                            MembershipId:userMemberShip.MembershipId,
-                        },
-                        data:{
-                            isOwner:false
-                        }
-                    })
-                }
-            }
-            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
-                where:{
-                    MembershipId:userAffectedMemberShip.MembershipId,
-                },
-                data:{
-                    isOwner:isOwner,
-                },
-            });
-        }
         if (!userMemberShip)
             throw new NotFoundException(`${userLogin} are not member`);
         if  (!userMemberShip.isAdmin && userAffectedMemberShip.isOwner)
             throw new NotFoundException(`${userLogin} is not admin, or ${loginMemberAffected} is owner `);
         if (isMute !== undefined)
         {
+            if (isMute)
+                array.push('Mute');
+            else
+                array.push('unMute');
             userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
                 where:{
                     MembershipId:userAffectedMemberShip.MembershipId,
@@ -418,6 +486,10 @@ export class ChatService {
 
         if (isBlacklist !== undefined)
         {
+            if (isBlacklist)
+                array.push('Ban');
+            else
+                array.push('unBan');
             userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
                 where:{
                     MembershipId:userAffectedMemberShip.MembershipId,
@@ -430,6 +502,10 @@ export class ChatService {
 
         if (isAdmin !== undefined)
         {
+            if (isAdmin)
+                array.push('Promote');
+             else
+                array.push('deMote');
             userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
                 where:{
                     MembershipId:userAffectedMemberShip.MembershipId,
@@ -439,7 +515,7 @@ export class ChatService {
                 },
             });
         }
-        return userAffectedMemberShip;
+        return {acts:array,userAffectedMemberShip};
     }
 
     // new messsage channel
@@ -454,7 +530,6 @@ export class ChatService {
         });
         if (!channel)
             throw new NotFoundException(`no such channel with the name ${channelName}`)
-
         // check if user is already on that channel
         const memberShip = await this.prisma.client.membershipChannel.findFirst({
             where:{
@@ -464,7 +539,6 @@ export class ChatService {
         });
         if (!memberShip)
             throw new NotFoundException(`${login} is not a member on channel: ${channelName}`);
-
         // check if user is muted or blacklisted
         if (memberShip.isMute || memberShip.isBlacklist)
             throw new NotFoundException(`${login} is  a blacklisted or muted member on channel: ${channelName}`);

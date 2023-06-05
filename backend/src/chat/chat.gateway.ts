@@ -4,7 +4,7 @@ import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, 
 import { Socket, Server} from 'socket.io'
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, msgChannelDto, newChannelDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
 import { ChatService } from './chat.service';
 import { BadRequestException, ConflictException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './socketException';
@@ -97,10 +97,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             if (!user)
                 throw new NotFoundException('no such user');
             const dto:ChannelDto = {channelName:channelName,isPrivate:isPrivate, LoginOwner:user.login,ispassword:ispassword,password:password};
-            const ch = await this.chatService.createNewChannel(dto);
-            this.existChannels.set(ch.channelName,ch);
-            client.join(ch.channelName);
-            client.emit('message',`your Channel: ${ch.channelName} has been created`);
+            const channel = await this.chatService.createNewChannel(dto);
+            this.existChannels.set(channel.channelName,channel);
+            client.join(channel.channelName);
+            client.emit('message',`your Channel: ${channel.channelName} has been created`);
         }
         catch(error){
             client.emit("errorMessage", error);
@@ -132,6 +132,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             if (!this.existChannels.has(body.channelName))
                 throw new BadRequestException('no such Channel');
             await this.chatService.deleteChannel(body);
+            this.existChannels.delete(body.channelName);
             client.emit('message',`you have been delete ${body.channelName} channel`);
         }
         catch(error){
@@ -141,58 +142,108 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
 
     // add new Member to a channel
     @SubscribeMessage('joinChannel')
-    async joinChannel(@ConnectedSocket() client:Socket, @MessageBody() body:MemberChannelDto){
-        if (!this.existChannels.has(body.channelName))
-            throw new BadRequestException('no such Channel');
-        const user = this.connectedUsers.get(client.id);
-        if (!user)
-            throw new NotFoundException('no such user');
-        // add client as member to  database
-        const memberShip = await this.chatService.createMemberChannel(body);
-        client.join(memberShip.channelName);
-        client.emit('joinChannel',`you have been Joined to ${memberShip.channelName} channel`);
+    async joinChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newMemberChannelDto){
+        try{
+            if (!this.existChannels.has(body.channelName))
+                throw new BadRequestException('no such Channel');
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new NotFoundException('no such user');
+            // add client as member to  database
+            const dto:MemberChannelDto = {channelName:body.channelName,login:user.login,password:body.password};
+            const memberShip = await this.chatService.createMemberChannel(dto);
+            const channel = await this.chatService.findChannel({channelName:body.channelName});
+            this.existChannels.set(channel.channelName,channel);
+            client.join(channel.channelName);
+            client.emit('message',`you have been Joined to ${channel.channelName} channel`);
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
     }
 
     // delete member from a channel
     @SubscribeMessage('kickMember')
     async kickMemberFromChannel(@ConnectedSocket() client:Socket, @MessageBody() body:DeleteMemberChannelDto){
-        if (!this.existChannels.has(body.channelName))
-            throw new BadRequestException('no such Channel');
-        const user = this.connectedUsers.get(client.id)
-        if (!user)
-            throw new NotFoundException('no such user');
-        await this.chatService.deleteMemberShip(body);
-        client.leave(body.channelName);
-        client.emit('kickMember',`you have been kicked from ${body.channelName} channel`);
+        try{
+                if (!this.existChannels.has(body.channelName))
+                    throw new BadRequestException('no such Channel');
+                const user = this.connectedUsers.get(client.id)
+                if (!user)
+                    throw new NotFoundException('no such user');
+                await this.chatService.deleteMemberShip(body);
+                const socketId = this.findKeyByLogin(body.loginDeleted);
+                if (socketId)
+                    this.server.in(socketId).socketsLeave(body.channelName);
+                client.emit('message',`you have kicked ${body.loginDeleted} from ${body.channelName} channel`);
+            }
+            catch(error){
+                client.emit('errorMessage', error);
+            }
+        }
+    
+    @SubscribeMessage('leaveChannel')
+    async leaveChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newLeaveChannel){
+        try {
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:leaveChannel = {channelName:body.channelName,login:user.login};
+            this.chatService.leaveChannel(dto);
+            const channel = await this.chatService.findChannel({channelName:body.channelName});
+            this.existChannels.set(channel.channelName,channel);
+            client.leave(body.channelName);
+            client.emit('message', `you have leaved ${dto.channelName}`)
+        }
+        catch(error){
+            client.emit('errorMessage', error)
+        }
     }
 
     // update a member ban mute ...
     @SubscribeMessage('updateMember')
     async updateUser(@ConnectedSocket() client:Socket, @MessageBody() body:updateMemberShipDto){
-        if (!this.existChannels.has(body.channelName))
-            client.emit('updateMember','no such Channel')
-        const user = this.connectedUsers.get(client.id)
-        if (!user)
-            client.emit('updateMember','no such user')
-        const memberShip = await this.chatService.updateMemberShip(body);
-        // this.server.to()
+        try {
+            const channel = this.existChannels.get(body.channelName)
+            if (!channel)
+                throw new BadRequestException('no such channel');
+            const user = this.connectedUsers.get(client.id)
+            if (!user)
+                throw new BadRequestException('no such user');
+            let memberShip = await this.chatService.updateMemberShip(body);
+            const actValues: string[] = Object.values(memberShip.acts);
+            const separator: string = " , ";
+            const msgAct: string = actValues.join(separator);
+            this.server.in(channel.channelName).emit('message',`${user.login}  had  ${msgAct} ${memberShip.userAffectedMemberShip.login}`)
+        }
+        catch(error){
+            client.emit('errorMessage',error);
+        }   
     }
 
     // msg channel
     @SubscribeMessage('msgChannel')
-    async newMsgChannel(@ConnectedSocket() client:Socket, @MessageBody() body:msgChannelDto){
-        if (!this.existChannels.has(body.channelName))
-            throw new BadRequestException('no such Channel');
-        const user = this.connectedUsers.get(client.id)
-        if (!user)
-            throw new NotFoundException('no such user');
-        const msg = await this.chatService.newMsgChannel(body);
-        if (msg)
-        {
-            this.server.to(msg.channelName).emit('msgChannel',{sender:user.login,content:msg.content});
+    async newMsgChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newMsgChannelDto){
+        try{
+            const {channelName, content}  = body
+            const channel = this.existChannels.get(channelName)
+            if (!channel)
+                throw new BadRequestException('no such channel');
+            const user = this.connectedUsers.get(client.id)
+            if (!user)
+                throw new NotFoundException('no such user');
+            const dto:msgChannelDto = {login:user.login, content:content, channelName:channelName}
+            const msg = await this.chatService.newMsgChannel(dto);
+            if (msg)
+            {
+                this.server.to(msg.channelName).emit('message',{sender:user.login,content:msg.content});
+            }
+            else
+                client.emit('errorMessage','cant send a msg to this channel');
         }
-        else
-            client.emit('msgChannel','cant send a msg to this channel');
+        catch(error){
+            client.emit('errorMessage', error);
+        }
     }
 
     // event to change case of a user
