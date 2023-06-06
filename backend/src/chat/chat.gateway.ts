@@ -323,7 +323,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     @SubscribeMessage('friend')
     async friendUser(@ConnectedSocket() client:Socket, @MessageBody() body:newFriendDto){
         try {   
-            const user = this.connectedUsers.get(client.id)
+            const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:FriendDto = {loginA:user.login,loginB:body.login};
