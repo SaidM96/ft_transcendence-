@@ -61,11 +61,34 @@ export class UserService {
         return await this.prisma.client.user.delete({where:{login:login}})
     }
 
+    // async updateUserField<T>(field:T, userId:string){
+
+    //     let map:Map<number,string>;
+    //     return await this.prisma.client.user.update({
+    //         where:{
+    //             UserId:userId,
+    //         },
+    //         data:{
+
+    //         }
+    //     })
+    // }
+    // find user with same username
+    async findUserwithSameUsername(username:string){
+        return await this.prisma.client.user.findFirst({
+            where:{
+                username:username,
+            },
+        });
+    }
+
     async updateUser(updateUser:UpdateUserDto){
         const {login, username, bioGra, avatar, enableTwoFa } = updateUser;
         let user = await this.findUser({login:login});
+        let noChanges = true;
         if (bioGra !== undefined)
         {
+            noChanges = false
             user = await this.prisma.client.user.update({
                 where:{
                     login:user.login,
@@ -77,6 +100,7 @@ export class UserService {
         }
         if (avatar !== undefined)
         {
+            noChanges = false
             user = await this.prisma.client.user.update({
                 where:{
                     login:user.login,
@@ -88,6 +112,7 @@ export class UserService {
         }
         if (username !== undefined)
         {
+            noChanges = false
             user = await this.prisma.client.user.update({
                 where:{
                     login:user.login,
@@ -99,6 +124,7 @@ export class UserService {
         }
         if (enableTwoFa !== undefined)
         {
+            noChanges = false
             user = await this.prisma.client.user.update({
                 where:{
                     login:user.login,
@@ -108,6 +134,9 @@ export class UserService {
                 }
             });
         }
+        if (!noChanges)
+            return user;
+        return null;
     }
 
     // friendship
@@ -127,7 +156,7 @@ export class UserService {
         //check if userA added userB
         const frienda = await this.IsfriendOf(loginA, loginB);
         if (frienda)
-            return {message:`${loginA} and ${loginB} is already friends!`};
+            throw new BadRequestException(`${loginA} and ${loginB} is already friends!`);
         // if userA friendOf userB  
         const friend = await this.IsfriendOf(loginB, loginA);
         if (friend)
@@ -142,7 +171,7 @@ export class UserService {
                     }
                 });
             else
-                return {message:`${loginA} and ${loginB} is already friends!`};
+                throw new BadRequestException(`${loginA} and ${loginB} is already friends!`);
         }
         // last case , let's create new friendship
         return  await this.prisma.client.friend.create({
@@ -185,7 +214,6 @@ export class UserService {
 
     // delete a friend 
     async removeFriend(friendDto:FriendDto){
-        
         const {loginA, loginB} = friendDto;
         const login = loginA;
         const removedLogin = loginB;
@@ -224,7 +252,7 @@ export class UserService {
                     isFriends:false,
                 },
             });
-        return {message:`${login} and ${removedLogin} are not friends!`}
+        throw new BadRequestException(`${login} and ${removedLogin} are not friends!`);
     }
 
     // block user
@@ -290,7 +318,6 @@ export class UserService {
                 blockedById:user.UserId,
             }
         });
-
     }
 
     // get haters  (blocked by users)
@@ -406,7 +433,6 @@ export class UserService {
         });
     }
 // match
-    
     //store New finished match
     async storeMatch(matchDto:storeMatchDto){
         const {loginA, loginB, scoreA, scoreB, winner} = matchDto;

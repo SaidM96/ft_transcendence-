@@ -1,7 +1,7 @@
 import { UserService } from 'src/user/user.service';
 import { Body, Controller, Delete, Get,Req, Post, UseGuards, Patch, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { BlockDto, FriendDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
+import { FriendDto ,findUserDto } from './dto/user.dto';
 import { Response } from 'express';
 
 @Controller('user')

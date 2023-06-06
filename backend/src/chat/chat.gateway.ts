@@ -8,7 +8,7 @@ import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto,
 import { ChatService } from './chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './socketException';
-import { UpdateStatus, newBlockDto } from 'src/user/dto/user.dto';
+import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
 
 
@@ -71,6 +71,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
         }
     }
 
+// channel
     findKeyByLogin(login: string): string | undefined {
         for (const [key, user] of this.connectedUsers) {
           if (user.login === login) {
@@ -79,31 +80,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
         }
         return undefined;
       }
-
-    // handle private msg 
-    @SubscribeMessage('PrivateMessage')
-    async handlePrivatemessage(@ConnectedSocket() client:Socket, @MessageBody() body:sendMsgSocket){
-        try {
-            const {receiver, content} = body;
-            const userSender = this.connectedUsers.get(client.id);
-            if (!userSender)
-                throw new NotFoundException(`cant find sender User`);
-            const userReceiver = await this.userService.findUser({login:receiver});
-            if (userReceiver.login == userSender.login)
-                throw new BadRequestException(`${receiver} cant send msg to ${receiver}`);
-            // check if receiver had blocked client or opposite
-            const IsEnemy = await this.userService.isBlockedMe({loginA:userSender.login,loginB:receiver});
-            if (IsEnemy)
-                throw new BadRequestException(`cant send any msg to ${receiver}`)
-            const receiverSocketId = this.findKeyByLogin(userReceiver.login);
-            if (receiverSocketId)
-                this.server.to(receiverSocketId).emit('PrivateMessage', {sender:userSender.login,content:content});
-            this.chatService.addNewMessage({sender:userSender.login,receiver:userReceiver.login, content:content});
-        }
-        catch(error){
-            client.emit("errorMessage", error);
-        }
-    }
 
     // create new channel
     @SubscribeMessage('newChannel')
@@ -265,7 +241,61 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
         }
     }
 
-    // event to blo9 someone remove block
+// user
+    // update a user
+    @SubscribeMessage('updateUser')
+    async updateUserEvent(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateUserDto){
+        try{
+            const user = this.connectedUsers.get(client.id)
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:UpdateUserDto = {login:user.login, username:body.username, bioGra:body.bioGra, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
+            if (dto.username !== undefined)
+            {
+                const userwithSameUsername = await this.userService.findUserwithSameUsername(dto.username);
+                if (userwithSameUsername && userwithSameUsername.username === dto.username)
+                    throw new BadRequestException(`we have already a user with username ${dto.username}!`);
+            }
+            const updatedUser = await this.userService.updateUser(dto);
+            if (updatedUser)
+            {
+                this.connectedUsers.set(client.id,updatedUser);
+                client.emit('message', updatedUser);
+            }
+            else
+                client.emit('message', 'you had changed anything');
+
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
+    // handle private msg 
+    @SubscribeMessage('PrivateMessage')
+    async handlePrivatemessage(@ConnectedSocket() client:Socket, @MessageBody() body:sendMsgSocket){
+        try {
+            const {receiver, content} = body;
+            const userSender = this.connectedUsers.get(client.id);
+            if (!userSender)
+                throw new NotFoundException(`cant find sender User`);
+            const userReceiver = await this.userService.findUser({login:receiver});
+            if (userReceiver.login == userSender.login)
+                throw new BadRequestException(`${receiver} cant send msg to ${receiver}`);
+            // check if receiver had blocked client or opposite
+            const IsEnemy = await this.userService.isBlockedMe({loginA:userSender.login,loginB:receiver});
+            if (IsEnemy)
+                throw new BadRequestException(`cant send any msg to ${receiver}`)
+            const receiverSocketId = this.findKeyByLogin(userReceiver.login);
+            if (receiverSocketId)
+                this.server.to(receiverSocketId).emit('PrivateMessage', {sender:userSender.login,content:content});
+            this.chatService.addNewMessage({sender:userSender.login,receiver:userReceiver.login, content:content});
+        }
+        catch(error){
+            client.emit("errorMessage", error);
+        }
+    }
+
+    // event to blo9 someone or .remove block
     @SubscribeMessage('block')
     async blo9User(@ConnectedSocket() client:Socket, @MessageBody() body:newBlockDto){
         try{
@@ -288,4 +318,33 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             client.emit('errorMessage', error);
         }
     }
+
+    // event to add friend or remove friend  bool : true: add new friend , false: remove friend
+    @SubscribeMessage('friend')
+    async friendUser(@ConnectedSocket() client:Socket, @MessageBody() body:newFriendDto){
+        try {   
+            const user = this.connectedUsers.get(client.id)
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:FriendDto = {loginA:user.login,loginB:body.login};
+            if (body.bool)
+            {
+                await this.userService.createFriendship(dto);
+                client.emit('message',` you have added ${body.login} friend`);
+            }
+            else
+            {
+                await this.userService.removeFriend(dto);
+                client.emit('message',` you have removed ${body.login} friend`);
+            }
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
+
+
+
+
+    
 }

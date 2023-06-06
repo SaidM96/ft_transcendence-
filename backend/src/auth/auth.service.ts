@@ -55,5 +55,5 @@ export class AuthService {
             token: code,
             secret: secret,
           });
-}
+    }
 }

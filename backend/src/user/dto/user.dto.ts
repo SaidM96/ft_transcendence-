@@ -96,3 +96,25 @@ export class newBlockDto {
     @IsBoolean()
     stillEnemy:boolean;
 }
+
+export class newFriendDto {
+    @IsString()
+    login: string;
+    @IsBoolean()
+    bool: boolean; // true: add new friend , false: remove friend 
+}
+
+export class newUpdateUserDto {
+    @IsOptional()
+    @IsString()
+    username:string;
+    @IsOptional()
+    @IsString()
+    bioGra:string;
+    @IsOptional()
+    @IsString()
+    avatar:string;
+    @IsOptional()
+    @IsBoolean()
+    enableTwoFa:boolean;
+}

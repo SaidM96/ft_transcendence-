@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Patch, Post, Res, UseGuards} from '@nestjs/common';
+import { Body, Controller, Get, Res, UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, channeDto, deleteChannelDto, getConvDto, msgChannelDto, sendMsgDto, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
+import {  channeDto,getConvDto} from './Dto/chat.dto';
 import { ChatService } from './chat.service';
 import { findUserDto } from 'src/user/dto/user.dto';
 import { Response } from 'express';
