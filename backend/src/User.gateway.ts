@@ -4,13 +4,13 @@ import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, 
 import { Socket, Server} from 'socket.io'
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './Dto/chat.dto';
-import { ChatService } from './chat.service';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './chat/Dto/chat.dto';
+import { ChatService } from './chat/chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
-import { WebsocketExceptionsFilter } from './socketException';
+import { WebsocketExceptionsFilter } from './chat/socketException';
 import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
-
+import { createHash } from 'crypto';
 
 @WebSocketGateway(3333)
 @UseFilters(WebsocketExceptionsFilter)
@@ -22,6 +22,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     @WebSocketServer()
     server:Server;
 
+    blackListedJwt:Map<string, string> = new Map();
     connectedUsers:Map<string, User> = new Map();
     existChannels:Map<string, channel> = new Map();
 
@@ -35,6 +36,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     async handleConnection(client: Socket) {
         try{
             const token = client.handshake.headers.authorization;
+            const hashedToken:string = await createHash('sha256').update(token).digest('hex');
+            if (this.blackListedJwt.has(hashedToken))
+                throw new BadRequestException('this jwt token is black Listed you have re login')
             const decodedToken = await this.jwtService.verify(token,{secret:`${process.env.jwt_secret}`});
             const login = decodedToken.login;
             const user = await this.userService.findUser({login:login});
@@ -343,8 +347,25 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
         }
     }
 
-
-
-
-    
+    // we need a token jwt of that  user to blacklist it
+    @SubscribeMessage('logout')
+    async lougOut(@ConnectedSocket() client:Socket){
+        try {
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new BadRequestException('no such user');
+            const token = client.handshake.headers.authorization;
+            const hashedToken:string = await createHash('sha256').update(token).digest('hex');
+            this.blackListedJwt.set(hashedToken,user.login);
+            // set status offline in database
+            const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:undefined};
+            await this.userService.modifyStatusUser(dto);
+            client.emit('message',` ${user.login} had log out`);
+            this.connectedUsers.delete(client.id);
+            client.disconnect();
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
 }

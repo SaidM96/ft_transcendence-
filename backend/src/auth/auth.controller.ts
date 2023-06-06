@@ -44,10 +44,4 @@ export class AuthController {
         response.status(400).json(error);
       }
     }
-
-    // @UseGuards(AuthGuard('jwt'))
-    // @Post('logout')
-    // async logOut(@Body() twoFA:TwoFADto, @Res() response:Response){
-
-    // }
 }

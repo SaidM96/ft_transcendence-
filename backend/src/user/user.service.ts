@@ -61,6 +61,10 @@ export class UserService {
         return await this.prisma.client.user.delete({where:{login:login}})
     }
 
+    async lougOut(login:string){
+        
+    }
+
     // async updateUserField<T>(field:T, userId:string){
 
     //     let map:Map<number,string>;
