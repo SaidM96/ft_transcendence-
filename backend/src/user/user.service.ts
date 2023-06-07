@@ -458,7 +458,7 @@ export class UserService {
                 scoreB:scoreB,
                 winner:winner,
             }
-        })
+        });
     }
 
     // get user's matchs history 

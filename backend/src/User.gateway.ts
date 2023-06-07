@@ -38,7 +38,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             const token = client.handshake.headers.authorization;
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             if (this.blackListedJwt.has(hashedToken))
-                throw new BadRequestException('this jwt token is black Listed you have re login')
+                throw new BadRequestException('this jwt token is black Listed you have re login');
             const decodedToken = await this.jwtService.verify(token,{secret:`${process.env.jwt_secret}`});
             const login = decodedToken.login;
             const user = await this.userService.findUser({login:login});
@@ -268,7 +268,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             }
             else
                 client.emit('message', 'you had changed anything');
-
         }
         catch(error){
             client.emit('errorMessage', error);
@@ -354,13 +353,14 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new BadRequestException('no such user');
+            // get token from header socket , hash it and set it in map  
             const token = client.handshake.headers.authorization;
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             this.blackListedJwt.set(hashedToken,user.login);
             // set status offline in database
             const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:undefined};
             await this.userService.modifyStatusUser(dto);
-            client.emit('message',` ${user.login} had log out`);
+            client.emit('message',`${user.login} had log out`);
             this.connectedUsers.delete(client.id);
             client.disconnect();
         }

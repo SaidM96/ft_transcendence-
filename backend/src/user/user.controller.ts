@@ -1,7 +1,7 @@
 import { UserService } from 'src/user/user.service';
 import { Body, Controller, Delete, Get,Req, Post, UseGuards, Patch, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FriendDto ,findUserDto } from './dto/user.dto';
+import { FriendDto ,findUserDto, storeMatchDto } from './dto/user.dto';
 import { Response } from 'express';
 
 @Controller('user')
@@ -39,13 +39,6 @@ constructor(private readonly userSrevice:UserService){}
             response.status(400).json(e);
         }
     }
-
-    // do it in gateway
-    // @UseGuards(AuthGuard('jwt'))
-    // @Delete('delete')
-    // async deleteUser(@Body() findUser:findUserDto){
-    //     return await this.userSrevice.deleteUser(findUser);
-    // }
 
     // get friends
     @UseGuards(AuthGuard('jwt'))
@@ -109,11 +102,11 @@ constructor(private readonly userSrevice:UserService){}
     // }
 
 // matches
-    // @UseGuards(AuthGuard('jwt'))
-    // @Post('match')
-    // async storeNewMatch(@Body() matchDto:storeMatchDto){
-    //     return await this.userSrevice.storeMatch(matchDto);
-    // }
+    @UseGuards(AuthGuard('jwt'))
+    @Post('match')
+    async storeNewMatch(@Body() matchDto:storeMatchDto){
+        return await this.userSrevice.storeMatch(matchDto);
+    }
 
     @UseGuards(AuthGuard('jwt'))
     @Get('historyMatch')

@@ -4,6 +4,7 @@ import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, channeDto, delete
 import { PrismaService } from 'prisma/prisma.service';
 import * as bcrypt from 'bcrypt'
 import { findUserDto } from 'src/user/dto/user.dto';
+import * as moment from 'moment';
 @Injectable()
 export class ChatService {
     constructor(private readonly userService:UserService,
@@ -437,8 +438,8 @@ export class ChatService {
     }
 
     // update memberShip , you can mute , blacklist , change nickName , set member an admin
-    async updateMemberShip(updateMember:updateMemberShipDto){
-        const {userLogin, channelName, loginMemberAffected , isMute, isBlacklist, isAdmin } = updateMember;
+    async   updateMemberShip(updateMember:updateMemberShipDto){
+        const {userLogin, channelName, loginMemberAffected , isMute, timeMute, isBlacklist, isAdmin } = updateMember;
         let array:string[] = [];
         const user = await this.userService.findUser({login:userLogin});
         const userAffected = await this.userService.findUser({login:loginMemberAffected});
@@ -472,19 +473,35 @@ export class ChatService {
         if (isMute !== undefined)
         {
             if (isMute)
+            {
                 array.push('Mute');
-            else
+                if (timeMute != undefined && timeMute >= 1)
+                {
+                    let timeToMute:Date = new Date();
+                    timeToMute.setMinutes(timeToMute.getMinutes() + timeMute);
+                    userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                        where:{
+                            MembershipId:userAffectedMemberShip.MembershipId,
+                        },
+                        data:{
+                            isMute:isMute,
+                            timeMute:timeToMute,
+                        },
+                    });
+                }
+            }
+            else{
                 array.push('unMute');
-            userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
-                where:{
-                    MembershipId:userAffectedMemberShip.MembershipId,
-                },
-                data:{
-                    isMute:isMute,
-                },
-            });
+                userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                    where:{
+                        MembershipId:userAffectedMemberShip.MembershipId,
+                    },
+                    data:{
+                        isMute:isMute,
+                    },
+                });
+            }
         }
-
         if (isBlacklist !== undefined)
         {
             if (isBlacklist)
@@ -541,8 +558,20 @@ export class ChatService {
         if (!memberShip)
             throw new NotFoundException(`${login} is not a member on channel: ${channelName}`);
         // check if user is muted or blacklisted
-        if (memberShip.isMute || memberShip.isBlacklist)
-            throw new NotFoundException(`${login} is  a blacklisted or muted member on channel: ${channelName}`);
+        if (memberShip.isBlacklist)
+            throw new NotFoundException(`${login} is  a blacklisted  member on channel: ${channelName}`);
+        if (memberShip.isMute){
+            const timeToMute:Date = memberShip.timeMute;
+            const now: Date = new Date();
+            const timeDifference: number = timeToMute.getTime() - now.getTime();
+            if (timeDifference > 0) {
+                const milliseconds = Math.abs(timeDifference);
+                const hours = Math.floor(milliseconds / (1000 * 60 * 60));
+                const minutes = Math.floor((milliseconds / (1000 * 60)) % 60);
+                const seconds = Math.floor((milliseconds / 1000) % 60);
+                throw new BadRequestException(`You are muted for ${hours} hours, ${minutes} minutes, and ${seconds} seconds.`)
+            }
+        }
         return await this.prisma.client.msgChannel.create({
             data:{
                 login: user.login,

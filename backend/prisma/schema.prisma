@@ -49,7 +49,7 @@ model  Block {
   blocked       User   @relation("Blocked",fields: [blockedId], references: [UserId], onDelete: Cascade)
   blockedId     String
   blockedLogin  String
-  BlockeddAt     DateTime @default(now())
+  BlockeddAt    DateTime @default(now())
 }
 
 
@@ -71,6 +71,7 @@ model MembershipChannel {
   MembershipId      String @id @default(uuid())
   createdAt         DateTime  @default(now())
   isMute            Boolean  @default(false)
+  timeMute          DateTime @default(now()) 
   isBlacklist       Boolean  @default(false)
   isOwner           Boolean  @default(false)
   isAdmin           Boolean  @default(false)

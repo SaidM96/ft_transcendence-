@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, isBoolean, isNotEmpty } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, isBoolean, isNotEmpty } from "class-validator";
 
 export class sendMsgDto {
     @IsString()
@@ -110,6 +110,9 @@ export class updateMemberShipDto{
     @IsOptional()
     @IsBoolean()
     isMute:boolean;
+    @IsOptional()
+    @IsNumber()
+    timeMute:number
     @IsOptional()
     @IsBoolean()
     isBlacklist:boolean;
