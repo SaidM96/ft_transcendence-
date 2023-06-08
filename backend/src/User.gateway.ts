@@ -273,6 +273,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             client.emit('errorMessage', error);
         }
     }
+    
     // handle private msg 
     @SubscribeMessage('PrivateMessage')
     async handlePrivatemessage(@ConnectedSocket() client:Socket, @MessageBody() body:sendMsgSocket){
@@ -302,7 +303,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     @SubscribeMessage('block')
     async blo9User(@ConnectedSocket() client:Socket, @MessageBody() body:newBlockDto){
         try{
-            const user = this.connectedUsers.get(client.id)
+            const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:BlockDto = {login:user.login, blockedLogin:body.blockedLogin}

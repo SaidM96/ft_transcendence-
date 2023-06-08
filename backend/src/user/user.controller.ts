@@ -3,18 +3,21 @@ import { Body, Controller, Delete, Get,Req, Post, UseGuards, Patch, Res } from '
 import { AuthGuard } from '@nestjs/passport';
 import { FriendDto ,findUserDto, storeMatchDto } from './dto/user.dto';
 import { Response } from 'express';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('user')
 export class UserController {
 constructor(private readonly userSrevice:UserService){}
 
-    // User
+    // get all Users
     @UseGuards(AuthGuard('jwt'))
     @Get('all')
     async findAll(){
         return await this.userSrevice.findAllUsers();
     }
 
+
+    // get a user by his token jwt
     @UseGuards(AuthGuard('jwt'))
     @Get('me')
     async findMe(@Req() req:any, @Res() response:Response){
@@ -28,6 +31,7 @@ constructor(private readonly userSrevice:UserService){}
         }
     }
 
+    // get user 
     @UseGuards(AuthGuard('jwt'))
     @Get('find')
     async findOne(@Body() findUser:findUserDto, @Res() response:Response){
@@ -40,20 +44,19 @@ constructor(private readonly userSrevice:UserService){}
         }
     }
 
-    // get friends
+    // get user friends
     @UseGuards(AuthGuard('jwt'))
-    @Get('friends')
+    @Post('friends')
     async getUserFriends(@Body() findUser:findUserDto, @Res() response:Response){
         try {
             const result =  await this.userSrevice.getUserFriends(findUser);
+            console.log(result)
             response.status(200).json(result);
         }
         catch(error){
             response.status(400).json(error);
         }
     }
-
-
 
     // get list of blocked users
     @UseGuards(AuthGuard('jwt'))
@@ -68,7 +71,7 @@ constructor(private readonly userSrevice:UserService){}
         }
     }
 
-// status
+// get status of user
     @UseGuards(AuthGuard('jwt'))
     @Get('status')
     async getUserStatus(@Body() findUser:findUserDto, @Res() response:Response){
@@ -82,7 +85,7 @@ constructor(private readonly userSrevice:UserService){}
     }
 
 
-// stats
+// get stats of user
     @UseGuards(AuthGuard('jwt'))
     @Get('stats')
     async getUserStats(@Body() findUser:findUserDto, @Res() response:Response){
@@ -95,12 +98,6 @@ constructor(private readonly userSrevice:UserService){}
         }
     }
 
-    // @UseGuards(AuthGuard('jwt'))
-    // @Patch('stats')
-    // async modifyStatsUser(@Body() updateStats:UpdateStats){
-    //     return await this.userSrevice.modifyStatsUser(updateStats); 
-    // }
-
 // matches
     @UseGuards(AuthGuard('jwt'))
     @Post('match')
@@ -108,6 +105,7 @@ constructor(private readonly userSrevice:UserService){}
         return await this.userSrevice.storeMatch(matchDto);
     }
 
+    // get history of matches between of a  user
     @UseGuards(AuthGuard('jwt'))
     @Get('historyMatch')
     async getHistoryMatch(@Body() findUser:findUserDto, @Res() response:Response){
@@ -119,7 +117,8 @@ constructor(private readonly userSrevice:UserService){}
             response.status(400).json(error);
         }
     }
-
+    
+    // get history of matches between two users
     @UseGuards(AuthGuard('jwt'))
     @Get('historyFriend')
     async getHistoryOneVsOne(@Body() friendDto:FriendDto, @Res() response:Response){

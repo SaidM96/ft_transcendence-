@@ -43,7 +43,7 @@ export class AuthService {
         });
         const otpauthUrl = await authenticator.keyuri(user.email,'PigPonG', secret);  
         const qrImg = await toDataURL(otpauthUrl);
-        return {qrImg, secret};
+        return {qrImg};
     }
 
     

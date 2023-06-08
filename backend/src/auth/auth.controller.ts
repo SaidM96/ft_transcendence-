@@ -16,9 +16,14 @@ export class AuthController {
     @UseGuards(AuthGuard('42'))
     @Get('callback')
     async QuaranteDeuxCallback(@Req() req:any, @Res() response:Response) {
-      const access = await this.authService.login42(req);
-      console.log(access);
-      response.redirect(`https://www.realmadrid.com/en`);
+      try{
+        const access = await this.authService.login42(req);
+        console.log(access);
+        response.redirect(`http://localhost:3000/${access}`);
+      }
+      catch(error){
+        response.status(400).json(error);
+      }
     }
 
     @UseGuards(AuthGuard('jwt'))

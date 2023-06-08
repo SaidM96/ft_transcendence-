@@ -9,10 +9,9 @@ import { Response } from 'express';
 export class ChatController {
     constructor(private readonly chatService:ChatService){}
 
-    // add new msg to database and rely it to conversation that belongs to
     // get conversation between two users
     @UseGuards(AuthGuard('jwt'))
-    @Get('conversation')
+    @Get('findConversation')
     async getConversation(@Body() getConv:getConvDto, @Res() response:Response){
         try{
             const result = await this.chatService.getConversation(getConv);
@@ -23,8 +22,9 @@ export class ChatController {
         }
     }
 
+    // get conversations that user belongs to
     @UseGuards(AuthGuard('jwt'))
-    @Get('conversations/user')
+    @Get('conversations')
     async getConversationsOfUser(@Body() dto:findUserDto, @Res() response:Response){
         try{
             const result = await this.chatService.getConversationsOfUser(dto);
@@ -34,7 +34,6 @@ export class ChatController {
             response.status(400).json(error);
         }
     }
-
 
 // channel
 
@@ -58,7 +57,7 @@ export class ChatController {
         return await this.chatService.getAllChannels();
     }
     
-    // memberShip
+    // get all memberShips of channels info that a user join to
     @UseGuards(AuthGuard('jwt'))
     @Get('membership/all')
     async getUserChannels(@Body() userDto:findUserDto, @Res() response:Response){
@@ -71,6 +70,7 @@ export class ChatController {
         }
     }
 
+    // get members  of a channel
     @UseGuards(AuthGuard('jwt'))
     @Get('channel/members')
     async getMembersOfChannel(@Body() chDto:channeDto, @Res() response:Response){
@@ -82,12 +82,4 @@ export class ChatController {
             response.status(400).json(error);
         }
     }
-
-    // delete a memberShip
-    // @UseGuards(AuthGuard('jwt'))
-    // @Delete('channel/member/delete')
-    // async deleteMemberShip(@Body() deleteMember:DeleteMemberChannelDto){
-    //     return await this.chatService.deleteMemberShip(deleteMember);
-    // }
-
 }

@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 
@@ -7,8 +8,9 @@ export class TwoFADto{
     @IsString()
     code:string;
 }
-export class LoginDto {
+export class LoginDto  {
     @IsString()
+    
     login:      string;
     @IsString()
     username:   string;
@@ -94,7 +96,7 @@ export class newBlockDto {
     @IsString()
     blockedLogin:string;
     @IsBoolean()
-    stillEnemy:boolean;
+    stillEnemy:boolean;// true: add new block , false: remove block 
 }
 
 export class newFriendDto {
