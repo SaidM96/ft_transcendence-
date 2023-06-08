@@ -17,17 +17,21 @@ constructor(private readonly userSrevice:UserService){}
     }
 
 
-    // get a user by his token jwt
+    // get a user by his token jwt and his friend
     @UseGuards(AuthGuard('jwt'))
     @Get('me')
     async findMe(@Req() req:any, @Res() response:Response){
         try{
             const  { login} = req.user;
-            const result = await this.userSrevice.findUser({login:login});
+            const user = await this.userSrevice.findUser({login:login});
+            const friends = await this.userSrevice.getUserFriends({login:login});
+            const matches = await this.userSrevice.getHistoryUserMatchs({login:login});
+            // get acheivement also ;
+            const result = {...user,friends,matches};
             response.status(200).json(result);
         }
-        catch(e){
-            response.status(400).json(e);
+        catch(error){
+            response.status(400).json(error);
         }
     }
 
@@ -50,7 +54,6 @@ constructor(private readonly userSrevice:UserService){}
     async getUserFriends(@Body() findUser:findUserDto, @Res() response:Response){
         try {
             const result =  await this.userSrevice.getUserFriends(findUser);
-            console.log(result)
             response.status(200).json(result);
         }
         catch(error){
