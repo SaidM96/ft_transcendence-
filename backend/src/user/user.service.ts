@@ -201,11 +201,12 @@ export class UserService {
         const {login} = findUser;
         const user = await  this.findUser(findUser);
         // list of friendship that added user(login)
-        const friendAddedUser = await this.prisma.client.friend.findMany({
+        let friendAddedUser = await this.prisma.client.friend.findMany({
             where:{
                 loginA:login,
             },
         });
+        // friendAddedUser.forEach()
         // list of friendship that addedBy user(login)
         const friendAddedbyUser = await this.prisma.client.friend.findMany({
             where:{
