@@ -128,9 +128,6 @@ model User {
   matchhistoryB   match[] @relation("matchB")
 }
 
-
-
-
 model match {
   matchyId     String    @id @default(uuid())
   userA        User      @relation("matchA",fields: [userAId], references: [UserId], onDelete: Cascade)

@@ -12,7 +12,7 @@ import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newU
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
 
-@WebSocketGateway(3333)
+@WebSocketGateway({cors:true, port:3333})
 @UseFilters(WebsocketExceptionsFilter)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
@@ -35,7 +35,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     // Socket should contain a user's jwt to connect him succefully 
     async handleConnection(client: Socket) {
         try{
-            console.log(client)
             const token = client.handshake.headers.authorization;
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             if (this.blackListedJwt.has(hashedToken))
