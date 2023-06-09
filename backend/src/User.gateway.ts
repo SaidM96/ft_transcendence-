@@ -35,6 +35,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     // Socket should contain a user's jwt to connect him succefully 
     async handleConnection(client: Socket) {
         try{
+            console.log(client)
             const token = client.handshake.headers.authorization;
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             if (this.blackListedJwt.has(hashedToken))
@@ -246,7 +247,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
     }
 
 // user
-    // update a user
+    // update a user  you can update username , 2fa bool , avater
     @SubscribeMessage('updateUser')
     async updateUserEvent(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateUserDto){
         try{

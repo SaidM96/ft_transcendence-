@@ -34,7 +34,7 @@ model Friend {
   FriendshipId       String @id @default(uuid())
   userA              User @relation("relationA",fields: [userAId], references: [UserId], onDelete: Cascade) // user that requested friendship first
   userAId            String
-  loginA             String 
+  loginA             String
   userB              User @relation("relationB",fields: [userBId], references: [UserId], onDelete: Cascade)
   userBId            String
   loginB             String 
