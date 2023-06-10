@@ -472,7 +472,7 @@ export class UserService {
         });
         for (let i = 0;i < matchsA.length; ++i){
             let otherUser = await this.findUserById(matchsA[i].userBId);
-            if (matchsA[i])
+            if (matchsA[i].winner)
                 win++;
             const {scoreA, scoreB,winner, finishedAt} = matchsA[i];
             result.push({loginA:user.login, loginB:otherUser.login, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt, avatar:otherUser.avatar, username:otherUser.username});
@@ -484,7 +484,7 @@ export class UserService {
         });
         for (let i = 0;i < matchsB.length; ++i){
             let otherUser = await this.findUserById(matchsB[i].userAId);
-            if (matchsB[i])
+            if (matchsB[i].winner)
                 win++;
             const {scoreA, scoreB,winner, finishedAt} = matchsB[i];
             result.push({loginA:user.login, loginB:otherUser.login, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt, avatar:otherUser.avatar, username:otherUser.username});

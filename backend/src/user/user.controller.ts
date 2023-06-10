@@ -4,6 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { FriendDto ,findUserDto, storeMatchDto } from './dto/user.dto';
 import { Response } from 'express';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { match } from 'assert';
 
 @Controller('user')
 export class UserController {
@@ -25,8 +26,11 @@ constructor(private readonly userSrevice:UserService){}
             const user = await this.userSrevice.findUser({login:login});
             const friends = await this.userSrevice.getUserFriends({login:login});
             const matches = await this.userSrevice.getHistoryUserMatchs({login:login});
+            // get porcentages
+            const porcentages = matches.pop();
+            
             // get acheivement also ;
-            const result = {...user,friends,matches};
+            const result = {...user, friends, porcentages, matches};
             response.status(200).json(result);
         }
         catch(error){
