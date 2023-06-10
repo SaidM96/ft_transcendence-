@@ -120,3 +120,8 @@ export class newUpdateUserDto {
     @IsBoolean()
     enableTwoFa:boolean;
 }
+
+export class jwtToken {
+    @IsString()
+    token:string;
+}

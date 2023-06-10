@@ -2,7 +2,8 @@ import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common
 import {AuthGuard} from '@nestjs/passport'
 import { AuthService } from './auth.service';
 import { Response } from 'express';
-import { TwoFADto, findUserDto } from 'src/user/dto/user.dto';
+import { TwoFADto, findUserDto, jwtToken } from 'src/user/dto/user.dto';
+import { JwtStrategy } from './jwtStrategy/jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
@@ -50,4 +51,15 @@ export class AuthController {
         response.status(400).json(error);
       }
     }
+
+    // @Post('check-jwt')
+    // async isJwtValid(@Body() body:jwtToken, @Res() response:Response){
+    //   try {
+    //       const result = this.
+    //       response.status(200).json(result);
+    //   }
+    //   catch(error){
+
+    //   }
+    // }
 }

@@ -4,7 +4,7 @@ import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, 
 import { Socket, Server} from 'socket.io'
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './chat/Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newDeleteChannelDto, newDeleteMemberChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, newUpdateChannelDto, newUpdateMemberShipDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './chat/Dto/chat.dto';
 import { ChatService } from './chat/chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './chat/socketException';
@@ -68,6 +68,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             // set status offline in database
             const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:undefined};
             await this.userService.modifyStatusUser(dto);
+            client.emit("message",'you have disonnected');
             this.connectedUsers.delete(client.id);
         }
         catch(error){
@@ -108,14 +109,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
 
     // update channel  : turne it public or private , change Owner , or password
     @SubscribeMessage('updateChannel')
-    async updateChannel(@ConnectedSocket() client:Socket, @MessageBody() body:updateChannelDto){
-        try{        
+    async updateChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateChannelDto){
+        try{
             if (!this.existChannels.has(body.channelName))
                 throw new BadRequestException('no such Channel');
             const user = this.connectedUsers.get(client.id)
             if (!user)
                 throw new NotFoundException('no such user');
-            const channel = await this.chatService.updateChannel(body);
+            const dto:updateChannelDto = {userLogin:user.login, channelName:body.channelName, isPrivate:body.isPrivate, ispassword:body.ispassword, newPassword:body.newPassword}
+            const channel = await this.chatService.updateChannel(dto);
             this.existChannels.set(channel.channelName,channel);
             client.emit('message','changes have been sauvegardeded');
         }
@@ -126,11 +128,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
 
     // delete channel
     @SubscribeMessage('deleteChannel')
-    async deleteChannel(@ConnectedSocket() client:Socket, @MessageBody() body:deleteChannelDto){
+    async deleteChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newDeleteChannelDto){
         try{
             if (!this.existChannels.has(body.channelName))
                 throw new BadRequestException('no such Channel');
-            await this.chatService.deleteChannel(body);
+            const user = this.connectedUsers.get(client.id)
+            if (!user)
+                throw new NotFoundException('no such user');
+            const dto:deleteChannelDto = {channelName:body.channelName, LoginOwner:user.login }
+            await this.chatService.deleteChannel(dto);
             this.existChannels.delete(body.channelName);
             client.emit('message',`you have been delete ${body.channelName} channel`);
         }
@@ -163,14 +169,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
 
     // delete member from a channel
     @SubscribeMessage('kickMember')
-    async kickMemberFromChannel(@ConnectedSocket() client:Socket, @MessageBody() body:DeleteMemberChannelDto){
+    async kickMemberFromChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newDeleteMemberChannelDto){
         try{
                 if (!this.existChannels.has(body.channelName))
                     throw new BadRequestException('no such Channel');
                 const user = this.connectedUsers.get(client.id)
                 if (!user)
                     throw new NotFoundException('no such user');
-                await this.chatService.deleteMemberShip(body);
+                const dto:DeleteMemberChannelDto = {channelName:body.channelName, login:user.login, loginDeleted:body.loginDeleted};
+                await this.chatService.deleteMemberShip(dto);
                 const socketId = this.findKeyByLogin(body.loginDeleted);
                 if (socketId)
                     this.server.in(socketId).socketsLeave(body.channelName);
@@ -201,7 +208,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
 
     // update a member ban mute ...
     @SubscribeMessage('updateMember')
-    async updateUser(@ConnectedSocket() client:Socket, @MessageBody() body:updateMemberShipDto){
+    async updateUser(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateMemberShipDto){
         try {
             const channel = this.existChannels.get(body.channelName)
             if (!channel)
@@ -209,7 +216,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             const user = this.connectedUsers.get(client.id)
             if (!user)
                 throw new BadRequestException('no such user');
-            let memberShip = await this.chatService.updateMemberShip(body);
+            const dto:updateMemberShipDto = {userLogin:user.login,channelName:body.channelName,loginMemberAffected:body.loginAffected, isMute:body.isMute, timeMute:body.timeMute, isBlacklist:body.isBlacklist, isAdmin:body.isAdmin}
+            let memberShip = await this.chatService.updateMemberShip(dto);
             const actValues: string[] = Object.values(memberShip.acts);
             const separator: string = " , ";
             const msgAct: string = actValues.join(separator);

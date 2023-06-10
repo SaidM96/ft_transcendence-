@@ -25,7 +25,6 @@ export class AuthService {
             return await this.jwtService.signAsync(payload);
     }
 
-
     // 2-FA Google Authenticator
 
     async generateNewQrCode(userDto:findUserDto){
@@ -56,4 +55,5 @@ export class AuthService {
             secret: secret,
           });
     }
+    
 }
