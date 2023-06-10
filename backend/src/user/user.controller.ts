@@ -15,6 +15,7 @@ constructor(private readonly userSrevice:UserService){}
     async findAll(){
         return await this.userSrevice.findAllUsers();
     }
+    
     // get a user by his token jwt and his friend
     @UseGuards(AuthGuard('jwt'))
     @Get('me')

@@ -12,7 +12,7 @@ import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newU
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
 
-@WebSocketGateway({cors:true, port:3333})
+@WebSocketGateway(3333, {cors:true})
 @UseFilters(WebsocketExceptionsFilter)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
