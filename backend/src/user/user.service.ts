@@ -464,6 +464,7 @@ export class UserService {
     async getHistoryUserMatchs(findUser:findUserDto){
         const user = await  this.findUser(findUser);
         let result:any[] = [];
+        let win:number = 0;
         const matchsA =  await this.prisma.client.match.findMany({
             where:{
                 userAId:user.UserId,
@@ -471,6 +472,8 @@ export class UserService {
         });
         for (let i = 0;i < matchsA.length; ++i){
             let otherUser = await this.findUserById(matchsA[i].userBId);
+            if (matchsA[i])
+                win++;
             const {scoreA, scoreB,winner, finishedAt} = matchsA[i];
             result.push({loginA:user.login, loginB:otherUser.login, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt, avatar:otherUser.avatar, username:otherUser.username});
         }
@@ -481,11 +484,18 @@ export class UserService {
         });
         for (let i = 0;i < matchsB.length; ++i){
             let otherUser = await this.findUserById(matchsB[i].userAId);
+            if (matchsB[i])
+                win++;
             const {scoreA, scoreB,winner, finishedAt} = matchsB[i];
             result.push({loginA:user.login, loginB:otherUser.login, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt, avatar:otherUser.avatar, username:otherUser.username});
         }
+        const lose = result.length - win;
+        const pWin =  win / result.length * 100;
+        const pLose = lose / result.length * 100;
+        result.push({pWin:pWin, pLose:pLose, numberOfMatches:result.length});
         return result;
     }
+
 
     // get history match one vs one
     async getHistoryOneVsOne(friendDto:FriendDto){
@@ -506,5 +516,11 @@ export class UserService {
             },
         });
         return {...matchsA, ...matchsB};
+    }
+
+
+    // get statique lose win for a user
+    async isUserLoser(login:string){
+        const user = await  this.findUser({login:login});
     }
 }
