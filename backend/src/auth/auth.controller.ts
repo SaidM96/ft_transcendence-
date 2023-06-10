@@ -19,8 +19,8 @@ export class AuthController {
       try{
         const access = await this.authService.login42(req);
         console.log(access);
-        // response.redirect(`http://localhost:3000/${access}`);
-        response.redirect('http://youtube.com')
+        response.redirect(`http://localhost:3000/${access}`);
+        // response.redirect('http://youtube.com')
       }
       catch(error){
         response.status(400).json(error);
