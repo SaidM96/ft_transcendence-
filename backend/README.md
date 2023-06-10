@@ -508,7 +508,7 @@ $ npm run start:prod
     ```typescript
     interface updateChannelDto {
     channelName: string;      // Required
-    password?:string;         // Optional
+    password?:   string;         // Optional
     }
     ```
   - **Response success**: you have been Joined to channelName
@@ -520,13 +520,13 @@ $ npm run start:prod
   - **Authentication Required**: NO
   - **Socket Body**: `DeleteMemberChannelDto` object
     ```typescript
-    interface updateChannelDto {
-    channelName: string;      // Required
-    loginDeleted:string;      // Required
+    interface kickmemberDto {
+    channelName:  string;      // Required
+    loginDeleted: string;      // Required
     }
     ```
  
-  - **Response success**: you have kicked ${loginDeleted} from ${channelName} channel
+  - **Response success**: you have kicked loginDeleted from ${channelName} channel
 
 ### leave channel
 
@@ -555,7 +555,7 @@ $ npm run start:prod
     isMute?:boolean;           // Optional
     timeMute?:number;         // Optional
     isBlacklist?:boolean;      // Optional
-    isAdmin?:boolean           // Optional
+    isAdmin?:boolean;           // Optional
     }
     ```
 
