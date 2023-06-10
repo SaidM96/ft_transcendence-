@@ -519,7 +519,7 @@ $ npm run start:prod
   - **Description**: delete member from a channel
   - **Authentication Required**: NO
   - **Socket Body**: `DeleteMemberChannelDto` object
-      ```typescript
+    ```typescript
     interface updateChannelDto {
     channelName: string;      // Required
     loginDeleted:string;      // Required
