@@ -1,6 +1,6 @@
 import { User, channel } from '.prisma/client';
 import { JwtService } from '@nestjs/jwt';
-import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
+import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
 import { Socket, Server} from 'socket.io'
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
@@ -11,17 +11,26 @@ import { WebsocketExceptionsFilter } from './chat/socketException';
 import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
+import { matterNode, measurements } from './Game/game.service';
 
 @WebSocketGateway(3333, {cors:true})
 @UseFilters(WebsocketExceptionsFilter)
 @UsePipes(new ValidationPipe({ transform: true }))
-export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
+export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit{
     constructor(private readonly jwtStrategy:JwtStrategy, private readonly userService:UserService,private readonly jwtService:JwtService, private readonly chatService:ChatService){    
         this.setExistenChannels();
     }
+    // server
     @WebSocketServer()
     server:Server;
 
+    // game
+    private worlds = {};
+    private world: matterNode
+    afterInit() {
+        this.worlds = {};
+    }
+    //
     blackListedJwt:Map<string, string> = new Map();
     connectedUsers:Map<string, User> = new Map();
     existChannels:Map<string, channel> = new Map();
@@ -70,9 +79,52 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             await this.userService.modifyStatusUser(dto);
             client.emit("message",'you have disonnected');
             this.connectedUsers.delete(client.id);
+            // game
+            this.world?.handleDisconnect(client);
+            if (!this.server.engine.clientsCount) {
+                this.world.clearGame()
+                console.log("deleting room")
+                const roomId = this.world.roomId
+                delete this.worlds[roomId]
+                this.worlds[roomId] = null
+            }
+            //
         }
         catch(error){
             client.emit(error);
+        }
+    }
+
+
+    // game
+    // to store a match use :   this.userService.storeMatch(objet)  objet:
+    // loginA:string;
+    // loginB:string;
+    // scoreA: number;
+    // scoreB: number;
+    // winner: boolean;
+    @SubscribeMessage('joinRoom')
+    handleJoinRoom(@MessageBody() data: { roomId: string, obj: measurements }, @ConnectedSocket() client: Socket) {
+        try{
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                    throw new BadRequestException('no such user');
+            const { roomId } = data;
+            console.log("user joined room", roomId, "and page height is", !this.worlds[roomId] == false)
+            if (!this.worlds[roomId]) {
+                console.log("new room");
+                this.world = new matterNode(this.server, roomId, data.obj);
+                this.worlds[roomId] = this.world;
+                this.world.sendBallPosition();
+            }
+            else
+                this.world = this.worlds[roomId];
+    
+            client.join(roomId); // add the client to the specified room
+            this.world.handleConnection(client)
+        }
+        catch(error){
+            client.emit("errorMessage", error);
         }
     }
 
@@ -93,7 +145,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             const {channelName,isPrivate , ispassword, password} = body;
             if (this.existChannels.has(body.channelName))
                 throw new BadRequestException('Channel already exists');
-            const user = this.connectedUsers.get(client.id)
+            const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new NotFoundException('no such user');
             const dto:ChannelDto = {channelName:channelName,isPrivate:isPrivate, LoginOwner:user.login,ispassword:ispassword,password:password};
@@ -116,7 +168,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             const user = this.connectedUsers.get(client.id)
             if (!user)
                 throw new NotFoundException('no such user');
-            const dto:updateChannelDto = {userLogin:user.login, channelName:body.channelName, isPrivate:body.isPrivate, ispassword:body.ispassword, newPassword:body.newPassword}
+            const dto:updateChannelDto = {userLogin:user.login, channelName:body.channelName, isPrivate:body.isPrivate, ispassword:body.ispassword, newPassword:body.newPassword};
             const channel = await this.chatService.updateChannel(dto);
             this.existChannels.set(channel.channelName,channel);
             client.emit('message','changes have been sauvegardeded');
@@ -281,8 +333,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             client.emit('errorMessage', error);
         }
     }
-    
-    // handle private msg 
+
+    // handle private msg
     @SubscribeMessage('PrivateMessage')
     async handlePrivatemessage(@ConnectedSocket() client:Socket, @MessageBody() body:sendMsgSocket){
         try {
@@ -342,12 +394,12 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect{
             if (body.bool)
             {
                 await this.userService.createFriendship(dto);
-                client.emit('message',` you have added ${body.login} friend`);
+                client.emit('message',` you have added ${user.username} friend`);
             }
             else
             {
                 await this.userService.removeFriend(dto);
-                client.emit('message',` you have removed ${body.login} friend`);
+                client.emit('message',` you have removed ${user.username} friend`);
             }
         }
         catch(error){

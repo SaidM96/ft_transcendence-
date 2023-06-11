@@ -1,10 +1,9 @@
 import { UserService } from 'src/user/user.service';
-import { Body, Controller, Delete, Get,Req, Post, UseGuards, Patch, Res } from '@nestjs/common';
+import { Body, Controller, Get,Req, Post, UseGuards, Res, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FriendDto ,findUserDto, storeMatchDto } from './dto/user.dto';
 import { Response } from 'express';
-import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { match } from 'assert';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('user')
 export class UserController {
@@ -136,4 +135,5 @@ constructor(private readonly userSrevice:UserService){}
             response.status(400).json(error);
         }
     }
+
 }

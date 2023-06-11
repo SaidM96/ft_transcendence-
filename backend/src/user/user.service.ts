@@ -1,6 +1,5 @@
 import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, PrismaClient  } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
 
 @Injectable()
@@ -441,7 +440,7 @@ export class UserService {
         const {loginA, loginB, scoreA, scoreB, winner} = matchDto;
         const userA = await  this.findUser({login:loginA});
         const userB = await  this.findUser({login:loginB});
-        return await this.prisma.client.match.create({
+        await this.prisma.client.match.create({
             data:{
                 userA:{
                     connect:{
@@ -458,6 +457,11 @@ export class UserService {
                 winner:winner,
             }
         });
+
+        // await this.prisma.client.match.findMany({
+        //     where{
+
+        //     }})
     }
 
     // get user's matchs history 
