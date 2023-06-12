@@ -34,7 +34,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     blackListedJwt:Map<string, string> = new Map();
     connectedUsers:Map<string, User> = new Map();
     existChannels:Map<string, channel> = new Map();
-
+    connectedSocket:Map<string, Socket> = new Map();
     // fetch all channels in database and set them in map
     async setExistenChannels(){
         const channels = await this.chatService.getAllChannels();
@@ -51,6 +51,12 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const decodedToken = await this.jwtService.verify(token,{secret:`${process.env.jwt_secret}`});
             const login = decodedToken.login;
             const user = await this.userService.findUser({login:login});
+            const key =  this.findKeyByLogin(user.login);
+            if (this.connectedSocket.has(key))
+            {
+                this.handleDisconnect(this.connectedSocket.get(key));
+            }
+            this.connectedSocket.set(client.id,client);
             this.connectedUsers.set(client.id,user);
             const roomsToJoin = await this.chatService.getUserNameChannels({login:user.login});
             roomsToJoin.forEach((channelName) => {
@@ -59,9 +65,11 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             // set status online in database
             const dto:UpdateStatus = {login:user.login, isOnline:true, inGame:undefined};
             await this.userService.modifyStatusUser(dto);
+            console.log(`${user.login} had connected   ${client.id}`);
             client.emit('message',`welcome ${this.connectedUsers.get(client.id).username} you have connected succefully`);
         }
         catch(error){
+            this.connectedSocket.delete(client.id);
             this.connectedUsers.delete(client.id);
             client.emit('errorMessage', error);
             client.disconnect();
@@ -79,6 +87,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             await this.userService.modifyStatusUser(dto);
             client.emit("message",'you have disonnected');
             this.connectedUsers.delete(client.id);
+            this.connectedSocket.delete(client.id);
             // game
             this.world?.handleDisconnect(client);
             if (!this.server.engine.clientsCount) {
@@ -119,9 +128,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             }
             else
                 this.world = this.worlds[roomId];
-    
             client.join(roomId); // add the client to the specified room
-            this.world.handleConnection(client)
+            this.world.handleConnection(client);
         }
         catch(error){
             client.emit("errorMessage", error);
@@ -423,6 +431,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             await this.userService.modifyStatusUser(dto);
             client.emit('message',`${user.login} had log out`);
             this.connectedUsers.delete(client.id);
+            this.connectedSocket.delete(client.id);
             client.disconnect();
         }
         catch(error){

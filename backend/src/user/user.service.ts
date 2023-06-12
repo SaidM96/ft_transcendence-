@@ -1,4 +1,4 @@
-import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto } from './dto/user.dto';
+import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto, usernameDto } from './dto/user.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService,  } from 'prisma/prisma.service';
 
@@ -17,6 +17,17 @@ export class UserService {
         if (!user)
             throw new NotFoundException(`no such user with login ${login}`);
         return user;
+    }
+
+    async findUserWithUsername(dto:usernameDto){
+        const user = await this.prisma.client.user.findFirst({
+            where:{
+                username:dto.username
+            },
+        });
+        if (!user)
+            throw new NotFoundException('no such user');
+        return user.login;
     }
 
     async findUserById(id:string) {
