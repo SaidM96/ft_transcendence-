@@ -15,7 +15,9 @@ import wait from '../image/wait.json'
 
 
 
+class User{
 
+}
 
 const router = Router;
 async function fetchdata(tokene :string ){
@@ -30,6 +32,24 @@ async function fetchdata(tokene :string ){
 
     context?.setToken(tokene);
     console.log("debug")
+    // try{
+    //     const res = await axios.post('http://localhost:5000/user/findLogin', 
+    //       {username : 'Mohamed Haddaoui'},
+    //       {
+    //       headers: {
+    //         Authorization: `Bearer ${context?.token}`,
+    //       },
+    //     });
+      
+    //     const response = await res.data;
+    //     console.log("this is login of user name " ,response);
+  
+    //   }catch(e){
+    //     console.error("this is the error ", e);
+    //   }
+    const res = await axios('https://jsonplaceholder.typicode.com/comments?postId=1')
+        const data = await res.data;
+        console.log("this is new data", data);
     try{
         const res = await axios.get('http://localhost:5000/user/me', {headers:{
             Authorization : `Bearer ${tokene}`
@@ -39,6 +59,7 @@ async function fetchdata(tokene :string ){
         console.log("response " , response);
         context?.setName(response.username);
         context?.setImg(response.avatar);
+        console.log("avatar " , response.avatar);
         context?.setFriends(response.friends);
         context?.setMatch(response.matches);
         // context?.setMatch(response.matches);

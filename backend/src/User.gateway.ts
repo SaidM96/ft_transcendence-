@@ -69,6 +69,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('message',`welcome ${this.connectedUsers.get(client.id).username} you have connected succefully`);
         }
         catch(error){
+            console.log(`${this.connectedUsers.get(client.id).login} had disconected  ${client.id}`);
             this.connectedSocket.delete(client.id);
             this.connectedUsers.delete(client.id);
             client.emit('errorMessage', error);
@@ -86,6 +87,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:undefined};
             await this.userService.modifyStatusUser(dto);
             client.emit("message",'you have disonnected');
+            console.log(`${user.login} had disconected  ${client.id}`);
             this.connectedUsers.delete(client.id);
             this.connectedSocket.delete(client.id);
             // game

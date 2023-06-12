@@ -108,22 +108,29 @@ export class ChatService {
                     conversationId:conv.ConvId,
                 },
             });
-        return null;
+            throw new BadRequestException(`${loginA} never had a conversation with ${loginB}`);
     }
 
     async getConversation(getConv:getConvDto){
         const {loginA, loginB} = getConv;
+        let result:any[] = [];
         // check if sender or receiver exist in  database 
         const userA = await this.userService.findUser({login:loginA});
         const userB = await this.userService.findUser({login:loginB});
         if ((userA.login == userB.login))
             throw new BadRequestException('sender and receiver cant be same');
-        const convA = await this.getConv(loginA,loginB);
-        if (convA)
-            return convA;
-        const convB = await this.getConv(loginB, loginA);
-        if (convB)
-            return convB;
+        let conv = await this.getConv(loginA,loginB);
+        if (conv){
+            result.push({loginA:userA.login,loginB:userB.login,usernameA:userA.username, usernameB:userB.username, avatarA:userA.avatar, avatarB:userB.avatar});
+        }
+        if (!conv)
+        {
+            conv =  await this.getConv(loginB, loginA);
+            if (conv)
+                result.push({loginA:userA.login,loginB:userB.login,usernameA:userA.username, usernameB:userB.username, avatarA:userA.avatar, avatarB:userB.avatar});
+        }
+        result.push(conv);
+        return result;
     }
 
 // channel
@@ -662,6 +669,7 @@ export class ChatService {
     }
 
     async getConversationsOfUser(dto:findUserDto){
+        let resulte:any[] = [];
         const {login} = dto;
         const user = await this.userService.findUser({login:login});
         const convA = await this.prisma.client.conversation.findMany({
@@ -669,11 +677,22 @@ export class ChatService {
                 loginA:login
             }
         });
+        for(let i = 0; i < convA.length; i++){
+            let otherUser = await this.userService.findUser({login:convA[i].loginB});
+            let otherUserState = await this.userService.getStatusUser({login:otherUser.login});
+            resulte.push({login:otherUser.login, username:otherUser.username, avatar:otherUser.avatar, isOnline:otherUserState.isOnline, inGame:otherUserState.inGame});  
+        }
         const convB = await this.prisma.client.conversation.findMany({
             where:{
                 loginB:login
             }
         });
-        return {...convA,...convB};
+        for(let i = 0; i < convB.length; i++){
+            let otherUser = await this.userService.findUser({login:convB[i].loginA});
+            let otherUserState = await this.userService.getStatusUser({login:otherUser.login});
+            resulte.push({login:otherUser.login, username:otherUser.username, avatar:otherUser.avatar, isOnline:otherUserState.isOnline, inGame:otherUserState.inGame}); 
+        }
+        return resulte;
     }
+    
 }
