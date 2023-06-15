@@ -59,7 +59,7 @@ export class ChatController {
     
     // get  channels of a user 
     @UseGuards(AuthGuard('jwt'))
-    @Post('membership/all')
+    @Post('memberships')
     async getUserChannels(@Body() userDto:findUserDto, @Res() response:Response){
         try{
             const result = await this.chatService.getUserChannels(userDto);

@@ -193,8 +193,8 @@ $ npm run start:prod
     ```
 
 ### Get channels of a user
-- **Endpoint**: `/chat/channel/members`
-- **Method**: GET
+- **Endpoint**: `/chat/memberships`
+- **Method**: Post
 - **Description**: Retrieves the members of a channel.
 - **Authentication Required**: Yes (JWT)
 - **Request Body**:
