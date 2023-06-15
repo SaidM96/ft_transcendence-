@@ -192,8 +192,7 @@ $ npm run start:prod
     }
     ```
 
-### Get Members of Channel
-
+### Get channels of a user
 - **Endpoint**: `/chat/channel/members`
 - **Method**: GET
 - **Description**: Retrieves the members of a channel.

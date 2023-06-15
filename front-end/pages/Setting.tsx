@@ -10,6 +10,9 @@ import { MyContext } from "@/components/Context";
 import { useContext, useEffect } from "react";
 import {io} from "socket.io-client"
 import InfoContact from "@/components/InfoContact";
+import createSocketConnection from "@/components/socketConnection";
+
+
 
 
 
@@ -17,30 +20,14 @@ import InfoContact from "@/components/InfoContact";
   const Setting = () =>{
     const context = useContext(MyContext);
     var token : string | null = '';
-    useEffect(() => {
-        if (context?.token){
-            var socket = io("http://localhost:3333", {
-              extraHeaders: {
-                  Authorization: context?.token,
-          }
-          });
-          socket.on('message', (payload: any) => {
-            console.log("111111111111111");
-            console.log(`Received message: ${payload}`);
-            // SetToMessages(payload);
-            // setMessages([...messages, payload]);
-          });
-          socket.on('errorMessage', (payload: any) => {
-            console.log("111111111111111");
+    useEffect(() =>{
+      context?.setSocket(createSocketConnection(context?.token))
+    },[context?.token])
     
-            console.log(`Received message: ${payload}`);
-            // SetToMessages(payload);
-            // setMessages([...messages, payload]);
-          });
-          context.setSocket(socket);
-
-        }
-      }, [context?.token]);
+    if (context?.socket)
+    context?.socket.on('message',(paylo) =>{
+      console.log(paylo);
+    })
     
 
 

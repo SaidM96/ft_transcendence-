@@ -12,12 +12,13 @@ import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newU
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
 import { matterNode, measurements } from './Game/game.service';
+import { PrismaService } from 'prisma/prisma.service';
 
 @WebSocketGateway(3333, {cors:true})
 @UseFilters(WebsocketExceptionsFilter)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit{
-    constructor(private readonly jwtStrategy:JwtStrategy, private readonly userService:UserService,private readonly jwtService:JwtService, private readonly chatService:ChatService){    
+    constructor(private readonly jwtStrategy:JwtStrategy, private readonly userService:UserService,private readonly jwtService:JwtService, private readonly chatService:ChatService,  private  prisma:PrismaService ){    
         this.setExistenChannels();
     }
     // server
@@ -69,7 +70,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('message',`welcome ${this.connectedUsers.get(client.id).username} you have connected succefully`);
         }
         catch(error){
-            console.log(`${this.connectedUsers.get(client.id).login} had disconected  ${client.id}`);
             this.connectedSocket.delete(client.id);
             this.connectedUsers.delete(client.id);
             client.emit('errorMessage', error);
@@ -92,7 +92,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             this.connectedSocket.delete(client.id);
             // game
             this.world?.handleDisconnect(client);
-            if (!this.server.engine.clientsCount) {
+            if (client.id ===  this.world.players.player1.client){
                 this.world.clearGame()
                 console.log("deleting room")
                 const roomId = this.world.roomId
@@ -120,18 +120,26 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const user = this.connectedUsers.get(client.id);
             if (!user)
                     throw new BadRequestException('no such user');
-            const { roomId } = data;
-            console.log("user joined room", roomId, "and page height is", !this.worlds[roomId] == false)
+            let { roomId } = data;
+            roomId = roomId.length ? roomId : user.login
+            console.log("user login ", user.login,"joined room", roomId, " new world ?", !this.worlds[roomId] )
             if (!this.worlds[roomId]) {
                 console.log("new room");
-                this.world = new matterNode(this.server, roomId, data.obj);
+                this.world = new matterNode(this.server, roomId, data.obj);// user.login   
+                this.world.onHello((payload: any) => {
+                    console.log("Received hello event")
+                    const {resultMatch} = payload
+                    console.log(resultMatch);
+                    this.userService.storeMatch(resultMatch)
+                    // Handle the hello event here
+                  });
                 this.worlds[roomId] = this.world;
                 this.world.sendBallPosition();
             }
             else
                 this.world = this.worlds[roomId];
             client.join(roomId); // add the client to the specified room
-            this.world.handleConnection(client);
+            this.world.handleConnection(client, user);
         }
         catch(error){
             client.emit("errorMessage", error);
@@ -243,6 +251,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 const socketId = this.findKeyByLogin(body.loginDeleted);
                 if (socketId)
                     this.server.in(socketId).socketsLeave(body.channelName);
+                
                 client.emit('message',`you have kicked ${body.loginDeleted} from ${body.channelName} channel`);
             }
             catch(error){
@@ -358,17 +367,25 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             // check if receiver had blocked client or opposite
             const IsEnemy = await this.userService.isBlockedMe({loginA:userSender.login,loginB:receiver});
             if (IsEnemy)
-                throw new BadRequestException(`cant send any msg to ${receiver}`)
+                throw new BadRequestException(`cant send any msg to ${receiver}`);
+            const msg = await this.chatService.addNewMessage({sender:userSender.login,receiver:userReceiver.login, content:content});
+            if (!msg)
+                throw new BadRequestException(`cant send any msg to ${receiver}`);
             const receiverSocketId = this.findKeyByLogin(userReceiver.login);
             if (receiverSocketId)
-                this.server.to(receiverSocketId).emit('PrivateMessage', {sender:userSender.login,content:content});
-            this.chatService.addNewMessage({sender:userSender.login,receiver:userReceiver.login, content:content});
+            {
+                this.server.to(receiverSocketId).emit('PrivateMessage', {sender:userSender.login ,receiver:userReceiver.login  ,content:content,sendAt:msg.sendAt});
+            }
+            // this.server.to(client.id).emit('PrivateMessage', {content:content,sendAt:msg.sendAt,fromUserA:msg.fromUserA});
         }
         catch(error){
+            console.log(error);
             client.emit("errorMessage", error);
         }
     }
-
+    content : string;
+    sendAt: string;
+    fromUserA: boolean;
     // event to blo9 someone or .remove block
     @SubscribeMessage('block')
     async blo9User(@ConnectedSocket() client:Socket, @MessageBody() body:newBlockDto){

@@ -39,6 +39,8 @@ export class ChatService {
             return await this.prisma.client.message.create({
                 data:{
                     content:content,
+                    loginSender:sender,
+                    loginReceiver:receiver,
                     fromUserA:true,
                     conversation:{
                         connect:{
@@ -53,6 +55,8 @@ export class ChatService {
             return await this.prisma.client.message.create({
                 data:{
                     content:content,
+                    loginSender:sender,
+                    loginReceiver:receiver,
                     fromUserA:false,
                     conversation:{
                         connect:{
@@ -84,6 +88,8 @@ export class ChatService {
         return await this.prisma.client.message.create({
             data:{
                 content:content,
+                loginSender:sender,
+                loginReceiver:receiver,
                 fromUserA:true,
                 conversation:{
                     connect:{
@@ -108,7 +114,7 @@ export class ChatService {
                     conversationId:conv.ConvId,
                 },
             });
-            throw new BadRequestException(`${loginA} never had a conversation with ${loginB}`);
+        return null;
     }
 
     async getConversation(getConv:getConvDto){
@@ -696,3 +702,4 @@ export class ChatService {
     }
     
 }
+
