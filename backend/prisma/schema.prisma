@@ -56,11 +56,12 @@ model  Block {
 // channel Models
 
 model channel {
-  ChannelId      String @id @default(uuid())
+  ChannelId      String    @id @default(uuid())
   isPrivate      Boolean
-  channelName    String @unique
+  channelName    String    @unique
   createdAt      DateTime  @default(now())
-  LoginOwner     String     
+  LoginOwner     String
+  avatar         String   @default("0")
   messages       MsgChannel[] @relation("MessagesChannel")
   members        MembershipChannel[] @relation("MembersChannel")
   ispassword     Boolean

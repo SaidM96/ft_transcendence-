@@ -59,10 +59,6 @@ export default function ContactList({  onContactClick } : any) {
         else
           return Avatar;
     }
-
-    const CreateChannel = () =>{
-
-    }
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const openModal = () => {
@@ -88,7 +84,7 @@ export default function ContactList({  onContactClick } : any) {
         </button>
 
         <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-">
-          <li><button onClick={openModal}>Create Channel</button></li>
+          <li><button onClick={openModal} >Create Channel</button></li>
 
         </ul>
       </div>

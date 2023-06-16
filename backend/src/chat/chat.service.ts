@@ -215,7 +215,7 @@ export class ChatService {
 
     // update channel : turne it public or private , change Owner , or password
     async updateChannel(updateCh:updateChannelDto){
-        const {userLogin, channelName, isPrivate, ispassword, newPassword} = updateCh;
+        const {userLogin, channelName, isPrivate, ispassword, newPassword, avatar} = updateCh;
 
         const user = await this.userService.findUser({login:userLogin});
         let channel = await this.prisma.client.channel.findFirst({
@@ -258,6 +258,17 @@ export class ChatService {
                 },
                 data:{
                     password:pass,
+                },
+            });
+        }
+        if (avatar !== undefined)
+        {
+            channel = await this.prisma.client.channel.update({
+                where:{
+                    ChannelId:channel.ChannelId,
+                },
+                data:{
+                    avatar:avatar,
                 },
             });
         }

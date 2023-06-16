@@ -98,6 +98,9 @@ export class updateChannelDto {
     @IsString()
     @IsOptional()
     newPassword:string;
+    @IsString()
+    @IsOptional()
+    avatar:string
 }
 
 export class updateMemberShipDto{
@@ -119,6 +122,7 @@ export class updateMemberShipDto{
     @IsOptional()
     @IsBoolean()
     isAdmin:boolean;
+    
 }
 
 export class channeDto {
@@ -184,9 +188,12 @@ export class newUpdateChannelDto {
     @IsOptional()
     @IsBoolean()
     ispassword:boolean;
-    @IsString()
     @IsOptional()
+    @IsString()
     newPassword:string;
+    @IsOptional()
+    @IsString()
+    avatar:string
 }
 
 export class newDeleteChannelDto {
