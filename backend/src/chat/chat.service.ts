@@ -599,6 +599,7 @@ export class ChatService {
         return await this.prisma.client.msgChannel.create({
             data:{
                 login: user.login,
+                avatar:user.avatar,
                 content: content,
                 channel: {
                     connect: {
@@ -640,6 +641,7 @@ export class ChatService {
     // get conversation  channel 
     async getConversationChannel(chDto:channeDto){
         const {channelName} = chDto;
+        let result:any[] = [];
         const channel = await this.prisma.client.channel.findFirst({
             where:{
                 channelName:channelName,
@@ -647,12 +649,14 @@ export class ChatService {
         });
         if (!channel)
             throw new NotFoundException(`no such channel with the name ${channelName}`);
-        const messages =  await this.prisma.client.msgChannel.findMany({
+        result.push(channel)
+        let messages =  await this.prisma.client.msgChannel.findMany({
             where:{
                 channelName:channel.channelName,
             },
         });
-        return {...channel,...messages};
+        result.push(messages);
+        return result;
     }
 
     // user's memberShips

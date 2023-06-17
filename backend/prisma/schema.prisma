@@ -86,7 +86,8 @@ model MembershipChannel {
 
 model MsgChannel {
   MsgChannelId        String @id @default(uuid())
-  login               String              
+  login               String        
+  avatar              String      
   content             String
   sendAt              DateTime  @default(now())
   channel             channel @relation("MessagesChannel",fields: [channelId], references: [ChannelId], onDelete: Cascade)
@@ -99,7 +100,7 @@ model User {
   login               String @unique()
   username            String @unique
   email               String @unique
-  avatar              String @default("smia")
+  avatar              String @default("0")
   enableTwoFa         Boolean @default(false)
   twoFactorSecret     String?
   bioGra              String
