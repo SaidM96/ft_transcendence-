@@ -11,7 +11,7 @@ import { WebsocketExceptionsFilter } from './chat/socketException';
 import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
-import { matterNode, measurements } from './Game/game.service';
+import { matterNode, measurements, userInGame } from './Game/game.service';
 import { PrismaService } from 'prisma/prisma.service';
 
 @WebSocketGateway(3333, {cors:true})
@@ -90,16 +90,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             console.log(`${user.login} had disconected  ${client.id}`);
             this.connectedUsers.delete(client.id);
             this.connectedSocket.delete(client.id);
-            // game
-            this.world?.handleDisconnect(client);
-            if (!this.server.engine.clientsCount) {
-                this.world.clearGame()
-                console.log("deleting room")
-                const roomId = this.world.roomId
-                delete this.worlds[roomId]
-                this.worlds[roomId] = null
-            }
-            //
         }
         catch(error){
             client.emit(error);
@@ -109,31 +99,60 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
 
     // game
     // to store a match use :   this.userService.storeMatch(objet)  objet:
-    // loginA:string;
-    // loginB:string;
-    // scoreA: number;
-    // scoreB: number;
-    // winner: boolean;
     @SubscribeMessage('joinRoom')
     handleJoinRoom(@MessageBody() data: { roomId: string, obj: measurements }, @ConnectedSocket() client: Socket) {
-        try{
+        try {
             const user = this.connectedUsers.get(client.id);
-            if (!user)
-                    throw new BadRequestException('no such user');
-            const { roomId } = data;
-            console.log("user joined room", roomId, "and page height is", !this.worlds[roomId] == false)
-            if (!this.worlds[roomId]) {
+            let { roomId } = data;
+            if (!user || !roomId || roomId == undefined)
+                throw new BadRequestException('no such user');
+            roomId = roomId.length ? roomId : user.login
+            if (roomId === user.login) {
+                console.log("user login ", user.login, "joined room", roomId, " new world ?", !this.worlds[roomId])
                 console.log("new room");
-                this.world = new matterNode(this.server, roomId, data.obj);
+                this.world = new matterNode(this.server, roomId, data.obj);// user.login   
+                this.world.onSettingScores((payload: any) => {
+                    console.log("Received hello event")
+                    const { resultMatch } = payload
+                    console.log(resultMatch);
+                    this.userService.storeMatch(resultMatch)
+                    // Handle the hello event here
+                });
                 this.worlds[roomId] = this.world;
                 this.world.sendBallPosition();
             }
-            else
+            else if (this.worlds[roomId]) {
+                console.log("user login ", user.login, "joined room", roomId, " new world ?", !this.worlds[roomId])
+
                 this.world = this.worlds[roomId];
+            }
+            else
+                throw new BadRequestException('owner must be connected to the channel to join it');
+
             client.join(roomId); // add the client to the specified room
-            this.world.handleConnection(client);
+            this.world.handleConnection(client, user);
+            client.on('disconnecting', () => {
+                // check if the disconnecting user is the owner of the room
+                if (this.worlds[user.login]) {
+                    this.server.to(user.login).emit('gameStatus', { msg: "Host left the game.." });
+                    this.server.to(user.login).emit('ready', { msg: false});
+                    this.worlds[user.login].clearGame()
+                    console.log("deleting room")
+                    delete this.worlds[user.login]
+                    this.worlds[user.login] = null
+                }
+                // check if the disconnecting user is part of someone elses room
+                const roomJoined = userInGame(user.login, this.worlds)
+                if (roomJoined) {
+
+                    console.log("second player left, putting back their paddle in the list")
+                        this.worlds[roomJoined].availablePaddles.push("right")
+                    console.log(this.worlds[roomJoined].availablePaddles)
+                }
+            });
         }
-        catch(error){
+        catch (error) {
+            console.log("error disconnecting from room")
             client.emit("errorMessage", error);
         }
     }

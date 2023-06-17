@@ -645,25 +645,35 @@ export class ChatService {
                 channelName:channelName,
             },
         });
-
         if (!channel)
             throw new NotFoundException(`no such channel with the name ${channelName}`);
-        return await this.prisma.client.msgChannel.findMany({
+        const messages =  await this.prisma.client.msgChannel.findMany({
             where:{
                 channelName:channel.channelName,
             },
         });
+        return {...channel,...messages};
     }
 
     // user's memberShips
     async getUserChannels(userDto:findUserDto){
         const {login} = userDto;
         const user = await this.userService.findUser({login:login});
-        return await this.prisma.client.membershipChannel.findMany({
+        let result:any[] = [];
+        const memberShips = await this.prisma.client.membershipChannel.findMany({
             where:{
                 login:user.login,
             },
         });
+        for(let i = 0; i < memberShips.length; i++){
+            let channel = await this.prisma.client.channel.findFirst({
+                where:{
+                    channelName:memberShips[i].channelName,
+                }
+            });
+            result.push({channelName:channel.channelName, avatar:channel.avatar});
+        }
+        return result;
     }
 
     // find channel
