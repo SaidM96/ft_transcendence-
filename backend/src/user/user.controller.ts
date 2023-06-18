@@ -138,9 +138,22 @@ constructor(private readonly userSrevice:UserService){}
 
     @UseGuards(AuthGuard('jwt'))
     @Post('findLogin')
-    async findUserWithUsername(@Body() dto:usernameDto, @Res() response:Response){
+    async findLoginWithUsername(@Body() dto:usernameDto, @Res() response:Response){
         try{
             const result =  await this.userSrevice.findUserWithUsername(dto);
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400 ).json(error);
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('findUser')
+    async findUserWithUsername(@Body() dto:usernameDto, @Res() response:Response){
+        try{
+            const login =  await this.userSrevice.findUserWithUsername(dto);
+            const result = await this.userSrevice.findUser({login:login});
             response.status(200).json(result);
         }
         catch(error){
