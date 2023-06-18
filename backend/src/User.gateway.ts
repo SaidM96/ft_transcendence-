@@ -325,7 +325,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const msg = await this.chatService.newMsgChannel(dto);
             if (msg)
             {
-                this.server.to(msg.channelName).emit(`${channelName}`,{sender:user.login,content:msg.content});
+                this.server.to(msg.channelName).emit(`${channelName}`,{sender:user.login,content:msg.content, avatar:user.avatar, username:user.username});
             }
             else
                 client.emit('errorMessage','cant send a msg to this channel');

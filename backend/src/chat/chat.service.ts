@@ -600,6 +600,7 @@ export class ChatService {
             data:{
                 login: user.login,
                 avatar:user.avatar,
+                username:user.username,
                 content: content,
                 channel: {
                     connect: {

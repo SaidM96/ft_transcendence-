@@ -148,6 +148,16 @@ constructor(private readonly userSrevice:UserService){}
         }
     }
 
-    
+    @UseGuards(AuthGuard('jwt'))
+    @Get('Leaderboard')
+    async getLeaderboard(@Res() response:Response){
+        try{
+            const result =  await this.userSrevice.getLeaderboard();
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400 ).json(error);
+        }
+    }
 
 }

@@ -468,11 +468,50 @@ export class UserService {
                 winner:winner,
             }
         });
-
-        // await this.prisma.client.match.findMany({
-        //     where{
-
-        //     }})
+        if (winner)
+        {
+            await this.prisma.client.user.update({
+                where:{
+                    UserId:userA.UserId,
+                },
+                data:{
+                    lvl:userA.lvl + 1,
+                }
+            });
+            if (userB.lvl > 0)
+            {
+                await this.prisma.client.user.update({
+                    where:{
+                        UserId:userB.UserId,
+                    },
+                    data:{
+                        lvl:userB.lvl - 1,
+                    },
+                });
+            }
+        }
+        else
+        {
+            await this.prisma.client.user.update({
+                where:{
+                    UserId:userB.UserId,
+                },
+                data:{
+                    lvl:userB.lvl + 1,
+                },
+            });
+            if (userA.lvl > 0)
+            {
+                await this.prisma.client.user.update({
+                    where:{
+                        UserId:userA.UserId,
+                    },
+                    data:{
+                        lvl:userA.lvl - 1
+                    },
+                });
+            }
+        }
     }
 
     // get user's matchs history 
@@ -534,8 +573,22 @@ export class UserService {
     }
 
 
-    // get statique lose win for a user
-    async isUserLoser(login:string){
-        const user = await  this.findUser({login:login});
+    async  getLeaderboard() {
+        let leaderboard = await this.prisma.client.user.findMany({
+            select:{
+                login:true,
+                username:true,
+                avatar:true,
+                lvl:true,
+            },
+            orderBy:{
+                lvl:"desc",
+            },
+        });
+        leaderboard.map((user,index) => ({
+            ...user,
+            rank: index + 1
+        }))
+        return leaderboard;
     }
 }
