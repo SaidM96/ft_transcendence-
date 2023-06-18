@@ -22,7 +22,10 @@ export class UserService {
     async findUserWithUsername(dto:usernameDto){
         const user = await this.prisma.client.user.findFirst({
             where:{
-                username:dto.username
+                username: {
+                    contains: dto.username.toLowerCase(),
+                    mode: 'insensitive',
+                },
             },
         });
         if (!user)
