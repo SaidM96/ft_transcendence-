@@ -585,10 +585,12 @@ export class UserService {
                 lvl:"desc",
             },
         });
-        leaderboard.map((user,index) => ({
-            ...user,
-            rank: index + 1
-        }))
+        leaderboard = leaderboard.map((user, index) => {
+            return {
+              ...user,
+              rank: index + 1,
+            };
+          });
         return leaderboard;
     }
 }
