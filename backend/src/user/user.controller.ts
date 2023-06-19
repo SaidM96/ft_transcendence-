@@ -1,7 +1,7 @@
 import { UserService } from 'src/user/user.service';
 import { Body, Controller, Get,Req, Post, UseGuards, Res, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FriendDto ,findUserDto, storeMatchDto, usernameDto } from './dto/user.dto';
+import { FriendDto ,findUserDto, findUserOrChannel, storeMatchDto, usernameDto } from './dto/user.dto';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -46,6 +46,43 @@ constructor(private readonly userSrevice:UserService){}
         }
         catch(e){
             response.status(400).json(e);
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('search')
+    async findUserOrChannel(@Body() dto:findUserOrChannel, @Res() response:Response){
+        try{
+            const result = await this.userSrevice.findUserOrChannel(dto);
+            response.status(200).json(result);
+        }
+        catch(e){
+            response.status(400).json(e);
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('findLogin')
+    async findLoginWithUsername(@Body() dto:usernameDto, @Res() response:Response){
+        try{
+            const result =  await this.userSrevice.findUserWithUsername(dto);
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400 ).json(error);
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('findUser')
+    async findUserWithUsername(@Body() dto:usernameDto, @Res() response:Response){
+        try{
+            const login =  await this.userSrevice.findUserWithUsername(dto);
+            const result = await this.userSrevice.findUser({login:login});
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400 ).json(error);
         }
     }
 
@@ -140,30 +177,7 @@ constructor(private readonly userSrevice:UserService){}
         }
     }
 
-    @UseGuards(AuthGuard('jwt'))
-    @Post('findLogin')
-    async findLoginWithUsername(@Body() dto:usernameDto, @Res() response:Response){
-        try{
-            const result =  await this.userSrevice.findUserWithUsername(dto);
-            response.status(200).json(result);
-        }
-        catch(error){
-            response.status(400 ).json(error);
-        }
-    }
 
-    @UseGuards(AuthGuard('jwt'))
-    @Post('findUser')
-    async findUserWithUsername(@Body() dto:usernameDto, @Res() response:Response){
-        try{
-            const login =  await this.userSrevice.findUserWithUsername(dto);
-            const result = await this.userSrevice.findUser({login:login});
-            response.status(200).json(result);
-        }
-        catch(error){
-            response.status(400 ).json(error);
-        }
-    }
 
     @UseGuards(AuthGuard('jwt'))
     @Get('Leaderboard')

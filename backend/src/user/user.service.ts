@@ -1,4 +1,4 @@
-import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, invitationDto, storeMatchDto, usernameDto } from './dto/user.dto';
+import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, findUserOrChannel, invitationDto, storeMatchDto, usernameDto } from './dto/user.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Acheivement } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
@@ -38,6 +38,41 @@ export class UserService {
         return await this.prisma.client.user.findUnique({where:{UserId:id}});
     }
 
+    async findUserOrChannel(dto:findUserOrChannel){
+        let user = await this.prisma.client.user.findFirst({
+            where:{
+                login:{
+                    contains: dto.search.toLowerCase(),
+                    mode: 'insensitive',
+                }
+            }});
+        if (user)
+            return  {...user,itsUser:true};
+        if (!user)
+        {
+            let user = await this.prisma.client.user.findFirst({
+                where:{
+                    username: {
+                        contains: dto.search.toLowerCase(),
+                        mode: 'insensitive',
+                    },
+                },
+            });
+            if (user)
+                return  {...user,itsUser:true};
+            const channel = await this.prisma.client.channel.findFirst({
+                where:{
+                    channelName:{
+                        contains: dto.search.toLowerCase(),
+                        mode: 'insensitive',
+                    }
+                }
+            });
+            if (channel)
+                return {...channel,itsUser:false};
+        }
+        throw new BadRequestException(`no username or a channelName with : ${dto.search}`);
+    }
     async createUser(loginDto:LoginDto){
         const user =  await this.prisma.client.user.create({
             data:{

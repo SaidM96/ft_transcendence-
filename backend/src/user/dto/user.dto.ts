@@ -78,6 +78,13 @@ export class UpdateStats{
 }
 
 
+export class findUserOrChannel {
+    @IsString()
+    @IsNotEmpty()
+    search:string;
+}
+
+
 export class storeMatchDto {
     @IsString()
     loginA:string;
