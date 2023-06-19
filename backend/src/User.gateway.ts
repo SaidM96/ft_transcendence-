@@ -4,14 +4,14 @@ import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, 
 import { Socket, Server} from 'socket.io'
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newDeleteChannelDto, newDeleteMemberChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, newUpdateChannelDto, newUpdateMemberShipDto, sendMsgSocket, updateChannelDto, updateMemberShipDto } from './chat/Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newDeleteChannelDto, newDeleteMemberChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, newUpdateChannelDto, newUpdateMemberShipDto, sendMsgSocket, updateChannelDto, updateMemberShipDto, gameInvite } from './chat/Dto/chat.dto';
 import { ChatService } from './chat/chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './chat/socketException';
 import { FriendDto, UpdateStatus, UpdateUserDto, acceptFriend, findUserDto, invitationDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
-import { matterNode, measurements, userInGame } from './Game/game.service';
+import { checkQueue, matterNode, measurements, userInGame } from './Game/game.service';
 import { PrismaService } from 'prisma/prisma.service';
 
 @WebSocketGateway(3333, {cors:true})
@@ -97,20 +97,28 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     }
 
 
-    // game
-    // to store a match use :   this.userService.storeMatch(objet)  objet:
     @SubscribeMessage('joinRoom')
-    handleJoinRoom(@MessageBody() data: { roomId: string, obj: measurements }, @ConnectedSocket() client: Socket) {
+    async handleJoinRoom(@MessageBody() data: { roomId: string, obj: measurements, queue: boolean }, @ConnectedSocket() client: Socket) {
         try {
             const user = this.connectedUsers.get(client.id);
-            let { roomId } = data;
+            let { roomId, queue } = data;
             if (!user || !roomId || roomId == undefined)
                 throw new BadRequestException('no such user');
             roomId = roomId.length ? roomId : user.login
             if (roomId === user.login) {
+                let queueRoom = null
+                if (queue) {
+
+                    queueRoom = checkQueue(this.worlds)
+                    if (queueRoom) {
+                        this.world = this.worlds[queueRoom]
+                        roomId = queueRoom
+                    }
+                }
                 console.log("user login ", user.login, "joined room", roomId, " new world ?", !this.worlds[roomId])
                 console.log("new room");
-                this.world = new matterNode(this.server, roomId, data.obj);// user.login   
+                if (!queueRoom)
+                    this.world = new matterNode(this.server, roomId, data.obj, queue);// user.login   
                 this.world.onSettingScores((payload: any) => {
                     console.log("Received hello event")
                     const { resultMatch } = payload
@@ -118,6 +126,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                     this.userService.storeMatch(resultMatch)
                     // Handle the hello event here
                 });
+                if (!queueRoom)
                 this.worlds[roomId] = this.world;
                 this.world.sendBallPosition();
             }
@@ -126,16 +135,32 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
 
                 this.world = this.worlds[roomId];
             }
-            else
+            else {
+                client.emit('ready', { msg: false });
+                client.emit('gameStatus', { msg: "Room host is not connected" });
                 throw new BadRequestException('owner must be connected to the channel to join it');
-
+            }
+            // set status inGame in database
+            const dto:UpdateStatus = {login:user.login, isOnline:undefined, inGame:true};
+            await this.userService.modifyStatusUser(dto);
             client.join(roomId); // add the client to the specified room
             this.world.handleConnection(client, user);
-            client.on('disconnecting', () => {
+            client.on('disconnecting', async () => {
+            //
+            // set status inGame in database
+                const dto:UpdateStatus = {login:user.login, isOnline:undefined, inGame:true};
+                await this.userService.modifyStatusUser(dto);
+                //
                 // check if the disconnecting user is the owner of the room
                 if (this.worlds[user.login]) {
+                    // set status inGame in database
+                    if (this.worlds[user.login].players.player2.login)
+                    {
+                        const dto:UpdateStatus = {login:this.worlds[user.login].players.player2.login, isOnline:undefined, inGame:true};
+                        await this.userService.modifyStatusUser(dto);
+                    }
                     this.server.to(user.login).emit('gameStatus', { msg: "Host left the game.." });
-                    this.server.to(user.login).emit('ready', { msg: false});
+                    this.server.to(user.login).emit('ready', { msg: false });
                     this.worlds[user.login].clearGame()
                     console.log("deleting room")
                     delete this.worlds[user.login]
@@ -146,13 +171,42 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 if (roomJoined) {
 
                     console.log("second player left, putting back their paddle in the list")
-                        this.worlds[roomJoined].availablePaddles.push("right")
+                    this.worlds[roomJoined].availablePaddles.push("right")
                     console.log(this.worlds[roomJoined].availablePaddles)
                 }
             });
         }
         catch (error) {
             console.log("error disconnecting from room")
+            client.emit("errorMessage", error);
+        }
+    }
+
+
+    // handle game invitation
+    @SubscribeMessage('gameInvitation')
+    async gameInvitation(@ConnectedSocket() client: Socket, @MessageBody() body: gameInvite) {
+        try {
+            const { receiver } = body;
+            const userSender = this.connectedUsers.get(client.id);
+            if (!userSender)
+                throw new NotFoundException(`cant find sender User`);
+            const userReceiver = await this.userService.findUser({ login: receiver });
+            if (userReceiver.login == userSender.login)
+                throw new BadRequestException(`${receiver} cant send msg to ${receiver}`);
+            // check if receiver had blocked client or opposite
+            const IsEnemy = await this.userService.isBlockedMe({ loginA: userSender.login, loginB: receiver });
+            if (IsEnemy)
+                throw new BadRequestException(`cant send any msg to ${receiver}`);
+
+            const receiverSocketId = this.findKeyByLogin(userReceiver.login);
+            if (receiverSocketId) {
+                this.server.to(receiverSocketId).emit('gameInvitation', { sender: userSender.login, receiver: userReceiver.login });
+            }
+            // this.server.to(client.id).emit('PrivateMessage', {content:content,sendAt:msg.sendAt,fromUserA:msg.fromUserA});
+        }
+        catch (error) {
+            console.log(error);
             client.emit("errorMessage", error);
         }
     }
@@ -447,9 +501,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const dto:invitationDto = {senderLogin:body.login,receiverLogin:user.login};
             await this.userService.accepteFriend(dto, body.accepte);
             const key = this.findKeyByLogin(body.login)
-            if (this.connectedUsers.has(key))
-                this.server.to(key).emit("message", `${user.login}  have accepte you as friend`)
-            client.emit('message',` you have accepte ${body.login} as a friend`);
+            if (body.accepte)
+            {
+                client.emit('message',` you have accepte ${body.login} as a friend`);
+                if (this.connectedUsers.has(key))
+                    this.server.to(key).emit("message", `${user.login}  have accepte you as friend`);
+            }
+            else{
+                client.emit('message',` you have decline ${body.login} invitation`);
+            }
         }
         catch(error){
             client.emit('errorMessage', error);
@@ -495,4 +555,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('errorMessage', error);
         }
     }
+
+
 }

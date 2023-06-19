@@ -195,23 +195,29 @@ export class UserService {
         const sender = await this.findUser({login:senderLogin});
         const receiver = await this.findUser({login:receiverLogin});
         if (sender.login === receiver.login)
-            throw new BadRequestException('cant invite yourself')
-        let ikhan = await this.prisma.client.pendingFriendShip.findFirst({
+            throw new BadRequestException('cant invite yourself');
+        const friendA = await this.IsfriendOf(senderLogin,receiverLogin);
+        const friendB = await this.IsfriendOf(receiverLogin,senderLogin);
+        if (friendA || friendB)
+            throw new BadRequestException(' already friends');
+        let senderToReceiver = await this.prisma.client.pendingFriendShip.findFirst({
             where:{
                 senderLogin:sender.login,
                 receiverLogin:receiver.login,
             }
         })
-        if (!ikhan)
-            ikhan = await this.prisma.client.pendingFriendShip.findFirst({
-            where:{
-                senderLogin:receiver.login,
-                receiverLogin:sender.login,
-            }
-        })
-        if (ikhan)
-            throw new BadRequestException(' you have already invetation')
-        await this.prisma.client.pendingFriendShip.create({
+        if (senderToReceiver)
+            throw new BadRequestException(' you have already invetation');
+        let receiverToSender = await this.prisma.client.pendingFriendShip.findFirst({
+        where:{
+            senderLogin:receiver.login,
+            receiverLogin:sender.login,
+        }})
+        if (receiverToSender)   
+            await this.accepteFriend({senderLogin:receiverLogin, receiverLogin:senderLogin},true);
+        else
+        {
+            await this.prisma.client.pendingFriendShip.create({
             data:{
                 sender:{
                     connect:{
@@ -226,7 +232,7 @@ export class UserService {
                 },
                 receiverLogin:receiver.login
             }
-        });
+        })};
     }
 
     async accepteFriend(dto:invitationDto, accepte:boolean){

@@ -226,3 +226,9 @@ export class newUpdateMemberShipDto{
     @IsBoolean()
     isAdmin:boolean;
 }
+
+
+export class gameInvite {
+    @IsString()
+    receiver:string;
+}

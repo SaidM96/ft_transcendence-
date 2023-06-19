@@ -42,6 +42,17 @@ export function userInGame(login: string, worlds: {}) {
 
     return null
 }
+
+export function checkQueue(worlds: {}) {
+    for (const user in worlds) {
+
+        if (worlds[user] && worlds[user].openGame && !worlds[user].availablePaddle)
+            return user
+    }
+
+    return null
+}
+
 export class matterNode {
     private engine: Engine;
     private world: World;
@@ -58,6 +69,7 @@ export class matterNode {
     private winner = ""
     private ready = true
     private eventEmitter: EventEmitter;
+    public openGame = false
 
     public players: {
         player1: { user: User; client: string };
@@ -66,9 +78,10 @@ export class matterNode {
             player1: { user: null, client: null },
             player2: { user: null, client: null },
         };
-    constructor(server: any, roomId: string, obj: measurements) {
+    constructor(server: any, roomId: string, obj: measurements, openGame : boolean) {
         this.roomId = roomId
         this.server = server;
+        this.openGame = openGame
         // event emitter to signal the socket gateway that a match score needs saving
         this.eventEmitter = new EventEmitter();
         // cords and measurements of objects
@@ -231,8 +244,8 @@ export class matterNode {
             roomArray = Array.from(room.keys())
         }
         console.log("client id", client.id)
-        console.log("connected to room are: ", roomArray)
-        console.log("available paddles", this.availablePaddles)
+        // console.log("connected to room are: ", roomArray)
+        // console.log("available paddles", this.availablePaddles)
         this.updateConnectedUsers(user, client)
         const availablePaddle = this.availablePaddles.shift(); // Get the next available paddle
 
@@ -262,8 +275,8 @@ export class matterNode {
             this.players.player1 = { user: user, client: client.id }
         else
             this.players.player2 = { user: user, client: client.id }
-        console.log({ user: user, client: client.id })
-        console.log(this.players.player1)
+        // console.log({ user: user, client: client.id })
+        // console.log(this.players.player1)
     }
     handleDisconnect(client: Socket) {
         if (client.id === this.players.player1.client) {
@@ -276,13 +289,11 @@ export class matterNode {
             console.log("second player left, putting back their paddle in the list")
             if (this.availablePaddles.length == 1)
                 this.availablePaddles.push("right")
-            console.log(this.availablePaddles)
         }
     }
     clearGame() {
-        console.log("clearing game instance", this.intervalId)
         clearInterval(this.intervalId)
-        console.log("clearing game instance", this.intervalId)
+        console.log("clearing game instance")
 
         World.clear(this.world);
         Engine.clear(this.engine);
