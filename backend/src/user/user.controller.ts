@@ -48,7 +48,7 @@ constructor(private readonly userSrevice:UserService){}
             response.status(400).json(e);
         }
     }
-
+    // search for user or channel  !!!!!!!!!!!!!   localhost:5000/user/search   {search:string} 
     @UseGuards(AuthGuard('jwt'))
     @Post('search')
     async findUserOrChannel(@Body() dto:findUserOrChannel, @Res() response:Response){
