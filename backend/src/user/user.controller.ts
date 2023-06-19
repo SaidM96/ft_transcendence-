@@ -28,7 +28,7 @@ constructor(private readonly userSrevice:UserService){}
             // get porcentages
             const porcentages = matches.pop();
             // get acheivement also ;
-            const result = {...user, friends, porcentages, matches};
+            const result = {...user, friends, porcentages, matches, };
             response.status(200).json(result);
         }
         catch(error){
@@ -190,6 +190,6 @@ constructor(private readonly userSrevice:UserService){}
         }
     }
 
-    
+
 
 }

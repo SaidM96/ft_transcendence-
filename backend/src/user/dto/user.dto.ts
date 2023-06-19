@@ -130,3 +130,9 @@ export class usernameDto{
     @IsString()
     username:string;
 }
+
+// invitation
+export class invitationDto {
+    senderLogin:string;
+    receiverLogin:string;
+}

@@ -1,4 +1,4 @@
-import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto, usernameDto } from './dto/user.dto';
+import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, invitationDto, storeMatchDto, usernameDto } from './dto/user.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Acheivement } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
@@ -154,6 +154,72 @@ export class UserService {
             }
         });
     }
+    // invitations
+    async inviteFriend(dto:invitationDto){
+        const {senderLogin, receiverLogin} = dto;
+        const sender = await this.findUser({login:senderLogin});
+        const receiver = await this.findUser({login:receiverLogin});
+        let ikhan = await this.prisma.client.pendingFriendShip.findFirst({
+            where:{
+                senderLogin:sender.login,
+                receiverLogin:receiver.login,
+            }
+        })
+        if (!ikhan)
+            ikhan = await this.prisma.client.pendingFriendShip.findFirst({
+            where:{
+                senderLogin:receiver.login,
+                receiverLogin:sender.login,
+            }
+        })
+        if (ikhan)
+            throw new BadRequestException(' you have already invetation')
+        await this.prisma.client.pendingFriendShip.create({
+            data:{
+                sender:{
+                    connect:{
+                        UserId:sender.UserId
+                    },
+                },
+                senderLogin:sender.login,
+                receiver:{
+                    connect:{
+                        UserId:receiver.UserId
+                    },
+                },
+                receiverLogin:receiver.login
+            }
+        });
+    }
+
+    async accepteFriend(dto:invitationDto){
+        const {senderLogin, receiverLogin} = dto;
+        const sender = await this.findUser({login:senderLogin});
+        const receiver = await this.findUser({login:receiverLogin});
+        const pend = await this.prisma.client.pendingFriendShip.findFirst({
+            where:{
+                senderLogin:sender.login,
+                receiverLogin:receiver.login,
+            }
+        });
+        if (!pend)
+            throw new BadRequestException(`${senderLogin} had not invite ${receiverLogin}`);
+        
+        await this.prisma.client.pendingFriendShip.delete({
+            where:{
+                PendingId:pend.PendingId
+            }
+        });
+        const friendShip = await this.createFriendship({loginA:senderLogin,loginB:receiverLogin});
+        await this.prisma.client.friend.update({
+            where:{
+                FriendshipId:friendShip.FriendshipId,
+            },
+            data:{
+                isFriends:true,
+            }
+        })
+    }
 
     async createFriendship(friendDto:FriendDto){
         const {loginA, loginB} = friendDto;
@@ -203,16 +269,41 @@ export class UserService {
         const {login} = findUser;
         const user = await  this.findUser(findUser);
         let result:any[] = [];
+        let friends:any[] = [];
+        let pendingFriends:any[] = []
+        let wToAccept:any[] = []
+
+        const pending = await this.prisma.client.pendingFriendShip.findMany({
+            where:{
+                senderId:user.UserId
+            }
+        });
+        for(let i = 0;i < pending.length; ++i) {
+            let otherUser = await this.findUser({login:pending[i].receiverLogin});
+            pendingFriends.push({login:otherUser.login, avatar:otherUser.avatar, username:otherUser.username});
+        };
+        const waitingToAccept = await this.prisma.client.pendingFriendShip.findMany({
+            where:{
+                receiverId:user.UserId
+            }
+        });
+        for(let i = 0;i < waitingToAccept.length; ++i) {
+            let otherUser = await this.findUser({login:waitingToAccept[i].senderLogin});
+            wToAccept.push({login:otherUser.login, avatar:otherUser.avatar, username:otherUser.username});
+        };
+
         // list of friendship that added user(login)
         const friendAddedUser = await this.prisma.client.friend.findMany({
             where:{
                 loginA:login,
             },
         });
+
         for(let i = 0;i < friendAddedUser.length; ++i) {
             let otherUser = await this.findUser({login:friendAddedUser[i].loginB});
-            const {loginA, loginB,isFriends } = friendAddedUser[i];
-            result.push({loginA:loginA, loginB:loginB, isFriends:isFriends, avatar:otherUser.avatar, username:otherUser.username,})
+            const {loginB,isFriends } = friendAddedUser[i];
+            if (isFriends)
+                friends.push({login:loginB, avatar:otherUser.avatar, username:otherUser.username});
         };
         // list of friendship that addedBy user(login)
         const friendAddedbyUser = await this.prisma.client.friend.findMany({
@@ -223,10 +314,12 @@ export class UserService {
         });
         for(let i = 0;i < friendAddedbyUser.length; ++i) {
             let otherUser = await this.findUser({login:friendAddedbyUser[i].loginA});
-            const {loginA, loginB,isFriends } = friendAddedbyUser[i];
-            result.push({loginA:loginB, loginB:loginA, isFriends:isFriends, avatar:otherUser.avatar, username:otherUser.username,})
+            const {loginA,isFriends } = friendAddedbyUser[i];
+            if (isFriends)
+                friends.push({login:loginA, avatar:otherUser.avatar, username:otherUser.username});
         };
-        return result;
+        
+        return {friends:friends, pendingInvitation:pendingFriends, waitToAccept:wToAccept};
     }
 
     // delete a friend 

@@ -41,6 +41,17 @@ model Friend {
   isFriends          Boolean @default(false)
 }
 
+model PendingFriendShip{
+  PendingId        String @id @default(uuid())
+  sender              User @relation("pendingA",fields: [senderId], references: [UserId], onDelete: Cascade) // user that requested friendship first
+  senderId            String
+  senderLogin         String
+  receiver            User @relation("pendingB",fields: [receiverId], references: [UserId], onDelete: Cascade)
+  receiverId          String
+  receiverLogin       String
+}
+
+
 model  Block {
   BlockId       String @id @default(uuid())
   blockBy       User   @relation("BlockedBy",fields: [blockedById], references: [UserId], onDelete: Cascade)
@@ -51,6 +62,7 @@ model  Block {
   blockedLogin  String
   BlockeddAt    DateTime @default(now())
 }
+
 
 
 // channel Models
@@ -142,6 +154,10 @@ model User {
   //matches
   matchhistoryA   match[] @relation("matchA")
   matchhistoryB   match[] @relation("matchB")
+
+  // pending friendShips
+  pendingA PendingFriendShip[] @relation("pendingA")
+  pendingB PendingFriendShip[] @relation("pendingB")
 }
 
 model match {

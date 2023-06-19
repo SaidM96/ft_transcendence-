@@ -8,7 +8,7 @@ import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto,
 import { ChatService } from './chat/chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './chat/socketException';
-import { FriendDto, UpdateStatus, UpdateUserDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
+import { FriendDto, UpdateStatus, UpdateUserDto, findUserDto, invitationDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
 import { matterNode, measurements, userInGame } from './Game/game.service';
@@ -422,28 +422,42 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     }
 
     // event to add friend or remove friend  bool : true: add new friend , false: remove friend
-    @SubscribeMessage('friend')
-    async friendUser(@ConnectedSocket() client:Socket, @MessageBody() body:newFriendDto){
-        try {   
+    @SubscribeMessage('inviteFriend')
+    async inviteFriend(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
+        try {
             const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new BadRequestException('no such user');
-            const dto:FriendDto = {loginA:user.login,loginB:body.login};
-            if (body.bool)
-            {
-                await this.userService.createFriendship(dto);
-                client.emit('message',` you have added ${user.username} friend`);
-            }
-            else
-            {
-                await this.userService.removeFriend(dto);
-                client.emit('message',` you have removed ${user.username} friend`);
-            }
+            const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
+            await this.userService.inviteFriend(dto);
+            const key = this.findKeyByLogin(body.login)
+            if (this.connectedUsers.has(key))
+                this.server.to(key).emit("message", `${user.login} had invite you `)
+            client.emit('message',` you have invited ${body.login} as a friend`);
         }
         catch(error){
             client.emit('errorMessage', error);
         }
     }
+
+    @SubscribeMessage('acceptFriend')
+    async acceptFriend(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
+        try {
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:invitationDto = {senderLogin:body.login,receiverLogin:user.login};
+            await this.userService.accepteFriend(dto);
+            const key = this.findKeyByLogin(body.login)
+            if (this.connectedUsers.has(key))
+                this.server.to(key).emit("message", `${user.login}  have accepte you as friend`)
+            client.emit('message',` you have accepte ${body.login} as a friend`);
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
+
 
     // we need a token jwt of that  user to blacklist it
     @SubscribeMessage('logout')
