@@ -27,7 +27,6 @@ constructor(private readonly userSrevice:UserService){}
             const matches = await this.userSrevice.getHistoryUserMatchs({login:login});
             // get porcentages
             const porcentages = matches.pop();
-            
             // get acheivement also ;
             const result = {...user, friends, porcentages, matches};
             response.status(200).json(result);
@@ -107,7 +106,12 @@ constructor(private readonly userSrevice:UserService){}
     @UseGuards(AuthGuard('jwt'))
     @Post('match')
     async storeNewMatch(@Body() matchDto:storeMatchDto){
-        return await this.userSrevice.storeMatch(matchDto);
+        try{
+            return await this.userSrevice.storeMatch(matchDto);
+        }
+        catch(error){
+            return {errorMessage:error};
+        }
     }
 
     // get history of matches between of a  user
@@ -172,5 +176,20 @@ constructor(private readonly userSrevice:UserService){}
             response.status(400 ).json(error);
         }
     }
+
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('acheivement')
+    async getAchievement(@Body() dto:findUserDto, @Res() response:Response){
+        try{
+            const result =  await this.userSrevice.getAcheivments(dto);
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400 ).json(error);
+        }
+    }
+
+    
 
 }

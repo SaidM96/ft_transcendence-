@@ -1,5 +1,6 @@
 import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, storeMatchDto, usernameDto } from './dto/user.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Acheivement } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
 
 @Injectable()
@@ -449,6 +450,109 @@ export class UserService {
         });
     }
 // match
+    // Achievement
+    async getAcheivments(dto:findUserDto){
+        const user = await  this.findUser(dto);
+        return  await this.prisma.client.acheivement.findMany({
+            where:{
+                userId:user.UserId
+            }
+        })
+    }
+
+    async storeAchievement(login:string, userId:string, idAchievement:number){
+        const achiev = await this.prisma.client.acheivement.findFirst({
+            where:{
+                Id:idAchievement,
+                userId:userId
+            }
+        })
+        if (!achiev)
+        {
+            // send email to user
+            return await this.prisma.client.acheivement.create({
+               data:{
+                   Id:idAchievement,
+                   user:{
+                       connect:{
+                           UserId:userId,
+                       },
+                   },
+                   login:login
+               },
+           });
+        }
+        return null
+    }
+
+    async findNewAchievement(login:string, userId:string){
+        const matchesA = await this.prisma.client.match.findMany({
+            where:{
+                userAId:userId,
+            }
+        });
+        const matchesB = await this.prisma.client.match.findMany({
+            where:{
+                userBId:userId,
+            },
+        });
+        let win = 0;
+        let nmMatches = 0;
+        let lose = 0;
+        let result:Acheivement[] = [];
+        if (matchesA)
+            matchesA.forEach((match) => {
+                if (match.winner)
+                    win++;
+                else
+                    lose++;
+                nmMatches++;
+            });
+        if (matchesB)
+            matchesB.forEach((match) => {
+                if (!match.winner)
+                    win++;
+                else
+                    lose++;
+                nmMatches++;
+            })
+        // First Game
+        if (matchesA.length + matchesB.length == 1)
+        {
+            const ach = await this.storeAchievement(login,userId,1);
+            if (ach)
+                result.push(ach);
+        }
+        // Winning Streak
+        if (win === 3)
+        {
+            const ach = await this.storeAchievement(login,userId,2);
+            if (ach)
+                result.push(ach);
+        }
+        // Paddle Prodigy
+        if (win === 9)
+        {
+            const ach = await this.storeAchievement(login,userId,3);
+            if (ach)
+                result.push(ach);
+        }
+        // Never Give Up
+        if (lose === 9)
+        {
+            const ach = await this.storeAchievement(login,userId,4);
+            if (ach)
+                result.push(ach);
+        }
+        // Ultimate Champion
+        if (win === 21)
+        {
+            const ach = await this.storeAchievement(login,userId,5);
+            if (ach)
+                result.push(ach);
+        }
+        return result;
+    }
     //store New finished match
     async storeMatch(matchDto:storeMatchDto){
         const {loginA, loginB, scoreA, scoreB, winner} = matchDto;
@@ -515,6 +619,9 @@ export class UserService {
                 });
             }
         }
+        const achievA = await this.findNewAchievement(userA.login,userA.UserId);
+        const acheivB = await this.findNewAchievement(userB.login, userB.UserId);
+        return {achievA:achievA, acheivB:acheivB};
     }
 
     // get user's matchs history 
@@ -596,4 +703,7 @@ export class UserService {
           });
         return leaderboard;
     }
+
+
+
 }

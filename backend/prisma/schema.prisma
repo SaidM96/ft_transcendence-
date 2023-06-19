@@ -96,6 +96,15 @@ model MsgChannel {
   channelName         String
 }
 
+model Acheivement {
+  acheivementId    String @id @default(uuid())
+  Id               Int 
+  user             User   @relation("Acheivement", fields: [userId], references: [UserId], onDelete: Cascade)
+  userId           String 
+  //
+  login        String
+}
+
 model User {
   UserId              String @id @default(uuid())
   login               String @unique()
@@ -106,6 +115,9 @@ model User {
   twoFactorSecret     String?
   bioGra              String
   lvl                 Int  @default(0)
+
+  // Acheivement
+  achievement         Acheivement[] @relation("Acheivement")
   // Friends
   friendsAddedUser     Friend[] @relation("relationA")
   friendsAddeBydUser   Friend[] @relation("relationB")
