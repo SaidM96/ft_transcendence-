@@ -140,6 +140,15 @@ export class usernameDto{
 
 // invitation
 export class invitationDto {
+    @IsString()
     senderLogin:string;
+    @IsString()
     receiverLogin:string;
+}
+
+export class acceptFriend {
+    @IsString()
+    login:string;
+    @IsBoolean()
+    accepte:boolean;
 }

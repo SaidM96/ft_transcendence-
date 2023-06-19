@@ -8,7 +8,7 @@ import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto,
 import { ChatService } from './chat/chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './chat/socketException';
-import { FriendDto, UpdateStatus, UpdateUserDto, findUserDto, invitationDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
+import { FriendDto, UpdateStatus, UpdateUserDto, acceptFriend, findUserDto, invitationDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
 import { matterNode, measurements, userInGame } from './Game/game.service';
@@ -439,13 +439,13 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     }
 
     @SubscribeMessage('acceptFriend')
-    async acceptFriend(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
+    async acceptFriend(@ConnectedSocket() client:Socket, @MessageBody() body:acceptFriend){
         try {
             const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:invitationDto = {senderLogin:body.login,receiverLogin:user.login};
-            await this.userService.accepteFriend(dto);
+            await this.userService.accepteFriend(dto, body.accepte);
             const key = this.findKeyByLogin(body.login)
             if (this.connectedUsers.has(key))
                 this.server.to(key).emit("message", `${user.login}  have accepte you as friend`)
@@ -464,7 +464,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('no such user');
             const dto:FriendDto = {loginA:body.login,loginB:user.login};
             await this.userService.removeFriend(dto);
-            client.emit('message',` you remove  ${body.login} from list a friends`);
+            client.emit('message',` you remove ${body.login} from list a friends`);
         }
         catch(error){
             client.emit('errorMessage', error);

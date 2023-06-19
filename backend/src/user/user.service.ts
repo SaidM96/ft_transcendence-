@@ -194,6 +194,8 @@ export class UserService {
         const {senderLogin, receiverLogin} = dto;
         const sender = await this.findUser({login:senderLogin});
         const receiver = await this.findUser({login:receiverLogin});
+        if (sender.login === receiver.login)
+            throw new BadRequestException('cant invite yourself')
         let ikhan = await this.prisma.client.pendingFriendShip.findFirst({
             where:{
                 senderLogin:sender.login,
@@ -227,7 +229,7 @@ export class UserService {
         });
     }
 
-    async accepteFriend(dto:invitationDto){
+    async accepteFriend(dto:invitationDto, accepte:boolean){
         const {senderLogin, receiverLogin} = dto;
         const sender = await this.findUser({login:senderLogin});
         const receiver = await this.findUser({login:receiverLogin});
@@ -245,16 +247,20 @@ export class UserService {
                 PendingId:pend.PendingId
             }
         });
-        const friendShip = await this.createFriendship({loginA:senderLogin,loginB:receiverLogin});
-        await this.prisma.client.friend.update({
-            where:{
-                FriendshipId:friendShip.FriendshipId,
-            },
-            data:{
-                isFriends:true,
-            }
-        })
+        if (accepte)
+        {
+            const friendShip = await this.createFriendship({loginA:senderLogin,loginB:receiverLogin});
+            await this.prisma.client.friend.update({
+                where:{
+                    FriendshipId:friendShip.FriendshipId,
+                },
+                data:{
+                    isFriends:true,
+                }
+            })
+        }
     }
+
 
     async createFriendship(friendDto:FriendDto){
         const {loginA, loginB} = friendDto;
