@@ -394,9 +394,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit("errorMessage", error);
         }
     }
-    content : string;
-    sendAt: string;
-    fromUserA: boolean;
+
     // event to blo9 someone or .remove block
     @SubscribeMessage('block')
     async blo9User(@ConnectedSocket() client:Socket, @MessageBody() body:newBlockDto){
@@ -421,7 +419,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         }
     }
 
-    // event to add friend or remove friend  bool : true: add new friend , false: remove friend
+    // event to anvite friend 
     @SubscribeMessage('inviteFriend')
     async inviteFriend(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
         try {
@@ -432,7 +430,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             await this.userService.inviteFriend(dto);
             const key = this.findKeyByLogin(body.login)
             if (this.connectedUsers.has(key))
-                this.server.to(key).emit("message", `${user.login} had invite you `)
+                this.server.to(key).emit("message", `${user.login} had invite you to be his friend `)
             client.emit('message',` you have invited ${body.login} as a friend`);
         }
         catch(error){
@@ -452,6 +450,21 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (this.connectedUsers.has(key))
                 this.server.to(key).emit("message", `${user.login}  have accepte you as friend`)
             client.emit('message',` you have accepte ${body.login} as a friend`);
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
+
+    @SubscribeMessage('removeFriend')
+    async removeFriend(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
+        try {
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:FriendDto = {loginA:body.login,loginB:user.login};
+            await this.userService.removeFriend(dto);
+            client.emit('message',` you remove  ${body.login} from list a friends`);
         }
         catch(error){
             client.emit('errorMessage', error);
