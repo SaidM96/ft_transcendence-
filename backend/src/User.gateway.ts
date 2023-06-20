@@ -481,11 +481,20 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
-            await this.userService.inviteFriend(dto);
+            const bool = await this.userService.inviteFriend(dto);
             const key = this.findKeyByLogin(body.login)
-            if (this.connectedUsers.has(key))
-                this.server.to(key).emit("message", `${user.login} had invite you to be his friend `)
-            client.emit('message',` you have invited ${body.login} as a friend`);
+            if (bool)
+            {
+                if (this.connectedUsers.has(key))
+                    this.server.to(key).emit("message", `${user.login} had accepte your invitation `)
+                client.emit('message',` you and ${body.login} are  friends now`);
+            }
+            else
+            {
+                if (this.connectedUsers.has(key))
+                    this.server.to(key).emit("message", `${user.login} had invite you to be his friend `)
+                client.emit('message',` you have invited ${body.login} as a friend`);
+            }
         }
         catch(error){
             client.emit('errorMessage', error);

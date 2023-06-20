@@ -213,8 +213,11 @@ export class UserService {
             senderLogin:receiver.login,
             receiverLogin:sender.login,
         }})
-        if (receiverToSender)   
+        if (receiverToSender)
+        {
             await this.accepteFriend({senderLogin:receiverLogin, receiverLogin:senderLogin},true);
+            return true;
+        }   
         else
         {
             await this.prisma.client.pendingFriendShip.create({
@@ -233,6 +236,7 @@ export class UserService {
                 receiverLogin:receiver.login
             }
         })};
+        return false;
     }
 
     async accepteFriend(dto:invitationDto, accepte:boolean){
@@ -426,6 +430,38 @@ export class UserService {
         });
         if (!block)
         {
+            await this.prisma.client.friend.deleteMany({
+                where:{
+                    loginA:login,
+                    loginB:blocked
+                }
+            });
+            await this.prisma.client.friend.deleteMany({
+                where:{
+                    loginA:blocked,
+                    loginB:login
+                }
+            });
+            let conv = await this.prisma.client.conversation.findFirst({
+                where:{
+                    loginA:login,
+                    loginB:blocked
+                }
+            });
+            if (!conv)
+            {
+                conv =await this.prisma.client.conversation.findFirst({
+                where:{
+                    loginA:blocked,
+                    loginB:login
+                }});
+            }
+            if (conv)
+                await this.prisma.client.conversation.delete({
+                    where:{
+                        ConvId:conv.ConvId
+                    }
+                })
             return await this.prisma.client.block.create({
                 data:{
                     blockBy:{
