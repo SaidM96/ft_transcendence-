@@ -39,7 +39,8 @@ export class UserService {
     }
 
     async findUserOrChannel(dto:findUserOrChannel){
-        let user = await this.prisma.client.user.findFirst({
+        let result:any[] = [];
+        let user = await this.prisma.client.user.findMany({
             where:{
                 login:{
                     contains: dto.search.toLowerCase(),
@@ -47,10 +48,10 @@ export class UserService {
                 }
             }});
         if (user)
-            return  {...user,itsUser:true};
-        if (!user)
+            result.push({userSearch:user});
+        else
         {
-            let user = await this.prisma.client.user.findFirst({
+            let user = await this.prisma.client.user.findMany({
                 where:{
                     username: {
                         contains: dto.search.toLowerCase(),
@@ -59,19 +60,21 @@ export class UserService {
                 },
             });
             if (user)
-                return  {...user,itsUser:true};
-            const channel = await this.prisma.client.channel.findFirst({
-                where:{
-                    channelName:{
-                        contains: dto.search.toLowerCase(),
-                        mode: 'insensitive',
-                    }
-                }
-            });
-            if (channel)
-                return {...channel,itsUser:false};
+                result.push({userSearch:user});
         }
-        throw new BadRequestException(`no username or a channelName with : ${dto.search}`);
+        const channel = await this.prisma.client.channel.findMany({
+            where:{
+                channelName:{
+                    contains: dto.search.toLowerCase(),
+                    mode: 'insensitive',
+                }
+            }
+        });
+        if (channel)
+            result.push({channelSearch:channel});
+        if (result.length == 0)
+            throw new BadRequestException(`no username or a channelName with : ${dto.search}`);
+        return result;
     }
     async createUser(loginDto:LoginDto){
         const user =  await this.prisma.client.user.create({
@@ -663,6 +666,10 @@ export class UserService {
         if (!achiev)
         {
             // send email to user
+            
+
+
+            //
             return await this.prisma.client.acheivement.create({
                data:{
                    Id:idAchievement,

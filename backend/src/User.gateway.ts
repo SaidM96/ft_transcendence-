@@ -480,23 +480,23 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new BadRequestException('no such user');
-            const otherUser = await this.userService.findUser({login:body.login})
+            const otherUser = await this.userService.findUser({login:body.login});
             const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
             const bool = await this.userService.inviteFriend(dto);
-            let key = this.findKeyByLogin(body.login)
+            let key = this.findKeyByLogin(body.login);
             if (bool)
             {
                 if (key && this.connectedUsers.has(key))
                 {
                     this.server.to(key).emit("invite", {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar})    
                 }
-                client.emit('invite',{message:` you and ${body.login} are  friends now`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
+                // client.emit('invite',{message:` you and ${body.login} are  friends now`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
             else
             {
                 if (key && this.connectedUsers.has(key))
                      this.server.to(key).emit("invite", {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar})
-                client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
+                // client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
         }
         catch(error){
@@ -571,7 +571,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             this.blackListedJwt.set(hashedToken,user.login);
             // set status offline in database
-            const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:undefined};
+            const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:false};
             await this.userService.modifyStatusUser(dto);
             client.emit('message',`${user.login} had log out`);
             this.connectedUsers.delete(client.id);
@@ -582,6 +582,4 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('errorMessage', error);
         }
     }
-
-
 }
