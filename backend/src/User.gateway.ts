@@ -480,14 +480,17 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const user = this.connectedUsers.get(client.id);
             if (!user)
                 throw new BadRequestException('no such user');
+            const otherUser = await this.userService.findUser({login:body.login})
             const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
             const bool = await this.userService.inviteFriend(dto);
             const key = this.findKeyByLogin(body.login)
             if (bool)
             {
                 if (this.connectedUsers.has(key))
-                    this.server.to(key).emit("message", `${user.login} had accepte your invitation `)
-                client.emit('message',` you and ${body.login} are  friends now`);
+                {
+                    this.server.to(key).emit("invite", {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar})    
+                }
+                client.emit('invite',{message:` you and ${body.login} are  friends now`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
             else
             {
@@ -500,6 +503,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('errorMessage', error);
         }
     }
+    
     @SubscribeMessage('removeInvite')
     async removeInvite(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
         try {
@@ -514,6 +518,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('errorMessage', error);
         }
     }
+
     @SubscribeMessage('acceptFriend')
     async acceptFriend(@ConnectedSocket() client:Socket, @MessageBody() body:acceptFriend){
         try {
