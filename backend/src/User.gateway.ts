@@ -379,7 +379,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const msg = await this.chatService.newMsgChannel(dto);
             if (msg)
             {
-                this.server.to(msg.channelName).emit(`${channelName}`,{login:user.login,content:msg.content, avatar:user.avatar, username:user.username});
+                this.server.to(msg.channelName).emit(`${channelName}`,{login:user.login,content:msg.content, avatar:user.avatar, username:user.username, sendAt:msg.sendAt});
             }
             else
                 client.emit('errorMessage','cant send a msg to this channel');
@@ -483,10 +483,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const otherUser = await this.userService.findUser({login:body.login})
             const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
             const bool = await this.userService.inviteFriend(dto);
-            const key = this.findKeyByLogin(body.login)
+            let key = this.findKeyByLogin(body.login)
             if (bool)
             {
-                if (this.connectedUsers.has(key))
+                if (key && this.connectedUsers.has(key))
                 {
                     this.server.to(key).emit("invite", {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar})    
                 }
@@ -494,9 +494,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             }
             else
             {
-                if (this.connectedUsers.has(key))
-                    this.server.to(key).emit("message", `${user.login} had invite you to be his friend `)
-                client.emit('message',` you have invited ${body.login} as a friend`);
+                if (key && this.connectedUsers.has(key))
+                     this.server.to(key).emit("invite", {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar})
+                client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
         }
         catch(error){
