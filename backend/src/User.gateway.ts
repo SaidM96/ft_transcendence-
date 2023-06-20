@@ -490,13 +490,13 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 {
                     this.server.to(key).emit("invite", {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar})    
                 }
-                // client.emit('invite',{message:` you and ${body.login} are  friends now`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
+                client.emit('invite',{message:` you and ${body.login} are  friends now`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
             else
             {
                 if (key && this.connectedUsers.has(key))
                      this.server.to(key).emit("invite", {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar})
-                // client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
+                client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
         }
         catch(error){
@@ -512,7 +512,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('no such user');
             const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
             await this.userService.removeInvite(dto);
-            client.emit('message',` you have removed invitaion to ${body.login} `);
+            client.emit('message',` you have removed invitaion to ${body.login}`);
+            const key = this.findKeyByLogin(body.login)
+            if (this.connectedUsers.has(key))
+                this.server.to(key).emit("message", `${user.login}  have removed invitation that he sends  to you`);
         }
         catch(error){
             client.emit('errorMessage', error);
@@ -551,7 +554,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('no such user');
             const dto:FriendDto = {loginA:body.login,loginB:user.login};
             await this.userService.removeFriend(dto);
-            client.emit('message',` you remove ${body.login} from list a friends`);
+            client.emit('message',` you removed ${body.login} from list a friends`);
+            const key = this.findKeyByLogin(body.login)
+            if (this.connectedUsers.has(key))
+                this.server.to(key).emit("message", `${user.login}  have removed you from list friend`);
         }
         catch(error){
             client.emit('errorMessage', error);

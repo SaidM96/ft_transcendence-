@@ -38,6 +38,21 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
         }
     }
 
+    @UseGuards(AuthGuard('jwt'))
+    @Post('profile')
+    async findProfile(@Body() findUser:findUserDto, @Res() response:Response){
+        try {
+            const user = await this.userSrevice.findUser(findUser);
+            const matches = await this.userSrevice.getHistoryUserMatchs({login:user.login});
+            const acheivement = await this.userSrevice.getAcheivments({login:user.login});
+            const porcentages = matches.pop();
+            const result = {...user, porcentages, matches, acheivement};
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400).json(error);
+        }
+    }
     // get user
     @UseGuards(AuthGuard('jwt'))
     @Post('find')

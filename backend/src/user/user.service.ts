@@ -192,6 +192,7 @@ export class UserService {
             }
         });
     }
+
     // invitations
     async inviteFriend(dto:invitationDto){
         const {senderLogin, receiverLogin} = dto;
@@ -201,7 +202,7 @@ export class UserService {
             throw new BadRequestException('cant invite yourself');
         const friendA = await this.IsfriendOf(senderLogin,receiverLogin);
         const friendB = await this.IsfriendOf(receiverLogin,senderLogin);
-        if (friendA || friendB)
+        if ((friendA && friendA.isFriends) || (friendB && friendB.isFriends))
             throw new BadRequestException(' already friends');
         let senderToReceiver = await this.prisma.client.pendingFriendShip.findFirst({
             where:{
@@ -271,7 +272,6 @@ export class UserService {
         });
         if (!pend)
             throw new BadRequestException(`${senderLogin} had not invite ${receiverLogin}`);
-        
         await this.prisma.client.pendingFriendShip.delete({
             where:{
                 PendingId:pend.PendingId
@@ -287,10 +287,9 @@ export class UserService {
                 data:{
                     isFriends:true,
                 }
-            })
+            });
         }
     }
-
 
     async createFriendship(friendDto:FriendDto){
         const {loginA, loginB} = friendDto;
@@ -298,7 +297,7 @@ export class UserService {
         const userB = await this.findUser({login:loginB});
         //check if userA added userB
         const frienda = await this.IsfriendOf(loginA, loginB);
-        if (frienda)
+        if (frienda && frienda.isFriends)
             throw new BadRequestException(`${loginA} and ${loginB} is already friends!`);
         // if userA friendOf userB  
         const friend = await this.IsfriendOf(loginB, loginA);
@@ -310,7 +309,7 @@ export class UserService {
                         FriendshipId:friend.FriendshipId,
                     },
                     data:{
-                        isFriends:true
+                        isFriends:true,
                     }
                 });
             else
@@ -324,7 +323,7 @@ export class UserService {
                         UserId:userA.UserId,
                     }
                 },
-                loginA: loginA, 
+                loginA: loginA,
                 userB:{
                     connect:{
                         UserId:userB.UserId,
