@@ -500,7 +500,20 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('errorMessage', error);
         }
     }
-
+    @SubscribeMessage('removeInvite')
+    async removeInvite(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
+        try {
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
+            await this.userService.removeInvite(dto);
+            client.emit('message',` you have removed invitaion to ${body.login} `);
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
     @SubscribeMessage('acceptFriend')
     async acceptFriend(@ConnectedSocket() client:Socket, @MessageBody() body:acceptFriend){
         try {

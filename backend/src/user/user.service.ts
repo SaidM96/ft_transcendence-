@@ -238,7 +238,24 @@ export class UserService {
         })};
         return false;
     }
-
+    // annuler intation
+    async removeInvite(dto:invitationDto){
+        const {senderLogin, receiverLogin} = dto;
+        const sender = await this.findUser({login:senderLogin});
+        const receiver = await this.findUser({login:receiverLogin});
+        const pend = await this.prisma.client.pendingFriendShip.findFirst({
+            where:{
+                senderLogin:sender.login,
+                receiverLogin:receiver.login,
+            }
+        });
+        if (pend)
+            await this.prisma.client.pendingFriendShip.delete({
+                where:{
+                    PendingId:pend.PendingId
+            }});
+        throw new BadRequestException(`${senderLogin} had not invite ${receiverLogin}`);
+    }
     async accepteFriend(dto:invitationDto, accepte:boolean){
         const {senderLogin, receiverLogin} = dto;
         const sender = await this.findUser({login:senderLogin});
