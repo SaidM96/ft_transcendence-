@@ -258,8 +258,10 @@ export class UserService {
                 where:{
                     PendingId:pend.PendingId
             }});
-        throw new BadRequestException(`${senderLogin} had not invite ${receiverLogin}`);
+        else
+            throw new BadRequestException(`${senderLogin} had not invite ${receiverLogin}`);
     }
+
     async accepteFriend(dto:invitationDto, accepte:boolean){
         const {senderLogin, receiverLogin} = dto;
         const sender = await this.findUser({login:senderLogin});
@@ -881,7 +883,6 @@ export class UserService {
         return {...matchsA, ...matchsB};
     }
 
-
     async  getLeaderboard() {
         let leaderboard = await this.prisma.client.user.findMany({
             select:{
@@ -902,7 +903,4 @@ export class UserService {
           });
         return leaderboard;
     }
-
-
-
 }

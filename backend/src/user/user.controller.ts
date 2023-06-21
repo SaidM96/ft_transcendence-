@@ -65,6 +65,7 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
             response.status(400).json(e);
         }
     }
+    
     // search for user or channel  !!!!!!!!!!!!!   localhost:5000/user/search   {search:string} 
     @UseGuards(AuthGuard('jwt'))
     @Post('search')
