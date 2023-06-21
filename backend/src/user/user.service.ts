@@ -38,11 +38,14 @@ export class UserService {
         return await this.prisma.client.user.findUnique({where:{UserId:id}});
     }
 
-    async findUserOrChannel(dto:findUserOrChannel){
+    async findUserOrChannel(dto:findUserOrChannel, userLogin:string){
         let result:any[] = [];
         let users = await this.prisma.client.user.findMany({
             where: {
-              OR: [
+                NOT: {
+                    login: userLogin,
+                  },
+                OR: [
                 {
                   login: {
                     contains: dto.search.toLowerCase(),
@@ -57,11 +60,8 @@ export class UserService {
                 },
               ],
             },
-          });
-        
-        if (users.length > 0){
-                result.push({userSearch:users});
-        }
+        });
+        result.push({userSearch:users});
         const channel = await this.prisma.client.channel.findMany({
             where:{
                 channelName:{
@@ -70,8 +70,7 @@ export class UserService {
                 }
             }
         });
-        if (channel.length > 0)
-            result.push({channelSearch:channel});
+        result.push({channelSearch:channel});
         return result;
     }
     async createUser(loginDto:LoginDto){
