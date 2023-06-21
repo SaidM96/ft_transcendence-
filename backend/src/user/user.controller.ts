@@ -209,7 +209,6 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
         }
     }
 
-
     @UseGuards(AuthGuard('jwt'))
     @Post('acheivement')
     async getAchievement(@Body() dto:findUserDto, @Res() response:Response){

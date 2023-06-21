@@ -40,27 +40,27 @@ export class UserService {
 
     async findUserOrChannel(dto:findUserOrChannel){
         let result:any[] = [];
-        let user = await this.prisma.client.user.findMany({
-            where:{
-                login:{
+        let users = await this.prisma.client.user.findMany({
+            where: {
+              OR: [
+                {
+                  login: {
                     contains: dto.search.toLowerCase(),
                     mode: 'insensitive',
-                }
-            }});
-        if (user)
-            result.push({userSearch:user});
-        else
-        {
-            let user = await this.prisma.client.user.findMany({
-                where:{
-                    username: {
-                        contains: dto.search.toLowerCase(),
-                        mode: 'insensitive',
-                    },
+                  },
                 },
-            });
-            if (user)
-                result.push({userSearch:user});
+                {
+                  username: {
+                    contains: dto.search.toLowerCase(),
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            },
+          });
+        
+        if (users.length > 0){
+                result.push({userSearchWithUsername:users});
         }
         const channel = await this.prisma.client.channel.findMany({
             where:{
@@ -70,10 +70,8 @@ export class UserService {
                 }
             }
         });
-        if (channel)
+        if (channel.length > 0)
             result.push({channelSearch:channel});
-        if (result.length == 0)
-            throw new BadRequestException(`no username or a channelName with : ${dto.search}`);
         return result;
     }
     async createUser(loginDto:LoginDto){
