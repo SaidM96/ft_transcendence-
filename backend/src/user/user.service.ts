@@ -60,7 +60,7 @@ export class UserService {
           });
         
         if (users.length > 0){
-                result.push({userSearchWithUsername:users});
+                result.push({userSearch:users});
         }
         const channel = await this.prisma.client.channel.findMany({
             where:{
