@@ -840,7 +840,7 @@ export class UserService {
             if (matchsA[i].winner)
                 win++;
             const {scoreA, scoreB,winner, finishedAt} = matchsA[i];
-            result.push({loginA:user.login, loginB:otherUser.login, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt, avatar:otherUser.avatar, username:otherUser.username});
+            result.push({loginA:user.login,avatarA:user.avatar, usernameA:user.username, loginB:otherUser.login, avatarB:otherUser.avatar, usernameB:otherUser.username, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt});
         }
         const matchsB =  await this.prisma.client.match.findMany({
             where:{
@@ -852,7 +852,7 @@ export class UserService {
             if (matchsB[i].winner)
                 win++;
             const {scoreA, scoreB,winner, finishedAt} = matchsB[i];
-            result.push({loginA:user.login, loginB:otherUser.login, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt, avatar:otherUser.avatar, username:otherUser.username});
+            result.push({loginA:user.login, avatarA:user.avatar, usernameA:user.username, loginB:otherUser.login, avatarB:otherUser.avatar, usernameB:otherUser.username, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt});
         }
         const lose = result.length - win;
         const pWin =  win / result.length * 100;
