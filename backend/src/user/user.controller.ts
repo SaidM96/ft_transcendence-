@@ -53,6 +53,7 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
             response.status(400).json(error);
         }
     }
+    
     // get user
     @UseGuards(AuthGuard('jwt'))
     @Post('find')

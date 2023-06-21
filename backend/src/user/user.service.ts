@@ -61,6 +61,10 @@ export class UserService {
               ],
             },
         });
+        for(let i = 0;i < users.length ; ++i){
+            if (await this.isRealFriend(users[i].login, userLogin))
+                users.splice(i, 1); // remove that user from list search cause he is a friemd of 
+        }
         result.push({userSearch:users});
         const channel = await this.prisma.client.channel.findMany({
             where:{
@@ -190,6 +194,16 @@ export class UserService {
         });
     }
 
+    async isRealFriend(loginA:string, loginB:string){
+        let friend = await this.IsfriendOf(loginA, loginB);
+        if (friend && friend.isFriends)
+            return true;
+        friend = await this.IsfriendOf(loginB, loginA)
+        if (friend && friend.isFriends)
+            return true;
+        return false;
+    }
+
     // invitations
     async inviteFriend(dto:invitationDto){
         const {senderLogin, receiverLogin} = dto;
@@ -298,6 +312,16 @@ export class UserService {
         const frienda = await this.IsfriendOf(loginA, loginB);
         if (frienda && frienda.isFriends)
             throw new BadRequestException(`${loginA} and ${loginB} is already friends!`);
+        if (frienda && !frienda.isFriends){
+            return await this.prisma.client.friend.update({
+                where:{
+                    FriendshipId:frienda.FriendshipId,
+                },
+                data:{
+                    isFriends:true,
+                }
+            });
+        }
         // if userA friendOf userB  
         const friend = await this.IsfriendOf(loginB, loginA);
         if (friend)
