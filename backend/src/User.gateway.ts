@@ -43,6 +43,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     }
     // handle connection user
     // Socket should contain a user's jwt to connect him succefully 
+
+    // add socket id of any duplicated user login to a room and , instead of emiting to a client i will emit to room named (login)
     async handleConnection(client: Socket) {
         try{
             const token = client.handshake.headers.authorization;
