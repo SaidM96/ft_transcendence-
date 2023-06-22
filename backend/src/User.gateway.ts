@@ -295,10 +295,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const channel = await this.chatService.findChannel({channelName:body.channelName});
             this.existChannels.set(channel.channelName,channel);
             client.join(channel.channelName);
-            client.emit('message',`you have been Joined to ${channel.channelName} channel`);
+            client.emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});
         }
         catch(error){
-            client.emit('errorMessage', error);
+            client.emit('errorJoin', error);
         }
     }
 
