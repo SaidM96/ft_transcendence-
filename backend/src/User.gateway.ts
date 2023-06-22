@@ -36,6 +36,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     connectedUsers:Map<string, User> = new Map();
     existChannels:Map<string, channel> = new Map();
     connectedSocket:Map<string, Socket> = new Map();
+    
     // fetch all channels in database and set them in map
     async setExistenChannels(){
         const channels = await this.chatService.getAllChannels();
@@ -537,7 +538,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             {
                 // client.emit('accept',` you have accepte ${body.login} as a friend`);
                 if (this.connectedUsers.has(key))
-                    this.server.to(key).emit("accept", {login:user.login, message:`${user.login}  have accepte you as friend`});
+                    this.server.to(key).emit("accept", {login:user.login, avatar:user.avatar, username:user.username, message:`${user.login}  have accepte you as friend`});
             }
             else{
                 // client.emit('decline',{login:user.login, message:` you have decline ${body.login} invitation`});
