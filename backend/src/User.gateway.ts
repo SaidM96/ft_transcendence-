@@ -4,7 +4,7 @@ import {ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, 
 import { Socket, Server} from 'socket.io'
 import { JwtStrategy } from 'src/auth/jwtStrategy/jwt.strategy';
 import { UserService } from 'src/user/user.service';
-import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newDeleteChannelDto, newDeleteMemberChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, newUpdateChannelDto, newUpdateMemberShipDto, sendMsgSocket, updateChannelDto, updateMemberShipDto, gameInvite, cancelGame } from './chat/Dto/chat.dto';
+import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto, leaveChannel, msgChannelDto, newChannelDto, newDeleteChannelDto, newDeleteMemberChannelDto, newLeaveChannel, newMemberChannelDto, newMsgChannelDto, newUpdateChannelDto, newUpdateMemberShipDto, sendMsgSocket, updateChannelDto, updateMemberShipDto, gameInvite, cancelGame, InviteMemberChannelDto } from './chat/Dto/chat.dto';
 import { ChatService } from './chat/chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './chat/socketException';
@@ -307,7 +307,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('message',`you have been delete ${body.channelName} channel`);
         }
         catch(error){
-            client.emit('errorMessage',error);
+            client.emit('errorMessage',error);  
         }
     }
 
@@ -333,6 +333,26 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         }
     }
 
+    // 
+    @SubscribeMessage('inviteMember')
+    async  inviteMemberChannel(@ConnectedSocket() client:Socket, @MessageBody() body:InviteMemberChannelDto){
+        try{
+            if (!this.existChannels.has(body.channelName))
+                throw new BadRequestException('no such Channel');
+            const channel = this.existChannels.get(body.channelName)
+            const user = this.connectedUsers.get(client.id);
+            if (!user)
+                throw new NotFoundException('no such user');
+            const memberShip = await this.chatService.addMember(body, user.login);
+            client.emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});
+            const socketId = this.findKeyByLogin(body.login);
+            if (socketId)
+                this.server.to(socketId).emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});;
+        }catch(error){
+            client.emit('errorMessage',error);
+        }
+    }
+    
     // delete member from a channel
     @SubscribeMessage('kickMember')
     async kickMemberFromChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newDeleteMemberChannelDto){
@@ -369,7 +389,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('message', `you have leaved ${dto.channelName}`)
         }
         catch(error){
-            client.emit('errorMessage', error)
+            client.emit('errorMessage', error);
         }
     }
 
