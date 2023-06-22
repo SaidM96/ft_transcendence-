@@ -232,3 +232,8 @@ export class gameInvite {
     @IsString()
     receiver:string;
 }
+
+export class cancelGame {
+    @IsString()
+    host:string
+}
