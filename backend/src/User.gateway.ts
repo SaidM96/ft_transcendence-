@@ -301,13 +301,13 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const user = this.connectedUsers.get(client.id)
             if (!user)
                 throw new NotFoundException('no such user');
-            const dto:deleteChannelDto = {channelName:body.channelName, LoginOwner:user.login }
+            const dto:deleteChannelDto = {channelName:body.channelName, LoginOwner:user.login };
             await this.chatService.deleteChannel(dto);
             this.existChannels.delete(body.channelName);
-            client.emit('message',`you have been delete ${body.channelName} channel`);
+            this.server.to(body.channelName).emit('channelRemoved',{channelName:body.channelName});
         }
         catch(error){
-            client.emit('errorMessage',error);  
+            client.emit('errorMessage',error);
         }
     }
 
@@ -344,10 +344,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (!user)
                 throw new NotFoundException('no such user');
             const memberShip = await this.chatService.addMember(body, user.login);
-            client.emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});
+            // client.emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});
             const socketId = this.findKeyByLogin(body.login);
+            
             if (socketId)
-                this.server.to(socketId).emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});;
+            {
+                const sock = this.connectedSocket.get(socketId);
+                sock.join(body.channelName);
+                this.server.to(socketId).emit('joinOther',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});;
+            }
         }catch(error){
             client.emit('errorMessage',error);
         }
