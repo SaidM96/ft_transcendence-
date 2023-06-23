@@ -670,6 +670,7 @@ export class ChatService {
 
     // members of a channel
     async getMembersOfChannel(chDto:channeDto){
+        let result:any[] = [];
         const {channelName} = chDto;
         const channel = await this.prisma.client.channel.findFirst({
             where:{
@@ -678,11 +679,36 @@ export class ChatService {
         });
         if (!channel)
             throw new NotFoundException(`no such channel with the name ${channelName}`);
-        return await this.prisma.client.membershipChannel.findMany({
+        const admins = await this.prisma.client.membershipChannel.findMany({
+            select:{
+                login:true,
+                isAdmin:true,
+                isOwner:true,
+                isMute:true,
+                isBlacklist:true,
+                channelName:true,
+            },
             where:{
                 channelName:channel.channelName,
+                isAdmin:true,
             },
         });
+        result.push({admins:admins});
+        const members = await this.prisma.client.membershipChannel.findMany({
+            select:{
+                login:true,
+                isAdmin:true,
+                isOwner:true,
+                isBlacklist:true,
+                isMute:true,
+                channelName:true,
+            },
+            where:{
+                channelName:channel.channelName,
+                isAdmin:false,
+            },
+        });
+        result.push({members:members});
     }
 
     // get conversation  channel 

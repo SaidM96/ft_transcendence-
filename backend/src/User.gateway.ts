@@ -346,7 +346,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const memberShip = await this.chatService.addMember(body, user.login);
             // client.emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});
             const socketId = this.findKeyByLogin(body.login);
-            
             if (socketId)
             {
                 const sock = this.connectedSocket.get(socketId);
@@ -372,7 +371,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 const socketId = this.findKeyByLogin(body.loginDeleted);
                 if (socketId)
                     this.server.in(socketId).socketsLeave(body.channelName);
-                
                 client.emit('message',`you have kicked ${body.loginDeleted} from ${body.channelName} channel`);
             }
             catch(error){
@@ -410,10 +408,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('no such user');
             const dto:updateMemberShipDto = {userLogin:user.login,channelName:body.channelName,loginMemberAffected:body.loginAffected, isMute:body.isMute, timeMute:body.timeMute, isBlacklist:body.isBlacklist, isAdmin:body.isAdmin}
             let memberShip = await this.chatService.updateMemberShip(dto);
+            const ik = memberShip.userAffectedMemberShip;
             const actValues: string[] = Object.values(memberShip.acts);
             const separator: string = " , ";
             const msgAct: string = actValues.join(separator);
-            this.server.in(channel.channelName).emit('message',`${user.login}  had  ${msgAct} ${memberShip.userAffectedMemberShip.login}`)
+            const socketId = this.findKeyByLogin(body.loginAffected);
+            if (socketId)
+            {
+                this.server.to(socketId).emit('Update',{message:`${user.login}  had  ${msgAct} ${ik.login}`,login:ik.login, channelName:ik.channelName,isAdmin:ik.isAdmin, isMute:ik.isMute, isBlacklist:ik.isBlacklist, isOwner:ik.isOwner});
+            }
         }
         catch(error){
             client.emit('errorMessage',error);

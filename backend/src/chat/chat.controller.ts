@@ -57,7 +57,7 @@ export class ChatController {
         return await this.chatService.getAllChannels();
     }
     
-    // get all memberShips of channels info that a user join to
+    // get channel of user;
     @UseGuards(AuthGuard('jwt'))
     @Post('memberships')
     async getUserChannels(@Body() userDto:findUserDto, @Res() response:Response){
