@@ -70,12 +70,25 @@ export class ChatController {
         }
     }
 
-    // get members  of a channel
+
     @UseGuards(AuthGuard('jwt'))
     @Post('channel/members')
     async getMembersOfChannel(@Body() chDto:channeDto, @Res() response:Response){
         try{
             const result = await this.chatService.getMembersOfChannel(chDto);
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400).json(error);
+        }
+    }
+
+    // get members  of a channel
+    @UseGuards(AuthGuard('jwt'))
+    @Post('channel/memberShips')
+    async getMembersOfChannelII(@Body() chDto:channeDto, @Res() response:Response){
+        try{
+            const result = await this.chatService.getMembersOfChannelII(chDto);
             response.status(200).json(result);
         }
         catch(error){
