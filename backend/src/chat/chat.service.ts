@@ -671,6 +671,8 @@ export class ChatService {
     // members of a channel
     async getMembersOfChannel(chDto:channeDto){
         let result:any[] = [];
+        let admin:any[] = [];
+        let regular:any[] = [];
         const {channelName} = chDto;
         const channel = await this.prisma.client.channel.findFirst({
             where:{
@@ -679,7 +681,7 @@ export class ChatService {
         });
         if (!channel)
             throw new NotFoundException(`no such channel with the name ${channelName}`);
-        const admins = await this.prisma.client.membershipChannel.findMany({
+        let admins = await this.prisma.client.membershipChannel.findMany({
             select:{
                 login:true,
                 isAdmin:true,
@@ -693,7 +695,12 @@ export class ChatService {
                 isAdmin:true,
             },
         });
-        result.push({admins:admins});
+        for(let i = 0; i < admins.length; ++i){
+            let us = await this.userService.findUser({login:admins[i].login});
+            const  {login, isAdmin, isMute,isOwner, isBlacklist } = admins[i];
+            admin.push({login:login, username:us.username, avatar:us.avatar,channelName:channelName, isOwner:isOwner, isAdmin:isAdmin, isMute:isMute, isBlacklist:isBlacklist })
+        }
+        result.push({admins:admin});
         const members = await this.prisma.client.membershipChannel.findMany({
             select:{
                 login:true,
@@ -707,8 +714,14 @@ export class ChatService {
                 channelName:channel.channelName,
                 isAdmin:false,
             },
-        });
-        result.push({members:members});
+        });   
+        for(let i = 0; i < members.length; ++i){
+            let us = await this.userService.findUser({login:members[i].login});
+            const  {login, isAdmin, isMute,isOwner, isBlacklist } = members[i];
+            regular.push({login:login, username:us.username, avatar:us.avatar,channelName:channelName, isOwner:isOwner, isAdmin:isAdmin, isMute:isMute, isBlacklist:isBlacklist })
+        }
+        result.push({members:regular});
+        return result;
     }
 
     // get conversation  channel 
