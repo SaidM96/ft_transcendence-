@@ -545,20 +545,23 @@ export class ChatService {
             if (isMute)
             {
                 array.push('Mute');
-                if (timeMute != undefined && timeMute >= 1)
-                {
-                    let timeToMute:Date = new Date();
-                    timeToMute.setMinutes(timeToMute.getMinutes() + timeMute);
-                    userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
-                        where:{
-                            MembershipId:userAffectedMemberShip.MembershipId,
-                        },
-                        data:{
-                            isMute:isMute,
-                            timeMute:timeToMute,
-                        },
-                    });
-                }
+                let time:number = 0;
+                if ((timeMute == undefined || timeMute < 1))
+                    time = 5;
+                else
+                    time = timeMute;
+                let timeToMute:Date = new Date();
+                timeToMute.setMinutes(timeToMute.getMinutes() + time);
+                userAffectedMemberShip = await this.prisma.client.membershipChannel.update({
+                    where:{
+                        MembershipId:userAffectedMemberShip.MembershipId,
+                    },
+                    data:{
+                        isMute:isMute,
+                        timeMute:timeToMute,
+                    },
+                });
+                
             }
             else{
                 array.push('unMute');
