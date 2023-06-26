@@ -27,7 +27,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
 
     // game
     private worlds = {};
-    private world: matterNode
+    private world: matterNode;
     afterInit() {
         this.worlds = {};
     }
@@ -47,7 +47,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
 
     // add socket id of any duplicated user login to a room and , instead of emiting to a client i will emit to room named (login)
     async handleConnection(client: Socket) {
-        try{
+        try{    
             const token = client.handshake.headers.authorization;
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             if (this.blackListedJwt.has(hashedToken))
@@ -140,15 +140,18 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 }
                 console.log("user login ", user.login, "joined room", roomId, " new world ?", !this.worlds[roomId])
                 console.log("new room");
-                if (!queueRoom)
+                if (!queueRoom){
                     this.world = new matterNode(this.server, roomId, data.obj, queue);// user.login   
                     this.world.onSettingScores(async (payload: any) => {
                         console.log("Received hello event")
                         const { resultMatch } = payload
-                        console.log(resultMatch);
-                        await this.userService.storeMatch(resultMatch)
+                        console.log(`helloooooooooo!!!!!!!!!!`);
+                        const kk = await this.userService.storeMatch(resultMatch) 
+                        if (kk)
+                            client.emit('achiev', {})
                         // Handle the hello event here
                     });
+                }
                     if (!queueRoom) {     
                         this.worlds[roomId] = this.world;
                         console.log("ball interval created")

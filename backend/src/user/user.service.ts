@@ -2,10 +2,11 @@ import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Acheivement } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
+import { Achievements } from './achievement.service';
 
 @Injectable()
 export class UserService {
-    constructor(private prisma:PrismaService){}
+    constructor(private prisma:PrismaService, private readonly achievements:Achievements){}
 
     async findAllUsers(){
         const resuslt = await this.prisma.client.user.findMany();
@@ -671,12 +672,19 @@ export class UserService {
 // match
     // Achievement
     async getAcheivments(dto:findUserDto){
+        const result:any[] = [];
+
         const user = await  this.findUser(dto);
-        return  await this.prisma.client.acheivement.findMany({
+        const achs = await this.prisma.client.acheivement.findMany({
             where:{
                 userId:user.UserId
             }
-        })
+        });
+        for (let i = 0;i < achs.length; ++i){
+            let ach = this.achievements.getAchievementById(achs[i].Id)
+            result.push(ach);
+        }
+        return result;
     }
 
     async storeAchievement(login:string, userId:string, idAchievement:number){
@@ -688,11 +696,6 @@ export class UserService {
         })
         if (!achiev)
         {
-            // send email to user
-            
-
-
-            //
             return await this.prisma.client.acheivement.create({
                data:{
                    Id:idAchievement,
@@ -705,7 +708,7 @@ export class UserService {
                },
            });
         }
-        return null
+        return null;
     }
 
     async findNewAchievement(login:string, userId:string){

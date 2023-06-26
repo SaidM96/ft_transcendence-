@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { User, channel } from '.prisma/client';
-import { Body, Engine, World, Bodies, Composite } from 'matter-js';
+import { Body, Engine, World, Bodies, Events, Composite } from 'matter-js';
 import WebSocket from 'ws';
 import { BadRequestException } from '@nestjs/common';
 import { EventEmitter } from 'events';
@@ -31,11 +31,10 @@ function saveMeasurements(div: { height: number, width: number }) {
         leftPaddle: { x: div.width / 2, y: 50, width: 100, height: 20 },
         rightPaddle: { x: div.width / 2, y: div.height - 50, width: 100, height: 20 },
     }
-    return obj
+    return obj;
 }
 export function userInGame(login: string, worlds: {}) {
     for (const user in worlds) {
-
         if (worlds[user] && worlds[user].players.player2.user && worlds[user].players.player2.user.login === login)
             return user
     }
@@ -45,7 +44,6 @@ export function userInGame(login: string, worlds: {}) {
 
 export function checkQueue(worlds: {}) {
     for (const user in worlds) {
-        console.log("avalablepadldes" , worlds[user].availablePaddles.length)
         if (worlds[user] && worlds[user].openGame && worlds[user].availablePaddles.length)
             return user
     }
@@ -57,6 +55,8 @@ export class matterNode {
     private engine: Engine;
     private world: World;
     private ball: any;
+    private wall: any;
+    private wallLeft: any;
     private leftPaddle: any;
     private rightPaddle: any;
     private paddles: {}  // contains the actual matter-js objects for the paddles
@@ -78,7 +78,7 @@ export class matterNode {
             player1: { user: null, client: null },
             player2: { user: null, client: null },
         };
-    constructor(server: any, roomId: string, obj: measurements, openGame : boolean) {
+    constructor(server: any, roomId: string, obj: measurements, openGame: boolean) {
         this.roomId = roomId
         this.server = server;
         this.openGame = openGame
@@ -96,7 +96,7 @@ export class matterNode {
             scale: 0
         };
         this.ball = Bodies.circle(-155, this.obj.ball.y, this.obj.ball.radius, { label: "ball", restitution: 1.1, friction: 0, frictionAir: 0, density: 10 });
-        this.leftPaddle = Bodies.rectangle(this.obj.leftPaddle.x, this.obj.leftPaddle.y, this.obj.leftPaddle.width, this.obj.leftPaddle.height, { label: "leftPaddle", isStatic: true });
+        this.leftPaddle = Bodies.rectangle(this.obj.leftPaddle.x, this.obj.leftPaddle.y, 1000, this.obj.leftPaddle.height, { label: "leftPaddle", isStatic: true });
         this.rightPaddle = Bodies.rectangle(this.obj.rightPaddle.x, this.obj.rightPaddle.y, this.obj.rightPaddle.width, this.obj.rightPaddle.height, { label: "rightPaddle", isStatic: true })
         this.paddles = { left: this.leftPaddle, right: this.rightPaddle }
         var roof = Bodies.rectangle(obj.wallTop.x, obj.wallTop.y, obj.wallTop.width, obj.wallTop.height, {
@@ -105,7 +105,7 @@ export class matterNode {
                 fillStyle: 'blue'
             }
         });
-        var wallLeft = Bodies.rectangle(obj.wallLeft.x, obj.wallLeft.y, obj.wallLeft.width, obj.wallLeft.height, {
+        this.wallLeft = Bodies.rectangle(obj.wallLeft.x, obj.wallLeft.y, obj.wallLeft.width, obj.wallLeft.height, {
             label: "leftwall",
             isStatic: true,
             render: {
@@ -120,16 +120,42 @@ export class matterNode {
                 fillStyle: 'red'
             }
         });
-        var wall = Bodies.rectangle(obj.wallRight.x, obj.wallRight.y, obj.wallRight.width, obj.wallRight.height, {
+        this.wall = Bodies.rectangle(obj.wallRight.x, obj.wallRight.y, obj.wallRight.width, obj.wallRight.height, {
             isStatic: true,
             render: {
                 fillStyle: 'green'
             }
         });
 
-        World.add(this.world, [this.ball, wall, wallLeft, this.leftPaddle, this.rightPaddle]);
+        World.add(this.world, [this.ball, this.wall, this.wallLeft, this.leftPaddle, this.rightPaddle]);
         // Start the engine and update the ball's position
         Engine.run(this.engine);
+        Events.on(this.engine, 'collisionStart', (event) => {
+            const pairs = event.pairs;
+            console.log("event collision")
+            for (let i = 0; i < pairs.length; i++) {
+                const pair = pairs[i];
+                if (pair.bodyA === this.ball && pair.bodyB === this.wallLeft) {
+                    const reflectionAngle = Math.PI / 4;
+                    const magnitude = Math.sqrt(this.ball.velocity.x ** 2 + this.ball.velocity.y ** 2);
+                    if (this.ball.velocity.y < 0)
+                        Body.setVelocity(this.ball, { x: Math.cos(reflectionAngle) * magnitude, y: -Math.cos(reflectionAngle) * magnitude });
+                    else
+                        Body.setVelocity(this.ball, { x: Math.cos(reflectionAngle) * magnitude, y: Math.cos(reflectionAngle) * magnitude });
+                    console.log("collision with wall left")
+                }
+                if (pair.bodyA === this.ball && pair.bodyB === this.wall) {
+
+                    console.log("collision with wall right")
+                    const reflectionAngle = Math.PI / 4;
+                    const magnitude = Math.sqrt(this.ball.velocity.x ** 2 + this.ball.velocity.y ** 2);
+                    if (this.ball.velocity.y < 0)
+                        Body.setVelocity(this.ball, { x: Math.cos(reflectionAngle) * magnitude, y: -Math.cos(reflectionAngle) * magnitude });
+                    else
+                        Body.setVelocity(this.ball, { x: Math.cos(reflectionAngle) * magnitude, y: Math.cos(reflectionAngle) * magnitude });
+                }
+            }
+        })
 
     }
     onSettingScores(callback: (payload: any) => void): void {
@@ -152,7 +178,7 @@ export class matterNode {
                     if (this.ball.position.x == -155) {
                         Body.setPosition(this.ball, { x: this.obj.divWidth / 2, y: this.obj.divHeight / 2 });
 
-                        this.server.to(this.roomId).emit('score', { score: this.score });
+                        this.server.to(this.roomId).emit('score', { score: this.score, players: this.players });
                         setTimeout(() => {    // after seconds launch the ball again
                             Body.setVelocity(this.ball, { x: 5, y: 6 });
                         }, 5000);
@@ -174,7 +200,7 @@ export class matterNode {
                         Body.setVelocity(this.ball, { x: 0, y: 0 });
                         Body.setPosition(this.ball, { x: this.obj.divWidth / 2, y: this.obj.divHeight / 2 });
                         this.score.right++
-                        this.server.to(this.roomId).emit('score', { score: this.score });
+                        this.server.to(this.roomId).emit('score', { score: this.score, players: this.players });
                         if (this.score.right >= 2) {
                             this.ready = false
                             this.winner = this.players.player2.user.login
@@ -194,7 +220,7 @@ export class matterNode {
                         Body.setVelocity(this.ball, { x: 0, y: 0 });
                         Body.setPosition(this.ball, { x: this.obj.divWidth / 2, y: this.obj.divHeight / 2 });
                         this.score.left++
-                        this.server.to(this.roomId).emit('score', { score: this.score });
+                        this.server.to(this.roomId).emit('score', { score: this.score, players: this.players });
                         if (this.score.left >= 2) {
                             this.ready = false
                             this.winner = this.players.player1.user.login
@@ -214,17 +240,17 @@ export class matterNode {
                     this.server.to(this.roomId).emit('ballPosition', { x: this.ball.position.x, y: this.ball.position.y });
 
                 }
-                else{
-                    this.server.to(this.roomId).emit('ready', { msg: true});
+                else {
+                    this.server.to(this.roomId).emit('ready', { msg: true });
 
                     this.server.to(this.roomId).emit('gameOver', { gameOver: this.winner });
                 }
             }
-            else{
+            else {
                 Body.setVelocity(this.ball, { x: 0, y: 0 });
                 Body.setPosition(this.ball, { x: -155, y: this.obj.divHeight / 2 });
                 this.score = { left: 0, right: 0 }
-                this.server.to(this.roomId).emit('ready', { msg: false});
+                this.server.to(this.roomId).emit('ready', { msg: false });
                 this.server.to(this.roomId).emit('gameStatus', { msg: "Waiting for a player to join..." });
 
             }
