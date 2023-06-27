@@ -872,6 +872,24 @@ export class UserService {
 
     // get user's matchs history 
     async getHistoryUserMatchs(findUser:findUserDto){
+        // const user = await  this.findUser(findUser);
+        // let result:any[] = [];
+        // let win:number = 0;
+        // const matchsA =  await this.prisma.client.match.findMany({
+        //     where:{
+        //         userAId:user.UserId,
+        //     },
+        //     select: {
+        //       userB: {
+        //         select: {
+        //           login: true,
+        //           avatar: true,
+        //           username: true,
+        //         },
+        //       },
+
+        //     },
+        // });
         const user = await  this.findUser(findUser);
         let result:any[] = [];
         let win:number = 0;
@@ -879,25 +897,14 @@ export class UserService {
             where:{
                 userAId:user.UserId,
             },
-            select: {
-              userB: {
-                select: {
-                  login: true,
-                  avatar: true,
-                  username: true,
-                },
-              },
-
-            },
         });
-
-        // for (let i = 0;i < matchsA.length; ++i){
-        //     let otherUser = await this.findUserById(matchsA[i].userBId);
-        //     if (matchsA[i].winner)
-        //         win++;
-        //     const {scoreA, scoreB,winner, finishedAt} = matchsA[i];
-        //     result.push({loginA:user.login,avatarA:user.avatar, usernameA:user.username, loginB:otherUser.login, avatarB:otherUser.avatar, usernameB:otherUser.username, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt});
-        // }
+        for (let i = 0;i < matchsA.length; ++i){
+            let otherUser = await this.findUserById(matchsA[i].userBId);
+            if (matchsA[i].winner)
+                win++;
+            const {scoreA, scoreB,winner, finishedAt} = matchsA[i];
+            result.push({loginA:user.login,avatarA:user.avatar, usernameA:user.username, loginB:otherUser.login, avatarB:otherUser.avatar, usernameB:otherUser.username, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt});
+        }
         const matchsB =  await this.prisma.client.match.findMany({
             where:{
                 userBId:user.UserId,
