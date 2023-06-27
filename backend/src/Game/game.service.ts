@@ -31,7 +31,7 @@ function saveMeasurements(div: { height: number, width: number }) {
         leftPaddle: { x: div.width / 2, y: 50, width: 100, height: 20 },
         rightPaddle: { x: div.width / 2, y: div.height - 50, width: 100, height: 20 },
     }
-    return obj;
+    return obj
 }
 export function userInGame(login: string, worlds: {}) {
     for (const user in worlds) {
@@ -317,7 +317,7 @@ export class matterNode {
     clearGame() {
         clearInterval(this.intervalId)
         console.log("clearing game instance", this.intervalId)
-
+        
         World.clear(this.world);
         Engine.clear(this.engine);
         console.log(this.world)

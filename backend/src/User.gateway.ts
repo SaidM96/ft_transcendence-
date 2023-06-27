@@ -33,18 +33,64 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     }
     //
     blackListedJwt:Map<string, string> = new Map();
-    connectedUsers:Map<string, User> = new Map();
     existChannels:Map<string, channel> = new Map();
     connectedSocket:Map<string, Socket> = new Map();
+    connectedUsers:Map<string, User> = new Map();
     
+    userSockets:Map<string, string[]> = new Map();
     // fetch all channels in database and set them in map
     async setExistenChannels(){
         const channels = await this.chatService.getAllChannels();
         channels.forEach((channel) => {this.existChannels.set(channel.channelName,channel)});
     }
+
+    getLoginBySocketId(id:string){
+        let ret = null;
+        this.userSockets.forEach((values,key) => {
+            if (values.includes(id))
+                ret = key; 
+        });
+        return ret;
+    }
+
+    deleteSocketFromMapUsers(id:string){
+        const login = this.getLoginBySocketId(id);
+        if (!login)
+            return ;
+        const index = this.userSockets.get(login).indexOf(id);
+        this.userSockets.get(login).splice(index, 1);
+        if(this.userSockets.get(login).length == 0){
+            this.connectedUsers.delete(login);
+        }
+    }
+
+    // emit to all client with same login
+    sendMsgToUser(login:string, msg:any, event:string){
+        const clients = this.userSockets.get(login);
+        clients.forEach((value) => {
+            this.server.to(value).emit(`${event}`, msg);
+        });
+    }
+
+    // join room to all socket of a login;
+    joinSocketsToRoom(login:string, roomName:string){
+        const clients = this.userSockets.get(login);
+        clients.forEach((value) => {
+            const socket = this.connectedSocket.get(value);
+            socket.join(roomName);
+        });
+    }
+    
+    leaveRoom(login:string, roomName:string){
+        const clients = this.userSockets.get(login);
+        clients.forEach((value) => {
+            const socket = this.connectedSocket.get(value);
+            socket.leave(roomName);
+        });
+    }
+
     // handle connection user
     // Socket should contain a user's jwt to connect him succefully 
-
     // add socket id of any duplicated user login to a room and , instead of emiting to a client i will emit to room named (login)
     async handleConnection(client: Socket) {
         try{    
@@ -55,13 +101,13 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const decodedToken = await this.jwtService.verify(token,{secret:`${process.env.jwt_secret}`});
             const login = decodedToken.login;
             const user = await this.userService.findUser({login:login});
-            const key =  this.findKeyByLogin(user.login);
-            if (this.connectedSocket.has(key))
-            {
-                this.handleDisconnect(this.connectedSocket.get(key));
-            }
+            if (this.userSockets.has(login))
+                this.userSockets.get(login).push(client.id);
+            else
+                this.userSockets.set(login, [client.id]);
             this.connectedSocket.set(client.id,client);
-            this.connectedUsers.set(client.id,user);
+            if (!this.connectedUsers.has(login))
+                this.connectedUsers.set(login,user);
             const roomsToJoin = await this.chatService.getUserNameChannels({login:user.login});
             roomsToJoin.forEach((channelName) => {
                 client.join(channelName);
@@ -70,11 +116,13 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const dto:UpdateStatus = {login:user.login, isOnline:true, inGame:undefined};
             await this.userService.modifyStatusUser(dto);
             console.log(`${user.login} had connected   ${client.id}`);
-            client.emit('message',`welcome ${this.connectedUsers.get(client.id).username} you have connected succefully`);
+            // const msg:string = `welcome ${this.connectedUsers.get(login).username} you have connected succefully`;
+            // this.sendMsgToUser(login, msg, 'message');
+            client.emit('message',`welcome ${this.connectedUsers.get(login).username} you have connected succefully`);
         }
         catch(error){
             this.connectedSocket.delete(client.id);
-            this.connectedUsers.delete(client.id);
+            this.deleteSocketFromMapUsers(client.id);
             client.emit('errorMessage', error);
             client.disconnect();
         }
@@ -83,7 +131,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     // handle disconnection user
     async handleDisconnect(client: Socket) {
         try {
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException(`cant find sender User`);
                 const status = await this.userService.getStatusUser({ login: user.login });
@@ -112,8 +161,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             await this.userService.modifyStatusUser(dto);
             client.emit("message", 'you have disonnected');
             console.log(`${user.login} had disconected  ${client.id}`);
-            this.connectedUsers.delete(client.id);
             this.connectedSocket.delete(client.id);
+            this.deleteSocketFromMapUsers(client.id);
         }
         catch (error) {
             client.emit(error);
@@ -123,7 +172,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('joinRoom')
     async handleJoinRoom(@MessageBody() data: { roomId: string, obj: measurements, queue: boolean }, @ConnectedSocket() client: Socket) {
         try {
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             let { roomId, queue } = data;
             if (!user || !roomId || roomId == undefined)
                 throw new BadRequestException('no such user');
@@ -185,7 +235,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     async gameInvitation(@ConnectedSocket() client: Socket, @MessageBody() body: gameInvite) {
         try {
             const { receiver } = body;
-            const userSender = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const userSender = this.connectedUsers.get(login);
             if (!userSender)
                 throw new NotFoundException(`cant find sender User`);
             const userReceiver = await this.userService.findUser({ login: receiver });
@@ -195,11 +246,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const IsEnemy = await this.userService.isBlockedMe({ loginA: userSender.login, loginB: receiver });
             if (IsEnemy)
                 throw new BadRequestException(`cant send any msg to ${receiver}`);
-
-            const receiverSocketId = this.findKeyByLogin(userReceiver.login);
-            if (receiverSocketId) {
+            if (this.connectedUsers.has(userReceiver.login)) {
+                this.sendMsgToUser(userReceiver.login,{ sender: userSender.login, receiver: userReceiver.login }, 'gameInvitation')
                 console.log("invite to game was sent to  ", userReceiver.login)
-                this.server.to(receiverSocketId).emit('gameInvitation', { sender: userSender.login, receiver: userReceiver.login });
             }
             // this.server.to(client.id).emit('PrivateMessage', {content:content,sendAt:msg.sendAt,fromUserA:msg.fromUserA});
         }
@@ -214,21 +263,21 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
      async cancelGame(@ConnectedSocket() client: Socket, @MessageBody() body: cancelGame) {
          try {
              const { host } = body;
-             const userSender = this.connectedUsers.get(client.id);
+             const login = this.getLoginBySocketId(client.id);
+             const userSender = this.connectedUsers.get(login);
              if (!userSender)
                  throw new NotFoundException(`cant find sender User`);
              const userReceiver = await this.userService.findUser({ login: host });
              if (userReceiver.login == userSender.login)
                  throw new BadRequestException(`${host} cant send msg to ${host}`);
-                 const receiverSocketId = this.findKeyByLogin(host);
-                 if (receiverSocketId) {
+                 if (this.connectedUsers.has(userReceiver.login)) {
                  const status = await this.userService.getStatusUser({ login: userReceiver.login });
                  if (status && status.inGame) {
                      // should delete instance of game
                      if (this.worlds[userReceiver.login]) {
                          this.server.to(userReceiver.login).emit('gameStatus', { msg: "invitation was canceled, fuck off" });
                          this.server.to(userReceiver.login).emit('ready', { msg: false });
-                         this.worlds[userReceiver.login].clearGame()
+                         this.worlds[userReceiver.login].clearGame();
                          delete this.worlds[userReceiver.login]
                          this.worlds[userReceiver.login] = null
                          const dto: UpdateStatus = { login: userReceiver.login, isOnline: undefined, inGame: false };
@@ -245,16 +294,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
          }
      }
 
-// channel
-    findKeyByLogin(login: string): string | undefined {
-        for (const [key, user] of this.connectedUsers) {
-          if (user.login === login) {
-            return key;
-          }
-        }
-        return undefined;
-      }
-
     // create new channel
     @SubscribeMessage('newChannel')
     async createNewChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newChannelDto){
@@ -262,14 +301,17 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const {channelName,isPrivate , ispassword, password} = body;
             if (this.existChannels.has(body.channelName))
                 throw new BadRequestException('Channel already exists');
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
-                throw new NotFoundException('no such user');
+                throw new NotFoundException('no such user 1');
             const dto:ChannelDto = {channelName:channelName,isPrivate:isPrivate, LoginOwner:user.login,ispassword:ispassword,password:password};
             const channel = await this.chatService.createNewChannel(dto);
             this.existChannels.set(channel.channelName,channel);
-            client.join(channel.channelName);
-            client.emit('message',`your Channel: ${channel.channelName} has been created`);
+            this.joinSocketsToRoom(login, channel.channelName);
+            // client.emit('message',`your Channel: ${channel.channelName} has been created`);
+            const msg:string = `your Channel: ${channel.channelName} has been created`
+            this.sendMsgToUser(login, msg,"message");
         }
         catch(error){
             client.emit("errorMessage", error);
@@ -282,13 +324,16 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         try{
             if (!this.existChannels.has(body.channelName))
                 throw new BadRequestException('no such Channel');
-            const user = this.connectedUsers.get(client.id)
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException('no such user');
             const dto:updateChannelDto = {userLogin:user.login, channelName:body.channelName, isPrivate:body.isPrivate, ispassword:body.ispassword, newPassword:body.newPassword, avatar:body.avatar};
             const channel = await this.chatService.updateChannel(dto);
             this.existChannels.set(channel.channelName,channel);
-            client.emit(`message`, `you have updated your channel ${channel.channelName}`);
+            // client.emit(`message`, `you have updated your channel ${channel.channelName}`);
+            const msg:string = `you have updated your channel ${channel.channelName}`
+            this.sendMsgToUser(login, msg,"message");
         }
         catch(error){
             client.emit('errorMessage',error);
@@ -301,7 +346,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         try{
             if (!this.existChannels.has(body.channelName))
                 throw new BadRequestException('no such Channel');
-            const user = this.connectedUsers.get(client.id)
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException('no such user');
             const dto:deleteChannelDto = {channelName:body.channelName, LoginOwner:user.login };
@@ -320,7 +366,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         try{
             if (!this.existChannels.has(body.channelName))
                 throw new BadRequestException('no such Channel');
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException('no such user');
             // add client as member to  database
@@ -328,8 +375,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const memberShip = await this.chatService.createMemberChannel(dto);
             const channel = await this.chatService.findChannel({channelName:body.channelName});
             this.existChannels.set(channel.channelName,channel);
-            client.join(channel.channelName);
-            client.emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});
+            this.joinSocketsToRoom(login, channel.channelName);
+            // client.join(channel.channelName);
+            const msg = {message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar}
+            this.sendMsgToUser(login, msg, 'join');
         }
         catch(error){
             client.emit('errorJoin', error);
@@ -343,42 +392,41 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (!this.existChannels.has(body.channelName))
                 throw new BadRequestException('no such Channel');
             const channel = this.existChannels.get(body.channelName)
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException('no such user');
             const memberShip = await this.chatService.addMember(body, user.login);
-            // client.emit('join',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});
-            const socketId = this.findKeyByLogin(body.login);
-            if (socketId)
+            //check if other user is connected
+            if (this.connectedUsers.has(body.login))
             {
-                const sock = this.connectedSocket.get(socketId);
-                sock.join(body.channelName);
-                this.server.to(socketId).emit('joinOther',{message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar});;
+                this.joinSocketsToRoom(body.login, body.channelName);
+                const msg:any = {message:`you have been Joined to ${channel.channelName} channel`, channelName:channel.channelName, avatar:channel.avatar};
+                this.sendMsgToUser(body.login, msg, "joinOther");
             }
         }catch(error){
             client.emit('errorMessage',error);
         }
     }
-    
+
     // delete member from a channel
     @SubscribeMessage('kickMember')
     async kickMemberFromChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newDeleteMemberChannelDto){
         try{
                 if (!this.existChannels.has(body.channelName))
                     throw new BadRequestException('no such Channel');
-                const user = this.connectedUsers.get(client.id)
+                const login = this.getLoginBySocketId(client.id);
+                const user = this.connectedUsers.get(login);
                 if (!user)
                     throw new NotFoundException('no such user');
                 const dto:DeleteMemberChannelDto = {channelName:body.channelName, login:user.login, loginDeleted:body.loginDeleted};
                 await this.chatService.deleteMemberShip(dto);
-                const socketId = this.findKeyByLogin(body.loginDeleted);
-                if (socketId)
+                if (this.connectedUsers.has(body.loginDeleted))
                 {
-                    this.server.in(socketId).socketsLeave(body.channelName);
-                    this.server.to(socketId).emit('kick',{message:`you have been kicked from ${body.channelName}`, channelName:body.channelName});
+                    this.leaveRoom(body.loginDeleted, body.channelName);
+                    const msg:any = {message:`you have been kicked from ${body.channelName}`, channelName:body.channelName}
+                    this.sendMsgToUser(body.loginDeleted, msg, "kick");
                 }
-                
-                // client.emit('message',`you have kicked ${body.loginDeleted} from ${body.channelName} channel`);
             }
             catch(error){
                 client.emit('errorMessage', error);
@@ -388,15 +436,17 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('leaveChannel')
     async leaveChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newLeaveChannel){
         try {
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:leaveChannel = {channelName:body.channelName,login:user.login};
             this.chatService.leaveChannel(dto);
             const channel = await this.chatService.findChannel({channelName:body.channelName});
             this.existChannels.set(channel.channelName,channel);
-            client.leave(body.channelName);
-            client.emit('message', `you have leaved ${dto.channelName}`)
+            this.leaveRoom(login, body.channelName);
+            const msg:any = {message:`you have leaved ${dto.channelName}`};
+            this.sendMsgToUser(login, msg, "message");
         }
         catch(error){
             client.emit('errorMessage', error);
@@ -410,7 +460,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const channel = this.existChannels.get(body.channelName)
             if (!channel)
                 throw new BadRequestException('no such channel');
-            const user = this.connectedUsers.get(client.id)
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:updateMemberShipDto = {userLogin:user.login,channelName:body.channelName,loginMemberAffected:body.loginAffected, isMute:body.isMute, timeMute:body.timeMute, isBlacklist:body.isBlacklist, isAdmin:body.isAdmin}
@@ -419,10 +470,11 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const actValues: string[] = Object.values(memberShip.acts);
             const separator: string = " , ";
             const msgAct: string = actValues.join(separator);
-            const socketId = this.findKeyByLogin(body.loginAffected);
-            if (socketId)
+            if (this.connectedUsers.has(body.loginAffected))
             {
-                this.server.to(socketId).emit('Update',{message:`${user.login}  had  ${msgAct} ${ik.login}`,login:ik.login, channelName:ik.channelName,isAdmin:ik.isAdmin, isMute:ik.isMute, isBlacklist:ik.isBlacklist, isOwner:ik.isOwner});
+                this.joinSocketsToRoom(body.loginAffected, body.channelName);
+                const msg:any = {message:`${user.login}  had  ${msgAct} ${ik.login}`,login:ik.login, channelName:ik.channelName,isAdmin:ik.isAdmin, isMute:ik.isMute, isBlacklist:ik.isBlacklist, isOwner:ik.isOwner};
+                this.sendMsgToUser(body.loginAffected, msg, "Update");
             }
         }
         catch(error){
@@ -438,7 +490,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const channel = this.existChannels.get(channelName)
             if (!channel)
                 throw new BadRequestException('no such channel');
-            const user = this.connectedUsers.get(client.id)
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException('no such user');
             const dto:msgChannelDto = {login:user.login, content:content, channelName:channelName}
@@ -460,7 +513,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('updateUser')
     async updateUserEvent(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateUserDto){
         try{
-            const user = this.connectedUsers.get(client.id)
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:UpdateUserDto = {login:user.login, username:body.username, bioGra:body.bioGra, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
@@ -473,8 +527,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const updatedUser = await this.userService.updateUser(dto);
             if (updatedUser)
             {
-                this.connectedUsers.set(client.id,updatedUser);
-                client.emit('message', updatedUser);
+                this.connectedUsers.set(login,updatedUser);
+                this.sendMsgToUser(login, updatedUser, 'message');
             }
             else
                 client.emit('message', 'you had changed anything');
@@ -489,7 +543,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     async handlePrivatemessage(@ConnectedSocket() client:Socket, @MessageBody() body:sendMsgSocket){
         try {
             const {receiver, content} = body;
-            const userSender = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const userSender = this.connectedUsers.get(login);
             if (!userSender)
                 throw new NotFoundException(`cant find sender User`);
             const userReceiver = await this.userService.findUser({login:receiver});
@@ -502,15 +557,13 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const msg = await this.chatService.addNewMessage({sender:userSender.login,receiver:userReceiver.login, content:content});
             if (!msg)
                 throw new BadRequestException(`cant send any msg to ${receiver}`);
-            const receiverSocketId = this.findKeyByLogin(userReceiver.login);
-            if (receiverSocketId)
+            if (this.connectedUsers.has(userReceiver.login))
             {
-                this.server.to(receiverSocketId).emit('PrivateMessage', {sender:userSender.login ,receiver:userReceiver.login  ,content:content,sendAt:msg.sendAt});
+                const mm:any = {sender:userSender.login ,receiver:userReceiver.login  ,content:content,sendAt:msg.sendAt};
+                this.sendMsgToUser(userReceiver.login, mm, "PrivateMessage");
             }
-            // this.server.to(client.id).emit('PrivateMessage', {content:content,sendAt:msg.sendAt,fromUserA:msg.fromUserA});
         }
         catch(error){
-            console.log(error);
             client.emit("errorMessage", error);
         }
     }
@@ -519,19 +572,20 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('block')
     async blo9User(@ConnectedSocket() client:Socket, @MessageBody() body:newBlockDto){
         try{
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:BlockDto = {login:user.login, blockedLogin:body.blockedLogin}
             if (body.stillEnemy)
             {
                 await this.userService.blockUser(dto);
-                client.emit('message',` you have blocked ${body.blockedLogin}`);
+                this.sendMsgToUser(login, ` you have blocked ${body.blockedLogin}`, "message");
             }
             else
             {
                 await this.userService.removeBlock(user.login,body.blockedLogin);
-                client.emit('message',` you have deblocked ${body.blockedLogin}`);
+                this.sendMsgToUser(login, `you have deblocked ${body.blockedLogin}`, "message");
             }
         }
         catch(error){
@@ -543,25 +597,31 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('inviteFriend')
     async inviteFriend(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
         try {
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const otherUser = await this.userService.findUser({login:body.login});
             const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
             const bool = await this.userService.inviteFriend(dto);
-            let key = this.findKeyByLogin(body.login);
             if (bool)
             {
-                if (key && this.connectedUsers.has(key))
+                if (this.connectedUsers.has(otherUser.login))
                 {
-                    this.server.to(key).emit("twoInvite", {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar})    
+                    const msg = {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar}
+                    this.sendMsgToUser(otherUser.login,msg, "twoInvite" );
+                    // this.server.to(key).emit("twoInvite", {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar})    
                 }
                 // client.emit('twoInvite',{message:` you and ${body.login} are  friends now`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
             else
             {
-                if (key && this.connectedUsers.has(key))
-                     this.server.to(key).emit("invite", {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar})
+                if (this.connectedUsers.has(otherUser.login))
+                {
+                    const msg = {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar}
+                    this.sendMsgToUser(otherUser.login,msg, "invite" );
+                }
+                // this.server.to(key).emit("invite", {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar})
                 // client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
         }
@@ -573,15 +633,18 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('removeInvite')
     async removeInvite(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
         try {
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:invitationDto = {senderLogin:user.login,receiverLogin:body.login};
             await this.userService.removeInvite(dto);
             // client.emit('cancelInvitation', {login:user.login, message:` you have removed invitaion to ${body.login}`});
-            const key = this.findKeyByLogin(body.login)
-            if (this.connectedUsers.has(key))
-                this.server.to(key).emit("cancelInvitation", {login:user.login, message:`${user.login}  have removed invitation that he sends  to you`});
+            if (this.connectedUsers.has(body.login))
+            {
+                const msg:any =  {login:user.login, message:`${user.login}  have removed invitation that he sends  to you`}
+                this.sendMsgToUser(body.login, msg, "   ");
+            }
         }
         catch(error){
             client.emit('errorMessage', error);
@@ -591,22 +654,22 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('acceptFriend')
     async acceptFriend(@ConnectedSocket() client:Socket, @MessageBody() body:acceptFriend){
         try {
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:invitationDto = {senderLogin:body.login,receiverLogin:user.login};
             await this.userService.accepteFriend(dto, body.accepte);
-            const key = this.findKeyByLogin(body.login)
             if (body.accepte)
             {
                 // client.emit('accept',` you have accepte ${body.login} as a friend`);
-                if (this.connectedUsers.has(key))
-                    this.server.to(key).emit("accept", {login:user.login, avatar:user.avatar, username:user.username, message:`${user.login}  have accepte you as friend`});
+                if (this.connectedUsers.has(body.login))
+                    this.sendMsgToUser(body.login,{login:user.login, avatar:user.avatar, username:user.username, message:`${user.login}  have accepte you as friend`} ,"accept");
             }
             else{
                 // client.emit('decline',{login:user.login, message:` you have decline ${body.login} invitation`});
-                if (this.connectedUsers.has(key))
-                    this.server.to(key).emit("decline", {login:user.login, message:`${user.login}  have decline your invitation`});
+                if (this.connectedUsers.has(body.login))
+                    this.sendMsgToUser(body.login,{login:user.login, message:`${user.login}  have decline your invitation`},"decline");
             }
         }
         catch(error){
@@ -617,15 +680,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('removeFriend')
     async removeFriend(@ConnectedSocket() client:Socket, @MessageBody() body:findUserDto){
         try {
-            const user = this.connectedUsers.get(client.id);
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:FriendDto = {loginA:body.login,loginB:user.login};
             await this.userService.removeFriend(dto);
             // client.emit('message',` you removed ${body.login} from list a friends`);
-            const key = this.findKeyByLogin(body.login);
-            if (this.connectedUsers.has(key))
-                this.server.to(key).emit("delete", {login:user.login, message:`${user.login}  have removed you from list friend`});
+            if (this.connectedUsers.has(body.login))
+                this.sendMsgToUser(body.login,{login:user.login, message:`${user.login}  have removed you from list friend`},"delete");
         }
         catch(error){
             client.emit('errorMessage', error);
@@ -637,7 +700,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     @SubscribeMessage('logout')
     async lougOut(@ConnectedSocket() client:Socket){
         try {
-            const user = this.connectedUsers.get(client.id);
+              const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
             // get token from header socket , hash it and set it in map  

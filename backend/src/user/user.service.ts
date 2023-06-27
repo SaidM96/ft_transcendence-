@@ -363,57 +363,77 @@ export class UserService {
     async getUserFriends(findUser:findUserDto){
         const {login} = findUser;
         const user = await  this.findUser(findUser);
-        let result:any[] = [];
         let friends:any[] = [];
         let pendingFriends:any[] = []
         let wToAccept:any[] = []
 
         const pending = await this.prisma.client.pendingFriendShip.findMany({
-            where:{
-                senderId:user.UserId
-            }
-        });
-        for(let i = 0;i < pending.length; ++i) {
-            let otherUser = await this.findUser({login:pending[i].receiverLogin});
-            pendingFriends.push({login:otherUser.login, avatar:otherUser.avatar, username:otherUser.username});
-        };
+            where: {
+              senderId: user.UserId,
+            },
+            select: {
+              receiver: {
+                select: {
+                  login: true,
+                  avatar: true,
+                  username: true,
+                },
+              },
+            },
+          });
+        pendingFriends = pending.map((pending) => pending.receiver);
+
         const waitingToAccept = await this.prisma.client.pendingFriendShip.findMany({
             where:{
                 receiverId:user.UserId
-            }
+            },
+            select: {
+                sender: {
+                  select: {
+                    login: true,
+                    avatar: true,
+                    username: true,
+                  },
+                },
+              },
         });
-        for(let i = 0;i < waitingToAccept.length; ++i) {
-            let otherUser = await this.findUser({login:waitingToAccept[i].senderLogin});
-            wToAccept.push({login:otherUser.login, avatar:otherUser.avatar, username:otherUser.username});
-        };
+        wToAccept = waitingToAccept.map((pending) => pending.sender);
 
         // list of friendship that added user(login)
         const friendAddedUser = await this.prisma.client.friend.findMany({
             where:{
                 loginA:login,
+                isFriends:true,
             },
+            select:{
+                userB:{
+                    select:{
+                        login:true,
+                        avatar:true,
+                        username:true,
+                    }
+                }
+            }
         });
-
-        for(let i = 0;i < friendAddedUser.length; ++i) {
-            let otherUser = await this.findUser({login:friendAddedUser[i].loginB});
-            const {loginB,isFriends } = friendAddedUser[i];
-            if (isFriends)
-                friends.push({login:loginB, avatar:otherUser.avatar, username:otherUser.username});
-        };
+        const friendAdded = friendAddedUser.map((it) => it.userB);
         // list of friendship that addedBy user(login)
         const friendAddedbyUser = await this.prisma.client.friend.findMany({
             where:{
                 loginB:login,
                 isFriends:true,
             },
+            select:{
+                userA:{
+                    select:{
+                        login:true,
+                        avatar:true,
+                        username:true,
+                    }
+                }
+            }
         });
-        for(let i = 0;i < friendAddedbyUser.length; ++i) {
-            let otherUser = await this.findUser({login:friendAddedbyUser[i].loginA});
-            const {loginA,isFriends } = friendAddedbyUser[i];
-            if (isFriends)
-                friends.push({login:loginA, avatar:otherUser.avatar, username:otherUser.username});
-        };
-        
+        const friendAddedby = friendAddedbyUser.map((it) => it.userA);
+        friends = friendAdded.concat(friendAddedby);
         return {friends:friends, pendingInvitation:pendingFriends, waitToAccept:wToAccept};
     }
 
@@ -859,14 +879,25 @@ export class UserService {
             where:{
                 userAId:user.UserId,
             },
+            select: {
+              userB: {
+                select: {
+                  login: true,
+                  avatar: true,
+                  username: true,
+                },
+              },
+
+            },
         });
-        for (let i = 0;i < matchsA.length; ++i){
-            let otherUser = await this.findUserById(matchsA[i].userBId);
-            if (matchsA[i].winner)
-                win++;
-            const {scoreA, scoreB,winner, finishedAt} = matchsA[i];
-            result.push({loginA:user.login,avatarA:user.avatar, usernameA:user.username, loginB:otherUser.login, avatarB:otherUser.avatar, usernameB:otherUser.username, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt});
-        }
+
+        // for (let i = 0;i < matchsA.length; ++i){
+        //     let otherUser = await this.findUserById(matchsA[i].userBId);
+        //     if (matchsA[i].winner)
+        //         win++;
+        //     const {scoreA, scoreB,winner, finishedAt} = matchsA[i];
+        //     result.push({loginA:user.login,avatarA:user.avatar, usernameA:user.username, loginB:otherUser.login, avatarB:otherUser.avatar, usernameB:otherUser.username, winner:winner,scoreA:scoreA,scoreB:scoreB, finishedAt:finishedAt});
+        // }
         const matchsB =  await this.prisma.client.match.findMany({
             where:{
                 userBId:user.UserId,
@@ -928,4 +959,6 @@ export class UserService {
           });
         return leaderboard;
     }
+
+    
 }
