@@ -643,9 +643,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (this.connectedUsers.has(body.login))
             {
                 const msg:any =  {login:user.login, message:`${user.login}  have removed invitation that he sends  to you`}
-                this.sendMsgToUser(body.login, msg, "   ");
+                this.sendMsgToUser(body.login, msg, "cancelInvitation");
             }
         }
+    
         catch(error){
             client.emit('errorMessage', error);
         }
@@ -662,12 +663,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             await this.userService.accepteFriend(dto, body.accepte);
             if (body.accepte)
             {
-                // client.emit('accept',` you have accepte ${body.login} as a friend`);
                 if (this.connectedUsers.has(body.login))
                     this.sendMsgToUser(body.login,{login:user.login, avatar:user.avatar, username:user.username, message:`${user.login}  have accepte you as friend`} ,"accept");
             }
             else{
-                // client.emit('decline',{login:user.login, message:` you have decline ${body.login} invitation`});
                 if (this.connectedUsers.has(body.login))
                     this.sendMsgToUser(body.login,{login:user.login, message:`${user.login}  have decline your invitation`},"decline");
             }
@@ -686,7 +685,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('no such user');
             const dto:FriendDto = {loginA:body.login,loginB:user.login};
             await this.userService.removeFriend(dto);
-            // client.emit('message',` you removed ${body.login} from list a friends`);
             if (this.connectedUsers.has(body.login))
                 this.sendMsgToUser(body.login,{login:user.login, message:`${user.login}  have removed you from list friend`},"delete");
         }
@@ -697,27 +695,27 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
 
 
     // we need a token jwt of that  user to blacklist it
-    @SubscribeMessage('logout')
-    async lougOut(@ConnectedSocket() client:Socket){
-        try {
-              const login = this.getLoginBySocketId(client.id);
-            const user = this.connectedUsers.get(login);
-            if (!user)
-                throw new BadRequestException('no such user');
-            // get token from header socket , hash it and set it in map  
-            const token = client.handshake.headers.authorization;
-            const hashedToken:string = await createHash('sha256').update(token).digest('hex');
-            this.blackListedJwt.set(hashedToken,user.login);
-            // set status offline in database
-            const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:false};
-            await this.userService.modifyStatusUser(dto);
-            client.emit('message',`${user.login} had log out`);
-            this.connectedUsers.delete(client.id);
-            this.connectedSocket.delete(client.id);
-            client.disconnect();
-        }
-        catch(error){
-            client.emit('errorMessage', error);
-        }
-    }
+    // @SubscribeMessage('logout')
+    // async lougOut(@ConnectedSocket() client:Socket){
+    //     try {
+    //           const login = this.getLoginBySocketId(client.id);
+    //         const user = this.connectedUsers.get(login);
+    //         if (!user)
+    //             throw new BadRequestException('no such user');
+    //         // get token from header socket , hash it and set it in map  
+    //         const token = client.handshake.headers.authorization;
+    //         const hashedToken:string = await createHash('sha256').update(token).digest('hex');
+    //         this.blackListedJwt.set(hashedToken,user.login);
+    //         // set status offline in database
+    //         const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:false};
+    //         await this.userService.modifyStatusUser(dto);
+    //         client.emit('message',`${user.login} had log out`);
+    //         this.connectedUsers.delete(client.id);
+    //         this.connectedSocket.delete(client.id);
+    //         client.disconnect();
+    //     }
+    //     catch(error){
+    //         client.emit('errorMessage', error);
+    //     }
+    // }
 }

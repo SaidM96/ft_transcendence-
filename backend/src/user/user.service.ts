@@ -382,7 +382,6 @@ export class UserService {
             },
           });
         pendingFriends = pending.map((pending) => pending.receiver);
-
         const waitingToAccept = await this.prisma.client.pendingFriendShip.findMany({
             where:{
                 receiverId:user.UserId
@@ -398,7 +397,6 @@ export class UserService {
               },
         });
         wToAccept = waitingToAccept.map((pending) => pending.sender);
-
         // list of friendship that added user(login)
         const friendAddedUser = await this.prisma.client.friend.findMany({
             where:{
