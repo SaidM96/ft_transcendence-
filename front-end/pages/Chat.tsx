@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import RealFooter from "@/components/RealFooter";
 import Barl from "@/components/Barl";
 import NavBar from "@/components/NavBar";
+import Router from "next/router";
 import { MyContext } from "@/components/Context";
 import { useContext } from "react";
 import { MesgType } from "@/components/Context";
@@ -19,6 +20,8 @@ import { useRouter } from "next/router";
 import ChannelHistor from "@/components/ChannelHistory";
 import History from "@/components/HIstory";
 import { ModalInvite, ModalError } from "@/components/Modal";
+const router = Router;
+var token : string | null = null;
 
 
 export default function Chat() {
@@ -30,19 +33,20 @@ export default function Chat() {
   const [show, setShow] = useState("block");
   const [gameRoom, setGameRoom] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  useEffect(() =>{
+    token = localStorage.getItem('token');
+    token ? router.push('/Chat') : router.push('/');
+  },[])
   useEffect(()=>{
     if (context?.socket){
+      
 
       context.socket.on('gameInvitation', (payload: any) => {
-        
-        console.log("game invite response ")
         if (payload && payload.sender) {
           setGameRoom(payload.sender)
           setIsModalOpen(true)
           
         }
-        console.log(payload)
       });
     }
     })
@@ -71,16 +75,23 @@ export default function Chat() {
         }
       })
       context?.setMembersChannel(response.data);
-      console.log("onclik channel this is response ", context?.membersChannel);
-
+      const resp = await axios.post('http://localhost:5000/chat/channel/memberShips',
+      {
+        channelName : login,
+      }, {
+        headers:{
+          Authorization: `Bearer ${context?.token}`
+        }
+      })
+      context?.setAdminChannel(resp.data[0].admins);
+      context?.setMembersChannel(resp.data[1].members);
+      console.log('here is memebers channel ', context?.membersChannel);
       setCheck('channel');
       setId(login);
       context?.setChannelInfo(res.data[0]);
       setChatHistory(res.data[1]);
-      console.log(context?.channelInfo , '  this is info')
     }
     else {
-      console.log("inside users");
 
        const res = await axios.post(
         "http://localhost:5000/chat/findConversation",
@@ -105,11 +116,9 @@ export default function Chat() {
     context?.setSocket(createSocketConnection(context?.token));
   }, [context?.token]);
 
-  if (context?.socket)
-    context?.socket.on("message", (paylo) => {
-      console.log(paylo);
-    });
+  
 
+if (token){
   return (
     <div className="bg-gradient-to-t from-gray-100 to-gray-400 min-h-screen">
       <ModalError />
@@ -142,4 +151,5 @@ export default function Chat() {
       <RealFooter />
     </div>
   );
+}
 }

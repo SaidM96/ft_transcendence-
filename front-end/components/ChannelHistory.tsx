@@ -4,7 +4,7 @@ import { FiSend } from "react-icons/fi";
 import defaul from '../image/avatar.webp'
 import Image from "next/image";
 import React, { ChangeEvent, useContext, useEffect, useRef, useState } from "react";
-import { FriendType, MembersType, MyContext, membersChannelType } from "./Context";
+import { FriendType, MembersType, MyContext, adminsChannelType, membersChannelType, userSearchProps } from "./Context";
 // import { Reciever, Sender } from "./ChatHistory";
 import { ModalUpdateChannel } from "./Modal";
 import { Contrail_One } from "next/font/google";
@@ -16,6 +16,7 @@ import { Socket } from "socket.io-client";
 import { ModalChat } from "./Modal";
 import { AlertCircle, CheckCircle } from 'react-feather'
 import { GetAvatarChannel } from "./Functions";
+import { library } from "@fortawesome/fontawesome-svg-core";
 
 interface recvProps {
   msg: string;
@@ -78,8 +79,6 @@ const Sender = (props: recvProps) => {
 }
 
 
-// file when store img
-// const [file, setFile] = useState<File | null>(null)
 
 
 
@@ -111,59 +110,7 @@ function GetAvatarAddFriend({ avatar }: { avatar: string }) {
 
 
 /// to add members to channel
-// const AddMember = () =>{
-//   const context = useContext(MyContext)
-//   console.log(context?.friends);
-//   const [hidden, setHidden] = useState('hidden')
-//   const openModal = () =>{
-//     setHidden('block');
-//   }
-//   const closeModal = () =>{
-//     setHidden('hidden');
-//   }
-//   const Modal = () =>{
-//     return (
-//       <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${hidden}`}>
-//         <div className="bg-white w-60 h-60 z-50">
-//           <div>this is modal</div>
-//           <button onClick={() =>closeModal()}>close</button>
 
-//         </div>
-//       </div>
-//     );
-//   }
-//   const AddFriend = (friend : FriendType) =>{
-//     console.log(context?.channelInfo?.channelName)
-//     context?.socket?.emit('inviteMember',{channelName: context.channelInfo?.channelName, login : friend.login})
-//     console.log('context memebers ', context?.membersChannel);
-//     console.log(friend.login);
-//     openModal();
-
-//   }
-//     return(
-//       <>
-//           <Modal />
-//         <div className="dropdown dropdown-bottom dropdown-end z-40 ">
-//             <FontAwesomeIcon tabIndex={0} icon={faUserPlus}  className="text-slate-600 w-7 h-6 cursor-pointer hover:text-blue-900" /> 
-//         <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-//           {
-//             context?.friends && context?.friends.length > 0 ? context?.friends.map((friend) =>{
-//               return (
-//                   <li><button onClick={() =>AddFriend(friend)} className="flex">
-//                     <GetAvatarAddFriend avatar={friend.avatar} />
-//                       <p>{friend.username}</p>
-//                       </button></li>
-
-//               );
-//             }) : "don't have any friend to add it"
-//           }
-
-//         </ul>
-//         </div>
-//       </>
-//     );
-
-// }
 const AddMember = () => {
   const context = useContext(MyContext)
   console.log(context?.friends);
@@ -210,14 +157,10 @@ const AddMember = () => {
         }
         )
         context?.setMembersChannel(res.data);
-        console.log(context?.membersChannel , ' before ')
-        console.log(context?.channelInfo?.channelName)
+       
         if (context?.membersChannel) {
           const hasLoginAmya = res.data.some((obj : MembersType) => obj.login === friend.login);
-          console.log("is membeer " ,hasLoginAmya);
           if (!hasLoginAmya) {
-            console.log('context memebers ', context?.membersChannel);
-            console.log(friend.login);
             openModal();
           }
          
@@ -246,7 +189,7 @@ const AddMember = () => {
           {
             context?.friends && context?.friends.length > 0 ? context?.friends.map((friend) => {
               return (
-                <li><button onClick={() => AddFriend(friend)} className="flex">
+                <li key={friend.login} ><button onClick={() => AddFriend(friend)} className="flex">
                   <GetAvatarAddFriend avatar={friend.avatar} />
                   <p>{friend.username}</p>
                 </button></li>
@@ -272,13 +215,7 @@ interface TypeModal {
 // udate channle or delete it
 const clickInfo = () => { }
 const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) => {
-
-
-
-
   const context = useContext(MyContext);
-
-
   const [msg, setMsg] = useState<msgChannel[]>([]);
 
   useEffect(() => {
@@ -290,17 +227,9 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
       context.socket.on(`${context.channelInfo?.channelName}`, (payload: any) => {
         if (payload) {
-          console.log('name of channel that listener ', context.channelInfo?.channelName);
-          console.log('this is all ', payload);
-          console.log('this is msg ', payload.content);
           setMsg((prevMsgs) => [...prevMsgs, payload]);
         }
-        if (!document.hidden) {
-          // Show a notification
-          console.log('newMsg')
-        }
-        else
-          console.log("msg and not in this page");
+        
       });
     }
 
@@ -323,15 +252,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
   const [isOpenModal, setIsopenModal] = useState(false);
 
-  useEffect(() => {
-    if (context?.socket) {
-      context?.socket.on('message', (pay) => {
-        if (pay)
-          console.log(pay);
-      })
-     
-    }
-  }, [context?.socket])
 
   const removeChannelByName = (channelName: string) => {
     context?.setChannels(prevChannels =>
@@ -359,6 +279,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     setIsOpenMember(true);
   }
   const [valueCheck, setValueCheck] = useState(false);
+
   //delete Channel
   const deleteChannel = () => {
     context?.socket?.emit('deleteChannel', {
@@ -367,8 +288,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     if (context?.channelInfo)
       removeChannelByName(context?.channelInfo?.channelName)
     router.reload();
-    // router.push(useRouter.pathname());
-
   }
 
   const memberChannel = () => {
@@ -384,7 +303,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
             }
           }
         )
-        // console.log(res.data);
         context?.setMembersChannel(res.data);
 
       } catch (e) {
@@ -392,8 +310,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
       }
     }
     GetDat();
-    console.log(context?.channelInfo);
-    console.log('conte ', context?.membersChannel);
     setIsOpenMember(true);
   }
 
@@ -404,72 +320,51 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
   const kickMember = (user : MembersType) =>{
     
     context?.socket?.emit('kickMember',{channelName : user.channelName, loginDeleted : user.login});
-
-    
-    const GetDat = async () => {
-      console.log("dkhel dkhel")
-      try {
-        const res = await axios.post('http://localhost:5000/chat/channel/members',
-          { channelName: context?.channelInfo?.channelName },
-          {
-            headers: {
-              Authorization: `Bearer ${context?.token}`,
-            }
-          }
-        )
-        // console.log(res.data);
-        context?.setMembersChannel(res.data);
-      } catch (e) {
-        console.log(e);
-      }
-    }
-    GetDat();
-
+    setIsOpenMember(false);
+  }
+  const [promoteuser, setPromote] = useState('Promote');
+  const Ban = (user : MembersType) =>{
+    context?.socket?.emit('updateMember', {channelName: user.channelName, loginAffected : user.login, isBlacklist : false})
   }
   const promote = (user : MembersType) =>{
-    console.log('here');
-    context?.socket?.emit('updateMember',{channelName : user.channelName,loginAffected : user.login,isAdmin : true})
+    if (promoteuser === 'Promote'){
+      context?.socket?.emit('updateMember',{channelName : user.channelName,loginAffected : user.login,isAdmin : true})
+      setPromote('Un promote');
+    }
+    else{
+      context?.socket?.emit('updateMember',{channelName : user.channelName,loginAffected : user.login,isAdmin : false})
+      setPromote('Promote');
+    }
   }
   const [meut, setMeut] = useState('hidden');
   const timeMeut = useRef<HTMLInputElement | null>(null)
   const meute = (user : MembersType) =>{
     if (timeMeut.current){
-      console.log(timeMeut.current.value , 'this is value');
       context?.socket?.emit('updateMember',{channelName : user.channelName,loginAffected : user.login,isMute : true,timeMute : +timeMeut.current.value})
+    setIsOpenMember(false);
     }
 
+  }
+  const sendInvite = (user: FriendType) => {
+
+    if (user.login) {
+      context?.socket?.emit('inviteFriend', {
+        login: user.login,
+      })
+      // if (user)
+
+     
+      // removeChat(user.login)
+      context?.setWaitToAccept((prev) => [...prev, user])
+
+      // when i add this
+    }
   }
 
   const ModalMembers = (props: propMember) => {
     if (!props.isOpen)
       return null;
-      console.log(context?.channelInfo);
-      console.log(context)
-      const [isAdmin, setIsAdmin] = useState(false)
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.post(
-          'http://localhost:5000/chat/channel/memberShips',
-          { channelName: context?.channelInfo?.channelName },
-          {
-            headers: {
-              Authorization: `Bearer ${context?.token}`,
-            },
-          }
-        );
-        if (res.data) {
-          const isadmin = res.data[0].admins.some((obj : any) => obj.login === context?.login);
-          setIsAdmin(isadmin)
-        }
 
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
   const [name, setName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [login, setLogin] = useState('');
@@ -480,64 +375,138 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
   const closeModal = () =>{
       setIsModalOpen(false)
     }
-  const sendMsg = (login : string, username : string, )=>{
-     
-    setName(username);
-    setLogin(login);
-      setIsModalOpen(true);
+  const sendMsg = (login : string | undefined, username : string | undefined, )=>{
+    if (login && username){
+      setName(username);
+      setLogin(login);
+        setIsModalOpen(true);
+    }
 
   }
 
-      
 
+  const GetOwner = () =>{
+
+    const [check, setCheck] = useState(false);
+    const user = context?.adminsChannel.find(user => user.isOwner === true)
+    // console.log(' this is the owner ', user);
+
+    const checkis = (login : string) =>{
+      context?.friends.map((user) =>{
+        if (user.login == login){
+          setCheck(true);
+        }
+      })
+    }
+
+
+    if (user){
+    return(
+      <li className="flex items-center justify-between px-4 bg-slate-200 rounded-xl min-h-[60px] w-full h-[60px]">
+        {user && <GetAvatarAddFriend avatar={user.avatar} />}
+        <div>{user?.username}</div>
+        <div>Owner</div>
+        <div className="dropdown dropdown-left">
+        { (context?.login !== user?.login )&&    <FontAwesomeIcon onClick={() => checkis(user.login)} className=" cursor-pointer" tabIndex={0} icon={faEllipsisVertical} />}
+          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+            <li><button onClick={ ()=> sendMsg(user?.login, user?.username) }>Send Msg</button></li>
+            {!check && <li><button onClick={() => sendInvite(user)}>Add Friend</button></li>}
+          </ul>
+        </div>
+        
+        </li>);
+    }
+    else
+      return null;
+      }
+
+  const GetAdmins = () => {
+    const [check , setCheck] = useState(false);
+
+    const checkis = (login : string) =>{
+      context?.friends.map((user) =>{
+        if (user.login == login){
+          setCheck(true);
+        }
+      })
+    }
+
+
+    return (
+       <>
+        {context?.adminsChannel.map((user) => {
+          if (user.login !== context.channelInfo?.LoginOwner) {
+            return (
+              <li className="flex items-center justify-between px-4 bg-slate-200 rounded-xl min-h-[60px] w-full h-[60px]" key={user.login}>
+                {user && <GetAvatarAddFriend avatar={user.avatar} />}
+                <div>{user?.username}</div>
+                <div>Admin</div>
+                <div className="dropdown dropdown-left">
+                { (context.login !== user.login )&&    <FontAwesomeIcon className=" cursor-pointer" tabIndex={0} icon={faEllipsisVertical} />}
+                  <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                  <li><button onClick={ ()=> sendMsg(user?.login, user?.username) }>Send Msg</button></li>
+                  {!check && <li><button onClick={() => sendInvite(user)}>Add Friend</button></li>}
+                  </ul>
+                </div>
+              </li>
+            );
+          }
+          return null; // Add a return statement for cases when the condition is not met
+        })}
+      </>
+    );
+  };
+
+  const GetUsers = () => {
+    const [check, setCheck] = useState(false);
+    
+    if (!context || !context.membersChannel) {
+      return null; // Return null if context or channelUsers is undefined
+    }
+    const checkThisUser = (user : adminsChannelType) =>{
+
+    }
+  
+    return (
+      <>
+        {context.membersChannel.map((user) => (
+         <li className="flex items-center justify-between px-4 bg-slate-200 rounded-xl min-h-[60px] w-full h-[60px]" key={user.login}>
+         {user && <GetAvatarAddFriend avatar={user.avatar} />}
+         <div>{user?.username}</div>
+         <div>Member</div>
+         <div className="dropdown dropdown-left">
+         { (context.login !== user.login )&&    <FontAwesomeIcon onClick={() => checkThisUser(user)} className=" cursor-pointer" tabIndex={0} icon={faEllipsisVertical} />}
+           <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+             <li><a>Item 1</a></li>
+             <li><a>Item 2</a></li>
+           </ul>
+         </div>
+       </li>
+        ))}
+      </>
+    );
+  };
+  
+  
+
+  const GetMem = () =>{
+    return (
+      <ul className="flex flex-col gap-2">
+        <GetOwner />
+        <GetAdmins />
+        <GetUsers />
+      </ul>
+    );
+  }
+
+      
     return (
       <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${context?.error ? 'hidden' : 'block'}`}>
                       <ModalChat  isOpen={isModalOpen} closeModal={closeModal} name={name} login={login}/>
-        <div className={`bg-white p-6 rounded-md w-[400px] h-[600px] min-w-[400px] min-h-[600px]  flex flex-col gap-1 overflow-y-auto `}>
-          <div className="text-center font-mono font-semibold">{context?.channelInfo?.channelName}  Members</div>
+        <div className={`bg-white p-6 rounded-md w-[500px] h-[600px] min-w-[400px] min-h-[600px]  flex flex-col gap-1 overflow-y-auto `}>
+          <div className="text-center font-mono font-semibold">{context?.channelInfo?.channelName} Channel , All Members</div>
           <div className="w-full h-[90%] ">
-            <ul className="w-full h-full  flex flex-col gap-1">
-              {
-                context?.membersChannel.map(user => {
-                  if (context.login !== user.login) {
-                    return (
-                      <li key={user.login} className="flex items-center justify-around bg-slate-200 rounded-xl min-h-[60px] w-full h-[60px]">
-                        {/* <div>image</div> */}
-                        <GetAvatarAddFriend avatar={user.avatar} />
-                        <div>{user.username}</div>
-                        <div className="dropdown dropdown-end hidden">
-                          {/* <label tabIndex={0} className="btn m-1">Click</label> */}
-                          <FontAwesomeIcon className=" cursor-pointer" tabIndex={0} icon={faEllipsisVertical} />
-                          
-                        </div>
-                        <div className="dropdown dropdown-end ">
-                          {/* <label tabIndex={0} className="btn m-1">Click</label> */}
-                          <FontAwesomeIcon className=" cursor-pointer" tabIndex={0} icon={faEllipsisVertical} />
-                          {
-                            isAdmin ? <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                            <li><button onClick={() => kickMember(user)}>Kick</button></li>
-                            <li><button onClick={() =>promote(user)}>Promote</button></li>
-                            <li className="flex flex-row"> 
-                              <div className="w-1/2 h-full"><input ref={timeMeut} type="text" className="w-full h-full input-bordered"  /></div>
-                              <div className="w-1/2 h-full" onClick={() =>meute(user)}>Meute</div>
-                            </li>
-                            
-                          </ul> : <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                            <li><button onClick={() => sendMsg(user.login, user.username)}>Send Message</button></li>
-                          </ul>
-                          }
-                          
-                          
-                        </div>
-                      </li>
-                    );
-                  }
-
-                })
-              }
-
-
-            </ul>
+            <GetMem />
 
           </div>
           <div className="w-full h-[10%] flex justify-end items-center">
@@ -575,6 +544,10 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
     fetchData();
   }, []);
+
+  const ListBan = () =>{
+
+  }
   //info
   const Info = () => {
     return (
@@ -583,13 +556,11 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
         <FontAwesomeIcon tabIndex={0} className="w-7 h-6 text-slate-700 hover:text-blue-900 cursor-pointer" onClick={clickInfo} icon={faBars} flip />
         <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
           <li><button onClick={memberChannel}>Members Channel</button></li>
-          {isAdmin ? (
-            <>
-              <li><button onClick={openMd}>Update Channel</button></li>
-              <li><button onClick={leaveChannel}>Leave Channel</button></li>
-              <li><button onClick={deleteChannel}>Delete Channel</button></li>
-            </>
-          ) : null}
+          {isAdmin && <li><button onClick={openMd}>Update Channel</button></li>}
+          {isAdmin && <li><button>List Banned</button></li>}
+          <li><button onClick={leaveChannel}>Leave Channel</button></li>
+          {isAdmin && <li><button onClick={deleteChannel}>Delete Channel</button></li>}
+
         </ul>
       </div>
     );
@@ -612,17 +583,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
       })
       setInputValue('');
     }
-    // if (context?.socket)
-    // context?.socket.on(`${context.channelInfo?.channelName}` , (pay) =>{
-    //   console.log('ret '  , pay);
-    //   setMsg((prevMsgs) => [...prevMsgs, pay]);
-    //   context?.socket?.off(`${context.channelInfo?.channelName}`)
-    // })
-    // return () => {
-    //       if (context?.socket) {
-    //         context.socket.off(`${context.channelInfo?.channelName}`);
-    //       }
-    //     };
+    
   }
 
 
@@ -639,8 +600,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
   }
   
-
-
   return (
 
     <div className={`${valueCheck === true ? 'hidden' : 'flex'}flex-col h-full overflow-y-auto relative scrollbar scrollbar-thumb-green-400 scrollbar-w-1
@@ -653,17 +612,12 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
         <div>
           <div >
            <GetAvatarChannel  />
-            {/* <Image className="w-12 h-12 rounded-full border-4 border-slate-400 cursor-pointer hover:border-slate-900"  src={GetAvatar(context?.channelInfo?.avatar)} alt="avatar" /> */}
           </div>
 
         </div>
 
         <div className="flex items-center gap-10 z-50" >
-          {
-            isAdmin ? (
-              <AddMember />
-            ) : null
-          }
+          {isAdmin && <AddMember />}
           <Info />
         </div>
 
@@ -671,13 +625,10 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
       <div className="w-full h-[93%] flex flex-col p-2 " >
         {msg.map((msg: msgChannel) => {
           if (msg.login === context?.login)
-            return <Sender msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
+            return <Sender key={msg.login} msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
           else
-            return <Reciever msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
+            return <Reciever key={msg.login} msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
         })}
-
-
-
         <div className={`mt-auto pb-1 pl-1 `}>
           <form
             onSubmit={handleSubmit}
@@ -698,6 +649,5 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     </div>
   );
 }
-
 
 export default ChannelHistor;
