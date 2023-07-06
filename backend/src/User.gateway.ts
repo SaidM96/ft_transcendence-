@@ -373,9 +373,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const dto:updateChannelDto = {userLogin:user.login, channelName:body.channelName, isPrivate:body.isPrivate, ispassword:body.ispassword, newPassword:body.newPassword, avatar:body.avatar};
             const channel = await this.chatService.updateChannel(dto);
             this.existChannels.set(channel.channelName,channel);
-            // client.emit(`message`, `you have updated your channel ${channel.channelName}`);
-            const msg:string = `you have updated your channel ${channel.channelName}`
-            this.sendMsgToUser(login, msg,"message");
+            const msg:string = `you have updated your channel ${channel.channelName}`;
+            // this.sendMsgToUser(login, msg,"message");
+            this.server.to(channel.channelName).emit("message", msg);
         }
         catch(error){
             client.emit('errorMessage',error);
@@ -510,6 +510,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             let memberShip = await this.chatService.updateMemberShip(dto);
             const ik = memberShip.userAffectedMemberShip;
             const actValues: string[] = Object.values(memberShip.acts);
+            if (actValues.length == 0)
+                throw new BadRequestException('you didnt change anything');
             const separator: string = " , ";
             const msgAct: string = actValues.join(separator);
             if (this.connectedUsers.has(body.loginAffected))
@@ -570,16 +572,32 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (updatedUser)
             {
                 this.connectedUsers.set(login,updatedUser);
-                this.sendMsgToUser(login, updatedUser, 'message');
+                this.sendMsgToUser(login, updatedUser, 'updateUser');
             }
             else
-                client.emit('message', 'you had changed anything');
+                client.emit('updateUser', 'you had changed anything');
         }
         catch(error){
             client.emit('errorMessage', error);
         }
     }
 
+    
+    @SubscribeMessage('updateAvatarUser')
+    async updateAvatarUserEvent(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateUserDto){
+        try{
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
+            if (!user)
+                throw new BadRequestException('no such user');
+            const dto:UpdateUserDto = {login:user.login, username:body.username, bioGra:body.bioGra, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
+            const updatedUser = await this.userService.updateUser(dto);
+            this.sendMsgToUser(login, updatedUser, 'updateAvatarUser');
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
     // handle private msg
     @SubscribeMessage('PrivateMessage')
     async handlePrivatemessage(@ConnectedSocket() client:Socket, @MessageBody() body:sendMsgSocket){
@@ -601,7 +619,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException(`cant send any msg to ${receiver}`);
             if (this.connectedUsers.has(userReceiver.login))
             {
-                const mm:any = {sender:userSender.login ,receiver:userReceiver.login  ,content:content,sendAt:msg.sendAt};
+                const mm:any = {sender:userSender.login , senderUsername:userSender.username, senderAvatar:userSender.avatar, receiver:userReceiver.login, receiverUsername:userReceiver.username, receiverAvatar:userReceiver.avatar  ,content:content,sendAt:msg.sendAt};
                 this.sendMsgToUser(userReceiver.login, mm, "PrivateMessage");
             }
         }

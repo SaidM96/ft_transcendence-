@@ -187,7 +187,6 @@ export class ChatService {
                         UserId:user.UserId,
                     },
                 },
-
             },
         });
         return channel;
@@ -538,7 +537,7 @@ export class ChatService {
             throw new NotFoundException(`${loginMemberAffected} are not member`);
         if (!userMemberShip)
             throw new NotFoundException(`${userLogin} are not member`);
-        if  (!userMemberShip.isAdmin && userAffectedMemberShip.isOwner)
+        if  (!userMemberShip.isAdmin || userAffectedMemberShip.isOwner)
             throw new NotFoundException(`${userLogin} is not admin, or ${loginMemberAffected} is owner `);
         if (isMute !== undefined)
         {
@@ -720,7 +719,7 @@ export class ChatService {
             select:{
                 login:true,
                 isAdmin:true,
-                isOwner:true,
+                isOwner:true,   
                 isMute:true,
                 isBlacklist:true,
                 channelName:true,
@@ -728,6 +727,7 @@ export class ChatService {
             where:{
                 channelName:channel.channelName,
                 isAdmin:true,
+                isBlacklist:false,
             },
         });
         for(let i = 0; i < admins.length; ++i){
@@ -748,14 +748,42 @@ export class ChatService {
             where:{
                 channelName:channel.channelName,
                 isAdmin:false,
+                isBlacklist:false,
             },
-        });   
+        });
         for(let i = 0; i < members.length; ++i){
             let us = await this.userService.findUser({login:members[i].login});
             const  {login, isAdmin, isMute,isOwner, isBlacklist } = members[i];
             regular.push({login:login, username:us.username, avatar:us.avatar,channelName:channelName, isOwner:isOwner, isAdmin:isAdmin, isMute:isMute, isBlacklist:isBlacklist })
         }
         result.push({members:regular});
+        return result;
+    }
+
+    async getBannedOfChannel(chDto:channeDto){
+        const {channelName} = chDto;
+        const channel = await this.prisma.client.channel.findFirst({
+            where:{
+                channelName:channelName,
+            },
+        });
+        if (!channel)
+            throw new NotFoundException(`no such channel with the name ${channelName}`);
+        let banneds = await this.prisma.client.membershipChannel.findMany({
+            select:{
+                user:{
+                    select:{
+                        login:true,
+                        username:true,
+                        avatar:true,
+                    },
+                },
+            },
+            where:{
+                isBlacklist:true
+            }
+        })
+        const result = banneds.map((banned) => banned.user);
         return result;
     }
 

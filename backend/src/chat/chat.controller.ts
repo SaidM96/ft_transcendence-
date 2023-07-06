@@ -95,4 +95,16 @@ export class ChatController {
             response.status(400).json(error);
         }
     }
+    
+    @UseGuards(AuthGuard('jwt'))
+    @Post('channel/banned')
+    async getBannedOfChannel(@Body() chDto:channeDto, @Res() response:Response){
+        try{
+            const result = await this.chatService.getBannedOfChannel(chDto);
+            response.status(200).json(result);
+        }
+        catch(error){
+            response.status(400).json(error);
+        }
+    }
 }
