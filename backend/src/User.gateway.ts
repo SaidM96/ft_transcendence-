@@ -526,6 +526,16 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         }   
     }
 
+    //
+    async sendMsgChannel(roomName:string, msg:any, loginSender:string){
+        const clientsInRoom:string[] = Array.from(this.server.sockets.adapter.rooms.get(roomName) || []);
+        const haters = await this.userService.getLoginHaters(loginSender);
+        clientsInRoom.forEach((clientId) => {
+            if (!haters.includes(this.getLoginBySocketId(clientId)))
+                this.server.to(clientId).emit(`${roomName}`,msg);
+        });
+    }
+
     // msg channel
     @SubscribeMessage('msgChannel')
     async newMsgChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newMsgChannelDto){
@@ -542,7 +552,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const msg = await this.chatService.newMsgChannel(dto);
             if (msg)
             {
-                this.server.to(msg.channelName).emit(`${channelName}`,{login:user.login,content:msg.content, avatar:user.avatar, username:user.username, sendAt:msg.sendAt});
+                await this.sendMsgChannel(channelName,msg,login);
             }
             else
                 client.emit('errorMessage','cant send a msg to this channel');
@@ -582,7 +592,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         }
     }
 
-    
     @SubscribeMessage('updateAvatarUser')
     async updateAvatarUserEvent(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateUserDto){
         try{
