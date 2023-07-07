@@ -163,7 +163,7 @@ model match {
   matchyId     String    @id @default(uuid())
   userA        User      @relation("matchA",fields: [userAId], references: [UserId], onDelete: Cascade)
   userAId      String
-  scoreA       Int
+  scoreA       Int       @default(0)
   userB        User      @relation("matchB",fields: [userBId], references: [UserId], onDelete: Cascade)
   userBId      String
   scoreB       Int       @default(0)

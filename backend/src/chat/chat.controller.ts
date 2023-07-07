@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Res, UseGuards} from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {  channeDto,getConvDto} from './Dto/chat.dto';
 import { ChatService } from './chat.service';
@@ -40,9 +40,10 @@ export class ChatController {
     // get conversation  channel 
     @UseGuards(AuthGuard('jwt'))
     @Post('channel/message/all')
-    async getConversationChannel(@Body() chDto:channeDto, @Res() response:Response){
+    async getConversationChannel(@Req() req:any,@Body() chDto:channeDto, @Res() response:Response){
         try{
-            const result = await this.chatService.getConversationChannel(chDto);
+            const { login} = req.user;
+            const result = await this.chatService.getConversationChannel(login,chDto);
             response.status(200).json(result);
         }
         catch(error){

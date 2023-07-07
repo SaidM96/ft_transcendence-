@@ -788,7 +788,7 @@ export class ChatService {
     }
 
     // get conversation  channel 
-    async getConversationChannel(chDto:channeDto){
+    async getConversationChannel(login:string, chDto:channeDto){
         const {channelName} = chDto;
         let result:any[] = [];
         const channel = await this.prisma.client.channel.findFirst({
@@ -803,6 +803,11 @@ export class ChatService {
             where:{
                 channelName:channel.channelName,
             },
+        });
+        const haters = await this.userService.getLoginHaters(login);
+        messages.forEach((msg,index) => {
+            if (haters.includes(msg.login))
+                messages.splice(index, 1);
         });
         result.push(messages);
         return result;

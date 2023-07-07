@@ -628,8 +628,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException(`cant send any msg to ${receiver}`);
             if (this.connectedUsers.has(userReceiver.login))
             {
-                const mm:any = {sender:userSender.login , senderUsername:userSender.username, senderAvatar:userSender.avatar, receiver:userReceiver.login, receiverUsername:userReceiver.username, receiverAvatar:userReceiver.avatar  ,content:content,sendAt:msg.sendAt};
-                this.sendMsgToUser(userReceiver.login, mm, "PrivateMessage");
+                const message:any = {sender:userSender.login , senderUsername:userSender.username, senderAvatar:userSender.avatar, receiver:userReceiver.login, receiverUsername:userReceiver.username, receiverAvatar:userReceiver.avatar  ,content:content,sendAt:msg.sendAt};
+                this.sendMsgToUser(userReceiver.login, message, "PrivateMessage");
             }
         }
         catch(error){
