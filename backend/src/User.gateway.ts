@@ -592,7 +592,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         }
     }
 
-    @SubscribeMessage('updateAvatarUser')
+    @SubscribeMessage('updateUsername')
     async updateAvatarUserEvent(@ConnectedSocket() client:Socket, @MessageBody() body:newUpdateUserDto){
         try{
             const login = this.getLoginBySocketId(client.id);
@@ -601,7 +601,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('no such user');
             const dto:UpdateUserDto = {login:user.login, username:body.username, bioGra:body.bioGra, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
             const updatedUser = await this.userService.updateUser(dto);
-            this.sendMsgToUser(login, updatedUser, 'updateAvatarUser');
+            this.sendMsgToUser(login, updatedUser, 'updateUsername');
         }
         catch(error){
             client.emit('errorMessage', error);

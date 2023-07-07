@@ -1,4 +1,4 @@
-import { Body, Controller, Get, InternalServerErrorException, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport'
 import { AuthService } from './auth.service';
 import { Response } from 'express';
@@ -19,7 +19,7 @@ export class AuthController {
         try{
           let access = await this.authService.login42(req);
           console.log(access);
-          response.redirect(`http://localhost:3000/GetData/${access}`);
+          response.redirect(`${process.env.url_front}/${access}`);
         }
         catch(error){
           response.status(400).json(error);
