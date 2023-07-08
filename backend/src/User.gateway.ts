@@ -600,11 +600,23 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (!user)
                 throw new BadRequestException('no such user');
             const dto:UpdateUserDto = {login:user.login, username:body.username, bioGra:body.bioGra, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
+            if (dto.username !== undefined)
+            {
+                const userwithSameUsername = await this.userService.findUserwithSameUsername(dto.username);
+                if (userwithSameUsername && userwithSameUsername.username === dto.username)
+                    throw new BadRequestException(`we have already a user with username ${dto.username}!`);
+            }
             const updatedUser = await this.userService.updateUser(dto);
-            this.sendMsgToUser(login, updatedUser, 'updateUsername');
+            if (updatedUser)
+            {
+                this.connectedUsers.set(login,updatedUser);
+                this.sendMsgToUser(login, updatedUser, 'updateUsername');
+            }
+            else
+                client.emit('updateUsername', 'you had changed anything');
         }
         catch(error){
-            client.emit('errorMessage', error);
+            client.emit('errorMessageUpdateUsername', error);
         }
     }
     // handle private msg

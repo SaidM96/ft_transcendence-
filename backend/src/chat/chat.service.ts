@@ -809,6 +809,11 @@ export class ChatService {
             if (haters.includes(msg.login))
                 messages.splice(index, 1);
         });
+        for(let i = 0; i < messages.length; i++){
+            let usr = await this.userService.findUser({login:messages[i].login});
+            messages[i].avatar = usr.avatar;
+            messages[i].username = usr.username;
+        }
         result.push(messages);
         return result;
     }
