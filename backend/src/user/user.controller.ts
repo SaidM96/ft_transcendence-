@@ -194,8 +194,6 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
         }
     }
 
-
-
     @UseGuards(AuthGuard('jwt'))
     @Get('Leaderboard')
     async getLeaderboard(@Res() response:Response){
@@ -235,6 +233,20 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
         }
         catch(error){
             response.status(400 ).json(error);
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('deleteAccount')
+    async deleteAccount(@Req() req:any, @Res() response:Response){
+        try{
+            const { login} = req.user;
+            const user = await this.userSrevice.findUser({login:login});
+            await this.userSrevice.deleteAcoount(login);
+            response.redirect(`http://localhost:3000`);
+        }
+        catch(error){
+            response.status(400).json(error);
         }
     }
 }
