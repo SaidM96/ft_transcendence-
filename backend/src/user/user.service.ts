@@ -129,9 +129,33 @@ export class UserService {
     }
 
     async updateUser(updateUser:UpdateUserDto){
-        const {login, username, bioGra, avatar, enableTwoFa } = updateUser;
+        const {login, username, bioGra,isOnline ,inGame ,avatar, enableTwoFa } = updateUser;
         let user = await this.findUser({login:login});
         let noChanges = true;
+        if (isOnline !== undefined)
+        {
+            noChanges = false
+            user = await this.prisma.client.user.update({
+                where:{
+                    login:user.login,
+                },
+                data:{
+                    isOnline:isOnline,
+                }
+            });
+        }
+        if (inGame !== undefined)
+        {
+            noChanges = false
+            user = await this.prisma.client.user.update({
+                where:{
+                    login:user.login,
+                },
+                data:{
+                    inGame:inGame,
+                }
+            });
+        } 
         if (bioGra !== undefined)
         {
             noChanges = false
@@ -360,6 +384,46 @@ export class UserService {
         });
     }
 
+    async getLoginsFriends(userId:string){
+        const friendsAdded = await this.prisma.client.friend.findMany({
+            where:{
+                userAId:userId,
+                isFriends:true
+            },
+            select:{
+                userB:{
+                    select:{
+                        login:true,
+                        username:true,
+                        avatar:true,
+                        isOnline:true,
+                        inGame:true
+                    }
+                }
+            }
+        })
+        const friendsAdd = friendsAdded.map((pending) => pending.userB);
+        const friendsBy = await this.prisma.client.friend.findMany({
+            where:{
+                userBId:userId,
+                isFriends:true
+            },
+            select:{
+                userA:{
+                    select:{
+                        login:true,
+                        username:true,
+                        avatar:true,
+                        isOnline:true,
+                        inGame:true
+                    }
+                }
+            }
+        })
+        const friendsB = friendsBy.map((pending) => pending.userA);
+        const result = friendsAdd.concat(friendsB);
+        return result;
+    }
     async getUserFriends(findUser:findUserDto){
         const {login} = findUser;
         const user = await  this.findUser(findUser);
@@ -377,6 +441,8 @@ export class UserService {
                   login: true,
                   avatar: true,
                   username: true,
+                  isOnline:true,
+                  inGame:true
                 },
               },
             },
@@ -392,6 +458,8 @@ export class UserService {
                     login: true,
                     avatar: true,
                     username: true,
+                    isOnline:true,
+                    inGame:true
                   },
                 },
               },
@@ -409,6 +477,8 @@ export class UserService {
                         login:true,
                         avatar:true,
                         username:true,
+                        isOnline:true,
+                        inGame:true
                     }
                 }
             }
@@ -426,6 +496,8 @@ export class UserService {
                         login:true,
                         avatar:true,
                         username:true,
+                        isOnline:true,
+                        inGame:true
                     }
                 }
             }
@@ -639,38 +711,38 @@ export class UserService {
     }
 // status
     // modify status of user
-    async modifyStatusUser(updateStatus:UpdateStatus){
-        const {login, isOnline, inGame} = updateStatus;
-        const user = await this.findUser({login});
-        let status = await this.prisma.client.status.findFirst({
-            where:{
-                userId:user.UserId,
-            },
-        });
-        if (!status)
-            return new NotFoundException('rfed');
-        if (isOnline !== undefined){
-            status = await this.prisma.client.status.update({
-            where:{
-                statusId:status.statusId,
-            },
-            data:{
-                isOnline:isOnline,
-            },
-        });
-        }
-        if (inGame !== undefined){
-            status = await this.prisma.client.status.update({
-            where:{
-                statusId:status.statusId,
-            },
-            data:{
-                inGame:inGame,
-            },
-        });
-        }
-        return status;
-    }
+    // async modifyStatusUser(updateStatus:UpdateStatus){
+    //     const {login, isOnline, inGame} = updateStatus;
+    //     const user = await this.findUser({login});
+    //     let status = await this.prisma.client.status.findFirst({
+    //         where:{
+    //             userId:user.UserId,
+    //         },
+    //     });
+    //     if (!status)
+    //         return new NotFoundException('rfed');
+    //     if (isOnline !== undefined){
+    //         status = await this.prisma.client.status.update({
+    //         where:{
+    //             statusId:status.statusId,
+    //         },
+    //         data:{
+    //             isOnline:isOnline,
+    //         },
+    //     });
+    //     }
+    //     if (inGame !== undefined){
+    //         status = await this.prisma.client.status.update({
+    //         where:{
+    //             statusId:status.statusId,
+    //         },
+    //         data:{
+    //             inGame:inGame,
+    //         },
+    //     });
+    //     }
+    //     return status;
+    // }
 
     // get status of user
     async getStatusUser(findUser:findUserDto){

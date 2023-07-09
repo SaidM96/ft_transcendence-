@@ -17,38 +17,19 @@ import Notification from './Notification'
 import { Stack } from "@mui/material";
 import { useRouter } from 'next/router';
 import Router from "next/router";
+import avatar from '../image/avatar.webp'
 
 import ChannelHistor from "./ChannelHistory";
 import { ModalInvite } from '@/components/Modal';
 
-const Sender = ({ msg }: { msg: string }) => {
-  
-  return (
-    <div className="chat chat-end">
-      <div className="chat-image avatar">
-        <div className="w-10 rounded-full">
-          <Image src={mhaddaou} alt="av" />
-        </div>
-      </div>
-      
-      <div className="chat-bubble">{msg}</div>
-          
-    </div>
-  );
-};
+const GetImage = ({name } : {name : string | undefined}) =>{
+  if (name === '0')
+    return <Image className="mask mask-squircle w-12 h-12" src={avatar} alt="avatar" /> 
+  else
+    return <img className="mask mask-squircle w-12 h-12" src={name} alt="avatar"/>
 
-const Reciever = ({ msg }: { msg: string }) => {
-  return (
-    <div className="chat chat-start">
-      <div className="chat-image avatar">
-        <div className="w-10 rounded-full">
-          <Image src={mhaddaou} alt="av" />
-        </div>
-      </div>
-      <div className="chat-bubble bg-slate-400">{msg}</div>
-    </div>
-  );
-};
+}
+
 
 const AvatarOffline = ({ img }: { img: StaticImageData }) => {
   return (
@@ -60,11 +41,11 @@ const AvatarOffline = ({ img }: { img: StaticImageData }) => {
   );
 };
 
-const AvatarOnline = ({ img }: { img: StaticImageData }) => {
+const AvatarOnline = ({ img }: { img: string  | undefined}) => {
   return (
     <div className="avatar online">
       <div className="w-14 rounded-full">
-        <Image src={img} alt="avatar" />
+        <GetImage name={img}  />
       </div>
     </div>
   );
@@ -81,6 +62,37 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
   const [newMsg, setNewMsg] = useState<MesgType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gameRoom, setGameRoom] = useState("")
+  const [userBlock, setUserBlock] = useState('');
+
+
+  const Sender = ({ msg }: { msg: string }) => {
+    
+    return (
+      <div className="chat chat-end">
+        <div className="chat-image avatar">
+          <div className="w-10 rounded-full">
+           {context?.img && <GetImage name={context?.img}/>}
+          </div>
+        </div>
+        
+        <div className="chat-bubble">{msg}</div>
+            
+      </div>
+    );
+  };
+  
+  const Reciever = ({ msg }: { msg: string }) => {
+    return (
+      <div className="chat chat-start">
+        <div className="chat-image avatar">
+          <div className="w-10 rounded-full">
+          {context?.login === context?.MessageInfo?.loginA? <GetImage name={context?.MessageInfo?.avatarB} /> : <GetImage name={context?.MessageInfo?.avatarA} /> }
+          </div>
+        </div>
+        <div className="chat-bubble bg-slate-400">{msg}</div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     if (gameRoom.length)
@@ -97,6 +109,7 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
     if (context?.socket) {
       context.socket.on('PrivateMessage', (payload: any) => {
         if (payload) {
+          // console.log('this is new message , ', payload)
           setNewMsg((prevMsgs) => [...prevMsgs, payload]);
         }
         if (!document.hidden) {
@@ -238,9 +251,37 @@ const handleGameInvite = () => {
     context.socket.emit('gameInvitation', {
       receiver: login,
     });
-    window.location.href = (`http://localhost:3000/ft_transcendence/${url}`)
+    window.location.href = (`http://localhost:3000/${url}`)
     
   }
+}
+const removefriend = (login: string) => {
+  context?.setFriends(prevFriends =>
+    prevFriends.filter(friend => friend.login !== login)
+  );
+};
+
+const removeChat = (login : string) =>{
+  context?.setContactChat(prevcontact =>
+    prevcontact.filter(chat => chat.login !== login))
+}
+const [loginr, setLoginr] = useState<string | undefined >(undefined);
+const blockUser = () =>{
+  console.log('hani dkhelt');
+  context?.login === context?.MessageContent[0].loginReceiver ? setUserBlock(context?.MessageContent[0].loginSender ) : setUserBlock(context?.MessageContent[0].loginReceiver)
+if (userBlock)
+  console.log(userBlock , ' this is user block');
+    // if (context?.socket)
+    // context?.socket.emit('block', {
+    //   blockedLogin: friend.login,
+    //   stillEnemy: true,
+    // })
+    // removefriend(friend.login);
+    // removeChat(friend.login);
+    // context?.setBlackList((prev) =>[...prev, friend]);
+  
+
+
 }
 
 
@@ -250,7 +291,8 @@ const handleGameInvite = () => {
        {isModalOpen && <ModalInvite isOpen={isModalOpen} closeModal={closeModal} title="Invitation to Game" msg={`you've been invited to join a game against ${gameRoom}`} color={gameRoom}  />}
       <div className={`w-full h-[7%] flex chat chat-start  border-b-2 border-slate-500 items-center ${chatHistory.length === 0 ? "hidden" : ""}`}>
         <div className="w-1/2 pl-6">
-          <AvatarOnline img={mhaddaou} />
+          {context?.login === context?.MessageInfo?.loginA ? <AvatarOnline img={context?.MessageInfo?.avatarB} /> : <AvatarOnline img={context?.MessageInfo?.avatarA} /> }
+          
         </div>
         <div className="w-1/2 pr-6 text-end">
           <div className="dropdown dropdown-left">
@@ -261,7 +303,7 @@ const handleGameInvite = () => {
                   <Link href="#" className=" hover:text-cyan-700 pl- text-left  rounded-t-lg block px-4 py-2 hover:bg-gray-100 ">info</Link>
                 </li>
                 <li>
-                  <Link href="#" className=" hover:text-cyan-700 text-left block px-4 py-2 hover:bg-gray-100 ">block</Link>
+                  <button onClick={blockUser} className=" hover:text-cyan-700 text-left block px-4 py-2 hover:bg-gray-100 ">block</button>
                 </li>
                 <li>
                   <Link href="#" className="hover:text-cyan-700 text-left rounded-b-lg block px-4 py-2 hover:bg-gray-100 ">Earnings</Link>
@@ -312,4 +354,4 @@ const handleGameInvite = () => {
   );
 }
 
-export {Reciever, Sender};
+// export {Reciever, Sender};

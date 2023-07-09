@@ -2,7 +2,7 @@ import axios, {AxiosError} from "axios";
 import { headers } from "next/dist/client/components/headers";
 import React, {useContext, useEffect, useState} from "react";
 import { MyContext } from "./Context";
-import {ModalSearch} from "./Modal";
+import {ModalError, ModalSearch} from "./Modal";
 import { dataProp } from "./Modal";
 const Search = ({page } : {page : string})=>{
     const context = useContext(MyContext);
@@ -251,7 +251,6 @@ const closeModale = () =>{
                   },
                 }
               );
-              // context?.setContactChat(res.data);
               context?.setChannels(res.data);
       
             } catch (error) {
@@ -263,16 +262,63 @@ const closeModale = () =>{
 
         }
       })
+      context.socket.on('blockuser', (pay) =>{
+        if (pay) {
+          const getData = async () =>{
+            const res = await axios.post('http://localhost:5000/user/friends', 
+            {
+              login: context.login,
+            },
+            {
+              headers:{
+                Authorization : `Bearer ${context.token}`,
+              }
+            })
+            console.log('this is friends ', res.data.friends);
+            context.setFriends(res.data.friends);
+          }
+          getData();
+        }
+      })
       context.socket.on('updateChannel', (pay) =>{
-        if (pay)
-          console.log('updateChannel');
+        if (pay){
+          // console.log('this is pay ', pay);
+          context.setChannelInfo(pay);
+          console.log('this is pass ', context.channelInfo?.ispassword)
+          const fetchData = async () => {
+            try {
+              const res = await axios.post(
+                'http://localhost:5000/chat/memberships',
+                { login: context?.login },
+                {
+                  headers: {
+                    Authorization: `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              // context?.setContactChat(res.data);
+              context?.setChannels(res.data);
+      
+            } catch (error) {
+              console.error('Error fetching data:', error);
+            }
+          };
+        
+          fetchData();
+        }
+      
         
       })
       context.socket.on('errorMessage', (pay) =>{
+       
+
+
         if (pay){
           if (pay.message !== 'jwt must be provided'){
+           
             context.setMessageError(pay.message);
             context.setError(true);
+          
           }
 
         }
@@ -291,7 +337,7 @@ const closeModale = () =>{
         context.socket.off('updateChannel');
         context.socket.off('errorMessage');
         context.socket.off('cancelInvitation');
-        // context.socket.off('gameInvitation');
+        context.socket.off('blockuser');
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

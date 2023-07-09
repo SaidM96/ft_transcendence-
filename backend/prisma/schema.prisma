@@ -126,7 +126,8 @@ model User {
   twoFactorSecret     String?
   bioGra              String
   lvl                 Int  @default(0)
-
+  isOnline            Boolean   @default(false)
+  inGame              Boolean   @default(false)
   // Acheivement
   achievement         Acheivement[] @relation("Acheivement")
   // Friends
