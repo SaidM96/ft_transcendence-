@@ -583,14 +583,17 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const updatedUser = await this.userService.updateUser(dto);
             if (updatedUser)
             {
-                let socketsId:string[] = []
-                this.connectedUsers.set(login,updatedUser);
                 this.sendMsgToUser(login, updatedUser, 'updateUser');
-                const friends = await this.userService.getLoginsFriends(user.UserId);
-                friends.forEach(friend => {
-                    socketsId = this.userSockets.get(friend.login);
-                    this.server.to(socketsId).emit('updatedFriend',updatedUser);
-                });
+                this.connectedUsers.set(login,updatedUser);
+                if (body.avatar || body.username)
+                {
+                    let socketsId:string[] = [];
+                    const friends = await this.userService.getLoginsFriends(user.UserId);
+                    friends.forEach(friend => {
+                        socketsId = this.userSockets.get(friend.login);
+                        this.server.to(socketsId).emit('updatedFriend',updatedUser);
+                    });
+                }
             }
             else
                 client.emit('updateUser', 'you had changed anything');
@@ -619,6 +622,15 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             {
                 this.connectedUsers.set(login,updatedUser);
                 this.sendMsgToUser(login, updatedUser, 'updateUsername');
+                if (body.avatar || body.username)
+                {
+                    let socketsId:string[] = [];
+                    const friends = await this.userService.getLoginsFriends(user.UserId);
+                    friends.forEach(friend => {
+                        socketsId = this.userSockets.get(friend.login);
+                        this.server.to(socketsId).emit('updatedFriend',updatedUser);
+                    });
+                }
             }
             else
                 client.emit('updateUsername', 'you had changed anything');
