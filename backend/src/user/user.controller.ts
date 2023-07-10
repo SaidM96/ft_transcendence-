@@ -129,19 +129,6 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
         }
     }
 
-// get status of user
-    // @UseGuards(AuthGuard('jwt'))
-    // @Post('status')
-    // async getUserStatus(@Body() findUser:findUserDto, @Res() response:Response){
-    //     try {
-    //         const result =  await this.userSrevice.getStatusUser(findUser); 
-    //         response.status(200).json(result);
-    //     }
-    //     catch(error){
-    //         response.status(400).json(error);
-    //     }
-    // }
-
 
 // get stats of user
     @UseGuards(AuthGuard('jwt'))

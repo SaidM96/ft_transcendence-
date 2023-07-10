@@ -96,6 +96,8 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
     );
   };
 
+  
+
   useEffect(() => {
     if (gameRoom.length)
       setIsModalOpen(true)
@@ -110,16 +112,30 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
   useEffect(() => {
     if (context?.socket) {
       context.socket.on('PrivateMessage', (payload: any) => {
+        console.log('privateMessage is received ' , payload)
         if (payload) {
           // console.log('this is new message , ', payload)
           setNewMsg((prevMsgs) => [...prevMsgs, payload]);
+          const fetchData = async () => {
+            try {
+              const res = await axios.post(
+                'http://localhost:5000/chat/conversations',
+                { login: context?.login },
+                {
+                  headers: {
+                    Authorization: `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              context?.setContactChat(res.data);
+      
+            } catch (error) {
+              console.error('Error fetching data:', error);
+            }
+          };
+        
+          fetchData();
         }
-        if (!document.hidden) {
-          // Show a notification
-          console.log('newMsg')
-        }
-        else
-          console.log("msg and not in this page");
       });
 
       context.socket.on('gameInvitation', (payload: any) => {
@@ -136,7 +152,7 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
   
     return () => {
       if (context?.socket) {
-        context.socket.off('PrivateMessage');
+        // context.socket.off('PrivateMessage');
         context.socket.off('gameInvitation');
 
       }

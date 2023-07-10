@@ -35,6 +35,14 @@ const getImgSrc = (name : string)  =>{
 }
 
 
+const GetImage = ({name } : {name : string | undefined}) =>{
+  if (name === '0')
+    return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar} alt="avatar" /> 
+  else
+    return <img className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={name} alt="avatar"/>
+
+}
+
 
 
 
@@ -135,6 +143,7 @@ export function GetDataAchievement() {
     const fetchData = async () => {
       try {
         const res = await axios.post(
+          
           "http://localhost:5000/user/acheivement",
           {
             login: context?.login,
@@ -184,6 +193,7 @@ export function GetDataAchievement() {
 
 export function GetDataFriend() {
     const context = useContext(MyContext);
+
   const router = Router;
 
     console.log()
@@ -281,7 +291,7 @@ x        </p>
                   <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
                       <ModalChat  isOpen={isModalOpen} closeModal={closeModal} name={name} login={login}/>
                       <div className="h-full w-1/3 flex justify-center items-center">
-                        <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={getImgSrc(friend.avatar)} alt="avatar" />
+                        <GetImage name={friend.avatar} />
                       </div>
                       <div className="w-1/3 text-center">{friend.username}</div>
                       <div className="w-1/3 text-center z-20">
@@ -350,7 +360,7 @@ const DatSend = () =>{
                     <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
                         {/* <ModalChat  isOpen={isModalOpen} closeModal={closeModal} name={name} login={login}/> */}
                         <div className="h-full w-1/3 flex justify-center items-center">
-                          <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={getImgSrc(friend.avatar)} alt="avatar" />
+                          <GetImage name={friend.avatar} />
                         </div>
                         <div className="w-1/3 text-center">{friend.username}</div>
                         <div className="w-1/3 text-center z-20">
@@ -426,7 +436,8 @@ const DataRecieved = () =>{
                     <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
                         {/* <ModalChat  isOpen={isModalOpen} closeModal={closeModal} name={name} login={login}/> */}
                         <div className="h-full w-1/3 flex justify-center items-center">
-                          <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={getImgSrc(friend.avatar)} alt="avatar" />
+                          <GetImage name={friend.avatar} />
+                          
                         </div>
                         <div className="w-1/3 text-center">{friend.username}</div>
                         <div className="w-1/3 text-center z-20">
@@ -486,7 +497,7 @@ const BlackList = () =>{
                   return (
                     <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
                         <div className="h-full w-1/3 flex justify-center items-center">
-                          <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={getImgSrc(friend.avatar)} alt="avatar" />
+                          <GetImage name={friend.avatar} />
                         </div>
                         <div className="w-1/3 text-center">{friend.username}</div>
                         <div className="w-1/3 text-center z-20">

@@ -97,7 +97,7 @@ const Other = () =>{
       return <div>Achievement</div>
     }
     else
-      return <div>hello</div>
+      return <div></div>
   }
 
 
@@ -115,11 +115,11 @@ const Other = () =>{
           })
           // context?.setProfileuser(JSON.stringify(userLogin));
           console.log("respnse profile  ", res.data);
-          if (res.data.status.inGame)
+          if (res.data.inGame)
             setStatus('in Game');
           else{
-            if (res.data.status.isOnline)
-              setStatus('on Line')
+            if (res.data.isOnline)
+              setStatus('En ligne')
             else
               setStatus('Offline');
           }

@@ -120,6 +120,12 @@ export default function Chat() {
   useEffect(() => {
     context?.setSocket(createSocketConnection(context?.token));
   }, [context?.token]);
+  context?.socket?.on('privateMessage', (pay) =>{
+    if (pay){
+      console.log('inside page chat this is pay loa   ', pay);
+    }
+
+  })
 
   
 

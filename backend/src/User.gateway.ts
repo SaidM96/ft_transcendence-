@@ -85,7 +85,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         const index = this.userSockets.get(login).indexOf(id);
         this.userSockets.get(login).splice(index, 1);
         if(this.userSockets.get(login).length == 0){
-            const dto:UpdateUserDto = {login:login, isOnline:false, inGame:undefined, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+            const dto:UpdateUserDto = {login:login, isOnline:false, inGame:undefined, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};   
             const updatedUser = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(updatedUser);
             this.connectedUsers.delete(login);
@@ -140,7 +140,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             roomsToJoin.forEach((channelName) => {
                 client.join(channelName);
             });
-            if (this.userSockets.get(login).length < 2){
+            if (this.userSockets.get(login).length == 1){
                 // set status online in database
                 const dto:UpdateUserDto = {login:user.login, isOnline:true, inGame:undefined, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
                 const updatedUser = await this.userService.updateUser(dto);
@@ -818,27 +818,27 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
 
 
     // we need a token jwt of that  user to blacklist it
-    // @SubscribeMessage('logout')
-    // async lougOut(@ConnectedSocket() client:Socket){
-    //     try {
-    //           const login = this.getLoginBySocketId(client.id);
-    //         const user = this.connectedUsers.get(login);
-    //         if (!user)
-    //             throw new BadRequestException('no such user');
-    //         // get token from header socket , hash it and set it in map  
-    //         const token = client.handshake.headers.authorization;
-    //         const hashedToken:string = await createHash('sha256').update(token).digest('hex');
-    //         this.blackListedJwt.set(hashedToken,user.login);
-    //         // set status offline in database
-    //         const dto:UpdateStatus = {login:user.login, isOnline:false, inGame:false};
-    //         await this.userService.updateUser(dto);
-    //         client.emit('message',`${user.login} had log out`);
-    //         this.connectedUsers.delete(client.id);
-    //         this.connectedSocket.delete(client.id);
-    //         client.disconnect();
-    //     }
-    //     catch(error){
-    //         client.emit('errorMessage', error);
-    //     }
-    // }
+    @SubscribeMessage('logout')
+    async lougOut(@ConnectedSocket() client:Socket){
+        try {
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
+            if (!user)
+                throw new BadRequestException('no such user');
+            // get token from header socket , hash it and set it in map
+            const token = client.handshake.headers.authorization;
+            const hashedToken:string = await createHash('sha256').update(token).digest('hex');
+            this.blackListedJwt.set(hashedToken,user.login);
+            // set status offline in database
+            // const dto:UpdateUserDto = {login:user.login, isOnline:false, inGame:false};
+            // await this.userService.updateUser(dto);
+            client.emit('message',`${user.login} had log out`);
+            this.connectedUsers.delete(client.id);
+            this.connectedSocket.delete(client.id);
+            client.disconnect();
+        }
+        catch(error){
+            client.emit('errorMessage', error);
+        }
+    }
 }
