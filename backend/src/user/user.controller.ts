@@ -228,9 +228,9 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
             const otherUser = await this.userSrevice.findUser({login:dto.login});
             const isEnmey = await this.userSrevice.isBlockedMe({loginA:login, loginB:dto.login});
             if (isEnmey == false)
-                bol = true
+                bol = true;
             else
-                bol = false
+                bol = false;
             response.json({message: bol});
         }
         catch(error){
