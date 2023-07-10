@@ -53,6 +53,31 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         return ret;
     }
 
+    async MsgToUpdatedfriends(user:User){
+        let socketsId:string[] = [];
+        const allfriends = await this.userService.getUserFriends({login:user.login});
+        const convLogins = await this.userService.getLoginsConversationOfUser(user.UserId);
+        convLogins.forEach(login => {
+            socketsId = this.userSockets.get(login);
+            this.server.to(socketsId).emit('updatedFriend',user);
+        });
+        allfriends.friends.forEach(element => {
+            if (!convLogins.includes(element.login)){
+                socketsId = this.userSockets.get(element.login);
+                this.server.to(socketsId).emit('updatedFriend',user);
+        }});
+        allfriends.pendingInvitation.forEach(element => {
+            if (!convLogins.includes(element.login)){
+                socketsId = this.userSockets.get(element.login);
+                this.server.to(socketsId).emit('updatedFriend',user);
+            }});
+        allfriends.waitToAccept.forEach(element => {
+            if (!convLogins.includes(element.login)){
+                socketsId = this.userSockets.get(element.login);
+                this.server.to(socketsId).emit('updatedFriend',user);
+            }});
+    }
+
     async deleteSocketFromMapUsers(id:string){
         const login = this.getLoginBySocketId(id);
         if (!login)
@@ -62,12 +87,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         if(this.userSockets.get(login).length == 0){
             const dto:UpdateUserDto = {login:login, isOnline:false, inGame:undefined, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
             const updatedUser = await this.userService.updateUser(dto);
-            let socketsId:string[] = [];
-            const friends = await this.userService.getLoginsFriends(updatedUser.UserId);
-            friends.forEach(friend => {
-                socketsId = this.userSockets.get(friend.login);
-                this.server.to(socketsId).emit('updatedFriend',updatedUser);
-            });
+            await this.MsgToUpdatedfriends(updatedUser);
             this.connectedUsers.delete(login);
         }
     }
@@ -125,12 +145,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 const dto:UpdateUserDto = {login:user.login, isOnline:true, inGame:undefined, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
                 const updatedUser = await this.userService.updateUser(dto);
                 this.connectedUsers.set(login,updatedUser);
-                let socketsId:string[] = [];
-                const friends = await this.userService.getLoginsFriends(user.UserId);
-                friends.forEach(friend => {
-                    socketsId = this.userSockets.get(friend.login);
-                    this.server.to(socketsId).emit('updatedFriend',updatedUser);
-                });
+                await this.MsgToUpdatedfriends(updatedUser);
             }
             console.log(`${user.login} had connected   ${client.id}`);
             // const msg:string = `welcome ${this.connectedUsers.get(login).username} you have connected succefully`;
@@ -152,8 +167,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             let user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException(`cant find sender User`);
-                const status = await this.userService.getStatusUser({ login: user.login });
-                if (status && status.inGame) {
+                if (user.inGame) {
                     console.log(`user is ingame client id: ${this.worlds[user.login] ? this.worlds[user.login].players.player1.client : "null"} and actual client id = ${client.id}`)
                     // should delete instance of game
                     if (this.worlds[user.login] && this.worlds[user.login].players.player1.client == client.id) {
@@ -166,12 +180,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                         const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
                         user = await this.userService.updateUser(dto);
                         this.connectedUsers.set(login,user);
-                        let socketsId:string[] = [];
-                        const friends = await this.userService.getLoginsFriends(user.UserId);
-                        friends.forEach(friend => {
-                            socketsId = this.userSockets.get(friend.login);
-                            this.server.to(socketsId).emit('updatedFriend',user);
-                        });
+                        await this.MsgToUpdatedfriends(user);
                     }
                     // check if the disconnecting user is part of someone elses room
                     const roomJoined = userInGame(user.login, this.worlds)
@@ -179,7 +188,11 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                         console.log("second player left, putting back their paddle in the list")
                         this.worlds[roomJoined].availablePaddles.push("right")
                         this.worlds[roomJoined].players.player2 = { user: null, client: null }
-                        console.log(this.worlds[roomJoined].availablePaddles)
+                        console.log(this.worlds[roomJoined].availablePaddles);
+                        const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+                        user = await this.userService.updateUser(dto);
+                        this.connectedUsers.set(login,user);
+                        await this.MsgToUpdatedfriends(user);
                     }
                 }
     
@@ -209,12 +222,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             console.log("room game deleted")
             const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
             user = await this.userService.updateUser(dto);
-            let socketsId:string[] = [];
-            const friends = await this.userService.getLoginsFriends(user.UserId);
-            friends.forEach(friend => {
-                socketsId = this.userSockets.get(friend.login);
-                this.server.to(socketsId).emit('updatedFriend',user);
-            });
+            await this.MsgToUpdatedfriends(user);
             this.connectedSocket.delete(client.id);
             await this.deleteSocketFromMapUsers(client.id);
         }
@@ -229,12 +237,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             await this.deleteSocketFromMapUsers(client.id);
             const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
             user = await this.userService.updateUser(dto);
-            let socketsId:string[] = [];
-            const friends = await this.userService.getLoginsFriends(user.UserId);
-            friends.forEach(friend => {
-                socketsId = this.userSockets.get(friend.login);
-                this.server.to(socketsId).emit('updatedFriend',user);
-            });
+            await this.MsgToUpdatedfriends(user);
         }
     }
 
@@ -293,14 +296,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('owner must be connected to the channel to join it');
             }
             client.join(roomId); // add the client to the specified room
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:true, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
             const userUpdate = await this.userService.updateUser(dto);
-            let socketsId:string[] = [];
-            const friends = await this.userService.getLoginsFriends(user.UserId);
-            friends.forEach(friend => {
-                socketsId = this.userSockets.get(friend.login);
-                this.server.to(socketsId).emit('updatedFriend',userUpdate);
-            });
+            await this.MsgToUpdatedfriends(userUpdate);
             this.world.handleConnection(client, user);
         }
         catch (error) {
@@ -350,8 +348,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (userReceiver.login == userSender.login)
                 throw new BadRequestException(`${host} cant send msg to ${host}`);
             if (this.connectedUsers.has(userReceiver.login)) {
-                const status = await this.userService.getStatusUser({ login: userReceiver.login });
-                if (status && status.inGame) {
+                if (userReceiver.inGame) {
                     // should delete instance of game
                     if (this.worlds[userReceiver.login]) {
                         this.server.to(userReceiver.login).emit('gameStatus', { msg: "invitation was canceled, fuck off" });
@@ -361,12 +358,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                         this.worlds[userReceiver.login] = null
                         const dto:UpdateUserDto = {login:login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
                         userSender = await this.userService.updateUser(dto);
-                        let socketsId:string[] = [];
-                        const friends = await this.userService.getLoginsFriends(userSender.UserId);
-                        friends.forEach(friend => {
-                            socketsId = this.userSockets.get(friend.login);
-                            this.server.to(socketsId).emit('updatedFriend',userSender);
-                        });
+                        await this.MsgToUpdatedfriends(userSender);
                         console.log("room game deleted")
                     }
                 }
@@ -627,15 +619,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             {
                 this.sendMsgToUser(login, updatedUser, 'updateUser');
                 this.connectedUsers.set(login,updatedUser);
+                // send to his friend
                 if (body.avatar || body.username)
-                {
-                    let socketsId:string[] = [];
-                    const friends = await this.userService.getLoginsFriends(user.UserId);
-                    friends.forEach(friend => {
-                        socketsId = this.userSockets.get(friend.login);
-                        this.server.to(socketsId).emit('updatedFriend',updatedUser);
-                    });
-                }
+                    await this.MsgToUpdatedfriends(updatedUser);
             }
             else
                 client.emit('updateUser', 'you had changed anything');
@@ -665,14 +651,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 this.connectedUsers.set(login,updatedUser);
                 this.sendMsgToUser(login, updatedUser, 'updateUsername');
                 if (body.avatar || body.username)
-                {
-                    let socketsId:string[] = [];
-                    const friends = await this.userService.getLoginsFriends(user.UserId);
-                    friends.forEach(friend => {
-                        socketsId = this.userSockets.get(friend.login);
-                        this.server.to(socketsId).emit('updatedFriend',updatedUser);
-                    });
-                }
+                    await this.MsgToUpdatedfriends(updatedUser);
             }
             else
                 client.emit('updateUsername', 'you had changed anything');

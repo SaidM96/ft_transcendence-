@@ -63,8 +63,8 @@ export class UserService {
             },
         });
         for(let i = 0;i < users.length ; ++i){
-            if (await this.isRealFriend(users[i].login, userLogin))
-                users.splice(i, 1); // remove that user from list search cause he is a friemd of 
+            if (await this.isBlockedMe({loginA:userLogin,loginB:users[i].login}) || await this.isRealFriend(users[i].login, userLogin))
+                users.splice(i, 1); // remove that user from list search cause he is a friemd of or blocked
         }
         result.push({userSearch:users});
         const channel = await this.prisma.client.channel.findMany({
@@ -84,19 +84,8 @@ export class UserService {
                 login: loginDto.login,
                 username: loginDto.username,
                 email:  loginDto.email,
-                bioGra: "",
             }
         });
-        await this.prisma.client.status.create({
-            data:{
-                user:{
-                    connect:{
-                        UserId:user.UserId,
-                    }
-                }
-            }
-        });
-        
         await this.prisma.client.stats.create({
             data:{
                 user:{
@@ -129,7 +118,7 @@ export class UserService {
     }
 
     async updateUser(updateUser:UpdateUserDto){
-        const {login, username, bioGra,isOnline ,inGame ,avatar, enableTwoFa } = updateUser;
+        const {login, username,isOnline ,inGame ,avatar, enableTwoFa } = updateUser;
         let user = await this.findUser({login:login});
         let noChanges = true;
         if (isOnline !== undefined)
@@ -156,18 +145,6 @@ export class UserService {
                 }
             });
         } 
-        if (bioGra !== undefined)
-        {
-            noChanges = false
-            user = await this.prisma.client.user.update({
-                where:{
-                    login:user.login,
-                },
-                data:{
-                    bioGra:bioGra,
-                }
-            });
-        }
         if (avatar !== undefined)
         {
             noChanges = false
@@ -420,10 +397,40 @@ export class UserService {
                 }
             }
         })
+
+        // pending 
         const friendsB = friendsBy.map((pending) => pending.userA);
         const result = friendsAdd.concat(friendsB);
         return result;
     }
+
+    async getLoginsConversationOfUser(userId:string){
+        const result:string[] = [];
+        const convA = await this.prisma.client.conversation.findMany({
+            where:{
+                userAId:userId,
+            },
+            select:{
+                loginB:true
+            }
+        });
+        convA.forEach((element) => {
+            result.push(element.loginB)
+        })
+        const convB = await this.prisma.client.conversation.findMany({
+            where:{
+                userBId:userId,
+            },
+            select:{
+                loginA:true
+            }
+        });
+        convB.forEach((element) => {
+            result.push(element.loginA)
+        })
+        return result;
+    }
+
     async getUserFriends(findUser:findUserDto){
         const {login} = findUser;
         const user = await  this.findUser(findUser);
@@ -442,7 +449,7 @@ export class UserService {
                   avatar: true,
                   username: true,
                   isOnline:true,
-                  inGame:true
+                  inGame:true, 
                 },
               },
             },
@@ -459,7 +466,7 @@ export class UserService {
                     avatar: true,
                     username: true,
                     isOnline:true,
-                    inGame:true
+                    inGame:true,
                   },
                 },
               },
@@ -745,14 +752,14 @@ export class UserService {
     // }
 
     // get status of user
-    async getStatusUser(findUser:findUserDto){
-        const user = await  this.findUser(findUser);
-        return await this.prisma.client.status.findUnique({
-            where:{
-                userId:user.UserId,
-            },
-        });
-    }
+    // async getStatusUser(findUser:findUserDto){
+    //     const user = await  this.findUser(findUser);
+    //     return await this.prisma.client.status.findUnique({
+    //         where:{
+    //             userId:user.UserId,
+    //         },
+    //     });
+    // }
 
 // stats
     // modify stats of user
