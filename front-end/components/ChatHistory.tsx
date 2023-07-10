@@ -254,7 +254,7 @@ useEffect(() => {
 //   </div>
 // )
 const [hidden, setHidden] = useState('hidden');
-const router = useRouter();
+const router = Router
 
 const clickPro = (): void => {
   if (hidden === 'hidden')
@@ -264,12 +264,17 @@ const clickPro = (): void => {
 }
 const handleGameInvite = () => {
   if (context?.socket) {
-    const url = `Game?room=${context.login}&queue=false`;
+
+    const url = `Game/?room=${context.login}&queue=false`;
     console.log("emiting invite", url)
     context.socket.emit('gameInvitation', {
       receiver: login,
     });
-    window.location.href = (`http://localhost:3000/${url}`)
+    const handleHref = (link : string) => {
+      router.push(link);
+    };
+    handleHref(`http://localhost:3000/${url}`)
+   
     
   }
 }
@@ -358,7 +363,7 @@ const viewProfile = () =>{
                   {/* <Link href="#" className="hover:text-cyan-700 text-left rounded-b-lg block px-4 py-2 hover:bg-gray-100 ">Earnings</Link> */}
                 </li>
                 <li>
-                  <Link href="#" onClick={handleGameInvite} className="hover:text-cyan-700 text-left rounded-b-lg block px-4 py-2 hover:bg-gray-100 ">Invite</Link>
+                  <button onClick={handleGameInvite} className="hover:text-cyan-700 text-left rounded-b-lg block px-4 py-2 hover:bg-gray-100 ">Invite</button>
                 </li>
 
               </ul>
