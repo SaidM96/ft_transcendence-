@@ -18,7 +18,7 @@ import { PrismaService } from 'prisma/prisma.service';
 @UseFilters(WebsocketExceptionsFilter)
 @UsePipes(new ValidationPipe({ forbidNonWhitelisted: true, transform:true}))
 export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit{
-    constructor(private readonly jwtStrategy:JwtStrategy, private readonly userService:UserService,private readonly jwtService:JwtService, private readonly chatService:ChatService,  private  prisma:PrismaService ){    
+    constructor(private readonly userService:UserService,private readonly jwtService:JwtService, private readonly chatService:ChatService,  private  prisma:PrismaService ){    
         this.setExistenChannels();
     }
     // server
@@ -820,9 +820,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             this.blackListedJwt.set(hashedToken,user.login);
             // set status offline in database
-            // const dto:UpdateUserDto = {login:user.login, isOnline:false, inGame:false};
-            // await this.userService.updateUser(dto);
-            client.emit('message',`${user.login} had log out`);
+            const dto:UpdateUserDto = {login:login, isOnline:false, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};   
+            const updatedUser = await this.userService.updateUser(dto);
+            await this.MsgToUpdatedfriends(updatedUser);
+            this.sendMsgToUser(login, `${user.login} had log out`, "logout");
             this.connectedUsers.delete(client.id);
             this.connectedSocket.delete(client.id);
             client.disconnect();

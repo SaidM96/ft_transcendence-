@@ -238,4 +238,19 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
             response.status(400).json(error);
         }
     }
+
+    @Get('is7erag')
+    async is7erag(@Req() req:any, @Res() response:Response){
+        try{
+            const { login} = req.user;
+            const token = req.headers.Authorization
+            const is7erag = await this.userSrevice.is7erag(token);
+            if (!is7erag)
+                response.status(200).json({message:false});
+            response.status(200).json({message:true});
+        }
+        catch(error){
+            response.status(400).json({message:false});
+        }
+    }
 }

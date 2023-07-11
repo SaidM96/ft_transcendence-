@@ -3,10 +3,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Acheivement } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
 import { Achievements } from './achievement.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UserService {
-    constructor(private prisma:PrismaService, private readonly achievements:Achievements){}
+    constructor(private readonly jwtService:JwtService,private prisma:PrismaService, private readonly achievements:Achievements){}
 
     async findAllUsers(){
         const resuslt = await this.prisma.client.user.findMany();
@@ -1080,5 +1081,9 @@ export class UserService {
             }
         });
     }
-    
+
+    async is7erag(token:string){
+        const is7erag = await this.jwtService.verify(token, {secret:`${process.env.jwt_secret}`})
+        return true;
+    }
 }
