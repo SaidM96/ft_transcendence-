@@ -78,6 +78,37 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             }});
     }
 
+    async emitToAllusers(user:User){
+        let socketsId:string[] = [];
+        const allfriends = await this.userService.getUserFriends({login:user.login});
+        const convLogins = await this.userService.getLoginsConversationOfUser(user.UserId);
+        const blockedby = await this.userService.getHaters({login:user.login});
+        convLogins.forEach(login => {
+            socketsId = this.userSockets.get(login);
+            this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+        });
+        allfriends.friends.forEach(element => {
+            if (!convLogins.includes(element.login)){
+                socketsId = this.userSockets.get(element.login);
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+        }});
+        allfriends.pendingInvitation.forEach(element => {
+            if (!convLogins.includes(element.login)){
+                socketsId = this.userSockets.get(element.login);
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+            }});
+        allfriends.waitToAccept.forEach(element => {
+            if (!convLogins.includes(element.login)){
+                socketsId = this.userSockets.get(element.login);
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+            }});
+        blockedby.forEach(element => {
+            if (!convLogins.includes(element.login)){
+                socketsId = this.userSockets.get(element.login);
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+            }});
+    }
+
     async deleteSocketFromMapUsers(id:string){
         const login = this.getLoginBySocketId(id);
         if (!login)
@@ -827,8 +858,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const updatedUser = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(updatedUser);
             this.sendMsgToUser(login, `${user.login} had log out`, "logout");
-            this.connectedUsers.delete(client.id);
             this.connectedSocket.delete(client.id);
+            await this.deleteSocketFromMapUsers(client.id);
             client.disconnect();
         }
         catch(error){
@@ -837,7 +868,19 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     }
 
     @SubscribeMessage('deleteAccount')
-    async deleteAccount(){
-        
+    async deleteAccount(@ConnectedSocket() client:Socket){
+        try{
+            const login = this.getLoginBySocketId(client.id);
+            const user = this.connectedUsers.get(login);
+            if (!user)
+                throw new BadRequestException('no such user');
+            await this.emitToAllusers(user);
+            await this.userService.deleteAcoount(login);
+            this.sendMsgToUser(login, `${user.login} had delete his Account`, "deleteMyAccount");
+        }
+        catch(error){
+
+        }
+
     }
 }
