@@ -666,14 +666,17 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const IsEnemy = await this.userService.isBlockedMe({loginA:userSender.login,loginB:receiver});
             if (IsEnemy)
                 throw new BadRequestException(`cant send any msg to ${receiver}`);
-            const msg = await this.chatService.addNewMessage({sender:userSender.login,receiver:userReceiver.login, content:content});
-            if (!msg)
+            const res = await this.chatService.addNewMessage({sender:userSender.login,receiver:userReceiver.login, content:content});
+            if (!res.msg)
                 throw new BadRequestException(`cant send any msg to ${receiver}`);
             if (this.connectedUsers.has(userReceiver.login))
             {
-                const message:any = {sender:userSender.login , senderUsername:userSender.username, senderAvatar:userSender.avatar, receiver:userReceiver.login, receiverUsername:userReceiver.username, receiverAvatar:userReceiver.avatar  ,content:content,sendAt:msg.sendAt};
+                const message:any = {sender:userSender.login , senderUsername:userSender.username, senderAvatar:userSender.avatar, receiver:userReceiver.login, receiverUsername:userReceiver.username, receiverAvatar:userReceiver.avatar  ,content:content,sendAt:res.msg.sendAt};
+                if (res.isFirst) // first msg
+                    this.sendMsgToUser(userReceiver.login, `ched ched first msg in conversation`, "firstMsg");
                 this.sendMsgToUser(userReceiver.login, message, "PrivateMessage");
             }
+
         }
         catch(error){
             client.emit("errorMessage", error);

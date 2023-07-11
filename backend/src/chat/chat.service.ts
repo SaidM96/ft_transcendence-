@@ -14,6 +14,7 @@ export class ChatService {
     // and assing it  to conv that it s belong to
     async addNewMessage(msgDto:sendMsgDto){
         const {sender, receiver, content} = msgDto;
+        let isFirstMsg:boolean = false
         // check if sender or receiver exist in  database 
         const userA = await this.userService.findUser({login:sender});
         const userB = await this.userService.findUser({login:receiver});
@@ -36,7 +37,7 @@ export class ChatService {
         // set fromUserA  to true to know who send msg 
         if (convA)
         {
-            return await this.prisma.client.message.create({
+            const msg = await this.prisma.client.message.create({
                 data:{
                     content:content,
                     loginSender:sender,
@@ -49,10 +50,11 @@ export class ChatService {
                     },
                 },
             });
+            return {isFirst:isFirstMsg, msg:msg};
         }
         if (convB)
         {
-            return await this.prisma.client.message.create({
+            const msg = await this.prisma.client.message.create({
                 data:{
                     content:content,
                     loginSender:sender,
@@ -65,6 +67,7 @@ export class ChatService {
                     },
                 },
             });
+            return {isFirst:isFirstMsg, msg:msg};
         }
 
         // else userA and  userB first time they had a conversation so we create new one
@@ -84,8 +87,8 @@ export class ChatService {
                 loginB:userB.login,
             },
         });
-
-        return await this.prisma.client.message.create({
+        isFirstMsg = true;
+        const msg = await this.prisma.client.message.create({
             data:{
                 content:content,
                 loginSender:sender,
@@ -98,6 +101,7 @@ export class ChatService {
                 },
             },
         });
+        return {isFirst:isFirstMsg, msg:msg};
     }
 
     // get conversation between two users

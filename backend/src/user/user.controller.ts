@@ -242,9 +242,8 @@ constructor(private readonly userSrevice:UserService, private readonly achieveme
     @Get('is7erag')
     async is7erag(@Req() req:any, @Res() response:Response){
         try{
-            const { login} = req.user;
-            const token = req.headers.Authorization
-            const is7erag = await this.userSrevice.is7erag(token);
+            const token:string = req.headers.authorization
+            const is7erag = await this.userSrevice.is7erag(token.slice(7));
             if (!is7erag)
                 response.status(200).json({message:false});
             response.status(200).json({message:true});

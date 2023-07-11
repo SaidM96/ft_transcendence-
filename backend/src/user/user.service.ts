@@ -1084,6 +1084,6 @@ export class UserService {
 
     async is7erag(token:string){
         const is7erag = await this.jwtService.verify(token, {secret:`${process.env.jwt_secret}`})
-        return true;
+        return is7erag;
     }
 }
