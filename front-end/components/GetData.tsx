@@ -5,7 +5,7 @@ import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import smia from '../image/smia.jpg'
 import amya from '../image/amya.jpg'
-import { MyContext, MatchType } from "./Context";
+import { MyContext, MatchType, AchievementType } from "./Context";
 import avatar from '../image/avatar.webp'
 import { ModalChat } from "./Modal";
 import { FriendType } from "./Context";
@@ -49,28 +49,11 @@ const GetImage = ({ name }: { name: string | undefined }) => {
 export default function GetDataHistory({ matches }: { matches: MatchType[] }) {
   const [Img, setImg] = useState<string | StaticImageData>('');
   const context = useContext(MyContext);
-  const TreatImage = (img: string) => {
-    if (img.length < 6) {
-      //string
-      if (img === '0')
-        setImg(avatar);
-      if (img === 'smia')
-        setImg(smia);
-    } else {
-      //StaticImageData
-      setImg(img);
-
-    }
-  }
+  
 
 
 
-  useEffect(() => {
-    if (context?.img)
-      TreatImage(context?.img);
-
-
-  }, [context?.img])
+ 
   useEffect(() => {
     //here for fetching data
     // and here for setting the tade to usestate data
@@ -134,39 +117,10 @@ export default function GetDataHistory({ matches }: { matches: MatchType[] }) {
   }
 }
 
-export function GetDataAchievement() {
-  const [Data, setData] = useState([]);
-  const context = useContext(MyContext);
 
-  useEffect(() => {
-    //here for fetching data
-    const fetchData = async () => {
-      try {
-        const res = await axios.post(
-
-          "http://localhost:5000/user/acheivement",
-          {
-            login: context?.login,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${context?.token}`,
-            },
-          }
-        );
-        console.log(res.data)
-        setData(res.data)
-        // http://localhost:5000/auth/2-FA post login code
-      } catch (error) {
-        // Handle the error here
-        console.error(error);
-      }
-    };
-    // and here for setting the tade to usestate data
-    console.log('data for achievments ');
-    fetchData()
-  })
-  if (Data.length == 0) {
+export function GetDataAchievement({achiev} : {achiev : AchievementType[]}) {
+  
+  if (achiev.length == 0) {
     return (
       <p className=' text-center text-4xl mx-auto my-auto text-slate-700 font-semibold font-mono '>
         Not have Achievement yet
@@ -178,17 +132,17 @@ export function GetDataAchievement() {
       <div>
   
   <div className="mygrid items-start m-5 gap-4">
-  {Data.map((e: Achievements) => (
-    <div key={e.id} className="p-2 text-center rounded-lg shadow bg-green-200 flex flex-col items-center justify-around">
+  {achiev.map((ach : AchievementType) => (
+    <div key={ach.id} className="p-2 text-center rounded-lg shadow bg-green-200 flex flex-col items-center justify-around">
       <div className="flex items-center">
         <Award />
-        {e.title}
+        {ach.title}
       </div>
       <div className="flex py-3  items-center">
         
-        For: {e.condition}
+        For: {ach.condition}
       </div>
-      <div className="flex items-center">{e.description}</div>
+      <div className="flex items-center">{ach.description}</div>
     </div>
   ))}
 </div>
@@ -253,6 +207,7 @@ export function GetDataFriend() {
     setIsModalOpen(true);
 
   }
+  
   const deleteFriend = (friend: FriendType) => {
     context?.socket?.emit('removeFriend', { login: friend.login });
     removefriend(friend.login);

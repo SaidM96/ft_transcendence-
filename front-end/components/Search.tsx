@@ -252,6 +252,8 @@ const closeModale = () =>{
       context.socket.on('updatedFriend', (pay) =>{
         if (pay){
           console.log('updatedFriend  ', pay);
+          if (pay.login === context.login)
+            return;
           const getData = async () =>{
             const res = await axios.post(
               "http://localhost:5000/chat/findConversation",
@@ -377,6 +379,31 @@ const closeModale = () =>{
       
         fetchData();
       })
+      context.socket.on('firstMsg', (pay) =>{
+        if (pay){
+          const fetchData = async () => {
+            try {
+              const res = await axios.post(
+                'http://localhost:5000/chat/conversations',
+                { login: context?.login },
+                {
+                  headers: {
+                    Authorization: `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              context?.setContactChat(res.data);
+      
+            } catch (error) {
+              console.error('Error fetching data:', error);
+            }
+          };
+        
+          fetchData();
+          
+        }
+      
+      })
       context.socket.on('updateChannel', (pay) =>{
         if (pay){
           // console.log('this is pay ', pay);
@@ -436,6 +463,7 @@ const closeModale = () =>{
         context.socket.off('cancelInvitation');
         context.socket.off('blockuser');
         context.socket.off('updatedFriend');
+        context.socket.off('firstMsg');
         
       }
     };

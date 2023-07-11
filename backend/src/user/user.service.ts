@@ -1,5 +1,5 @@
 import { BlockDto, FriendDto, LoginDto, UpdateStats, UpdateStatus, UpdateUserDto, findUserDto, findUserOrChannel, invitationDto, storeMatchDto, usernameDto } from './dto/user.dto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Acheivement } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
 import { Achievements } from './achievement.service';
@@ -645,6 +645,27 @@ export class UserService {
             throw new BadRequestException(`${login} didn't block ${blocked}`);
     }
 
+    // get list blocked for displaying display them
+    async getblockedUsers(login:string){
+        const user = await  this.findUser({login:login});
+        const blockedList = await this.prisma.client.block.findMany({
+            where:{
+                blockedById:user.UserId,
+            },
+            select:{
+                blocked:{
+                    select:{
+                        login:true,
+                        username:true,
+                        avatar:true,
+                    }
+                }
+            }
+        });
+        const result = blockedList.map(it => it.blocked);
+        return result;
+    }
+
     // get list of blocked users by  a user
     async getBlockedList(findUser:findUserDto){
         const result:any[] = [];
@@ -910,6 +931,8 @@ export class UserService {
         const {loginA, loginB, scoreA, scoreB, winner} = matchDto;
         const userA = await  this.findUser({login:loginA});
         const userB = await  this.findUser({login:loginB});
+        if (loginA === loginB)
+            throw new BadGatewayException("loginA  and loginB  must be different");
         await this.prisma.client.match.create({
             data:{
                 userA:{
@@ -934,7 +957,7 @@ export class UserService {
                     UserId:userA.UserId,
                 },
                 data:{
-                    lvl:userA.lvl + 1,
+                    lvl:userA.lvl + 0.4
                 }
             });
             if (userB.lvl > 0)
@@ -944,7 +967,7 @@ export class UserService {
                         UserId:userB.UserId,
                     },
                     data:{
-                        lvl:userB.lvl - 1,
+                        lvl:userB.lvl - 0.2
                     },
                 });
             }
@@ -956,7 +979,7 @@ export class UserService {
                     UserId:userB.UserId,
                 },
                 data:{
-                    lvl:userB.lvl + 1,
+                    lvl:userB.lvl + 0.4
                 },
             });
             if (userA.lvl > 0)
@@ -966,7 +989,7 @@ export class UserService {
                         UserId:userA.UserId,
                     },
                     data:{
-                        lvl:userA.lvl - 1
+                        lvl:userA.lvl - 0.2
                     },
                 });
             }
@@ -978,24 +1001,6 @@ export class UserService {
 
     // get user's matchs history 
     async getHistoryUserMatchs(findUser:findUserDto){
-        // const user = await  this.findUser(findUser);
-        // let result:any[] = [];
-        // let win:number = 0;
-        // const matchsA =  await this.prisma.client.match.findMany({
-        //     where:{
-        //         userAId:user.UserId,
-        //     },
-        //     select: {
-        //       userB: {
-        //         select: {
-        //           login: true,
-        //           avatar: true,
-        //           username: true,
-        //         },
-        //       },
-
-        //     },
-        // });
         const user = await  this.findUser(findUser);
         let result:any[] = [];
         let win:number = 0;
@@ -1026,7 +1031,7 @@ export class UserService {
         const lose = result.length - win;
         const pWin =  win / result.length * 100;
         const pLose = lose / result.length * 100;
-        result.push({pWin:pWin, pLose:pLose, numberOfMatches:result.length});
+        result.push({pWin:pWin.toFixed(2), pLose:pLose.toFixed(2), numberOfMatches:result.length});
         return result;
     }
 
@@ -1075,6 +1080,17 @@ export class UserService {
 
 
     async deleteAcoount(login:string){
+        const user = await this.findUser({login:login});
+        await this.prisma.client.channel.deleteMany({
+            where:{
+                LoginOwner:login,
+            },
+        });
+        await this.prisma.client.msgChannel.deleteMany({
+            where:{
+                login:login,
+            },
+        });
         await this.prisma.client.user.delete({
             where:{
                 login:login
