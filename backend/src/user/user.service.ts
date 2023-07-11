@@ -604,6 +604,25 @@ export class UserService {
                         ConvId:conv.ConvId
                     }
                 })
+            let pend = await this.prisma.client.pendingFriendShip.findFirst({
+                where:{
+                    senderId:user.UserId,
+                    receiverId:blockedUser.UserId
+                }
+            })
+            if (!pend)
+                pend = await this.prisma.client.pendingFriendShip.findFirst({
+                    where:{
+                        senderId:blockedUser.UserId,
+                        receiverId:user.UserId,
+                    }
+                })
+            if (pend)
+                await  this.prisma.client.pendingFriendShip.delete({
+                    where:{
+                        PendingId:pend.PendingId
+                    }
+                })
             return await this.prisma.client.block.create({
                 data:{
                     blockBy:{

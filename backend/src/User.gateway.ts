@@ -835,4 +835,9 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.emit('errorMessage', error);
         }
     }
+
+    @SubscribeMessage('deleteAccount')
+    async deleteAccount(){
+        
+    }
 }
