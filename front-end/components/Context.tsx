@@ -155,8 +155,16 @@ export interface profileType{
   lvl : number
 }
 
+export interface userBlockedType{
+  username : string;
+  login : string;
+  avatar : string;
+}
+
 
 export interface ContextTypes{
+  userBlocked : userBlockedType[];
+  setUserBlocked : Dispatch<SetStateAction<userBlockedType[]>>;
   acheivement : AchievementType[];
   setAcheivement : Dispatch<SetStateAction<AchievementType[]>>;
   showChat : boolean;
@@ -254,6 +262,7 @@ const MyContext = createContext<ContextTypes | undefined>(undefined);
 // create provider
 
 const MyContextProvider = ({children} : ChildProps) =>{
+    const [userBlocked, setUserBlocked] = useState<userBlockedType[]>([]);
     const [acheivement, setAcheivement] = useState<AchievementType[]>([])
     const [loginClick, setLoginClick] = useState<string>('');
     const [showChat, setShowChat] = useState(true);
@@ -326,6 +335,9 @@ const MyContextProvider = ({children} : ChildProps) =>{
         const GetChannelBanner = localStorage.getItem('channelBanner');
         const GetClickC = localStorage.getItem('loginClick');
         const Getacheivement = localStorage.getItem('acheivement')
+        const GetuserBlocked = localStorage.getItem('userBlocked');
+        if (GetuserBlocked !== undefined && GetuserBlocked !== null && GetuserBlocked != 'undefined')
+          setUserBlocked(JSON.parse(GetuserBlocked));
         if (GetClickC)
         setLoginClick(GetClickC)
         if (Getacheivement != undefined && Getacheivement !== null && Getacheivement !== "undefined"){
@@ -351,11 +363,11 @@ const MyContextProvider = ({children} : ChildProps) =>{
         if (GetBlock!== undefined && GetBlock!== null) {
           setBlackList(JSON.parse(GetBlock));
         }
-        if (GetWaitAccept != undefined && GetWaitAccept !== null){
+        if (GetWaitAccept != undefined && GetWaitAccept !== null && GetWaitAccept !== "undefined"){
             setWaitToAccept(JSON.parse(GetWaitAccept));
         }
         const GetPending = localStorage.getItem('pending')
-        if (GetPending !== undefined && GetPending != null){
+        if (GetPending !== undefined && GetPending != null && GetPending !== "undefined"){
           setPendingInvitation(JSON.parse(GetPending));
         }
         const GetChangeName = localStorage.getItem('changeName');
@@ -510,11 +522,14 @@ const MyContextProvider = ({children} : ChildProps) =>{
   useEffect(() =>{
     localStorage.setItem('acheivement', JSON.stringify(acheivement));
   },[acheivement]);
+  useEffect(() =>{
+    localStorage.setItem('userBlocked' , JSON.stringify(userBlocked));
+  }, [userBlocked])
 
   // context value
  
     const ContextValue = {name,showChat,acheivement, setAcheivement, setShowChat ,setName, img, setImg, friends, setFriends,wins, setWins, losses, setLosses,  level, setLevel,LevlPer,setLevlPer,login, setLogin, checkname, 
-      setCheckname,socket,setSocket, chatHistory,setChatHistory,showMsg, setShowMsg, check, setCheck, match, setMatch,token, setToken,blackList,adminsChannel, setAdminChannel, 
+      setCheckname,socket,userBlocked, setUserBlocked,setSocket, chatHistory,setChatHistory,showMsg, setShowMsg, check, setCheck, match, setMatch,token, setToken,blackList,adminsChannel, setAdminChannel, 
       setBlackList,error, setError, messageError, setMessageError, membersChannel, setMembersChannel,userSearch, setUserSearch,channelSearch, setChannelSearch,MessageContent, 
       waitToAccept,profile, setProfile, pendingInvitation, setPendingInvitation, setWaitToAccept, channelInfo, Channels,setClickChannel, setChannelInfo,clickChat, setClickChat,
       clickChannel,changeName,loginClick, setLoginClick,channelBanner, setChannelBanner, setChangeName, setChannels,owner, profileuser, setProfileuser,setOwner, admin, setAdmin, setMessageContent,contactChat, enableTwoFa, setEnableTwofa, setContactChat, MessageInfo, setMessageInfo , chn, setChn}

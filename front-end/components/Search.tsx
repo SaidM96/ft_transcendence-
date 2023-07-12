@@ -76,6 +76,7 @@ const closeModale = () =>{
 
           }
         })
+       
         context?.socket.on('joinOther', (pay) =>{
           if (pay){
             console.log('her channel name ', pay)
@@ -112,6 +113,7 @@ const closeModale = () =>{
             // }
           }
         })
+     
         
         context?.socket.on('join', (pay)=>{
           if (pay){
@@ -149,18 +151,9 @@ const closeModale = () =>{
             // }
           }
         })
-        context.socket.on('updateFriend', (pay) =>{
-          if (pay){
-            console.log('this is update friend  ', pay);
-          }
-        })
+       
         
-        context.socket.on('errorJoin' , (pay) =>{
-            if (pay){
-              console.log(pay)
-              console.log('this is error')
-            }
-        })
+     
     }
 
 
@@ -215,7 +208,84 @@ const closeModale = () =>{
             avatar : pay.avatar
           }
 
-            context.setPendingInvitation((prev) =>[...prev,friend])
+            // context.setPendingInvitation((prev) =>[...prev,friend])
+            const getDat = async () =>{
+              try{
+                const resp = await axios.post('http://localhost:5000/user/friends', 
+                {login : context?.login}, 
+                {
+                  headers: {
+                    Authorization : `Bearer ${context?.token} `
+
+                  }
+                });
+                console.log(resp);
+                const res= await axios.post('http://localhost:5000/user/friends',
+                {login : context.login},
+                {
+                  headers : {
+                    Authorization : `Bearer ${context.token}`
+                  }
+                }
+                )
+                context.setPendingInvitation(res.data.waitToAccept);
+                console.log('this fro event invite j',res.data )
+
+              }catch(e){
+                console.log(e);
+              }
+            }
+            getDat()
+        }
+      })
+      context.socket.on('errorJoin',(pay : any) =>{
+          if (pay){
+            if (pay.message !== 'jwt must be provided'){
+             
+              context.setMessageError(pay.message);
+              context.setError(true);
+            
+            }
+  
+          }
+      });
+      context.socket.on('twoInvite',(pay : any) =>{
+        if (pay){
+          console.log(pay, 'twoInvite');
+          const fetchData = async () =>{
+            try{
+              const res = await axios.post('http://localhost:5000/user/friends',
+              {
+                login : context?.login
+              },{
+                headers : {
+                  Authorization : ` Bearer ${context?.token}`
+                }
+              }
+              )
+              context.setFriends(res.data.friends);
+              context.setWaitToAccept(res.data.pendingInvitation)
+              context.setPendingInvitation(res.data.waitToAccept);
+//               friends
+// : 
+// [{…}]
+// pendingInvitation
+// : 
+// []
+// waitToAccept
+// : 
+// []
+              console.log(res.data)
+              // context.setF
+
+            }catch (error) {
+              console.log(error)
+            }
+
+          }
+          fetchData();
+          
+          
         }
       })
 
@@ -330,8 +400,11 @@ const closeModale = () =>{
                 Authorization : `Bearer ${context.token}`,
               }
             })
-            console.log('this is friends ', res.data.friends);
+            console.log('this all  friends  and not friend  ', res.data);
             context.setFriends(res.data.friends);
+            context.setWaitToAccept(res.data.pendingInvitationt);
+            context.setPendingInvitation(res.data.waitAccept);
+
           }
           getData();
           const fetchData = async () => {
@@ -464,6 +537,8 @@ const closeModale = () =>{
         context.socket.off('blockuser');
         context.socket.off('updatedFriend');
         context.socket.off('firstMsg');
+        context.socket.off('errorJoin');
+        context.socket.off('twoInvite');
         
       }
     };

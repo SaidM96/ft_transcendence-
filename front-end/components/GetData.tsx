@@ -5,7 +5,7 @@ import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import smia from '../image/smia.jpg'
 import amya from '../image/amya.jpg'
-import { MyContext, MatchType, AchievementType } from "./Context";
+import { MyContext, MatchType, AchievementType, userBlockedType } from "./Context";
 import avatar from '../image/avatar.webp'
 import { ModalChat } from "./Modal";
 import { FriendType } from "./Context";
@@ -13,6 +13,7 @@ import Router from "next/router";
 import axios from "axios";
 
 import { Award } from "react-feather"
+import { checkIs7rag } from "./Functions";
 interface Achievements {
   avatar: string
   condition: string
@@ -184,6 +185,8 @@ export function GetDataFriend() {
   }
 
   const blockUser = (friend: FriendType) => {
+    if (context?.token)
+      checkIs7rag(context?.token);
     if (context?.socket)
       context?.socket.emit('block', {
         blockedLogin: friend.login,
@@ -191,7 +194,7 @@ export function GetDataFriend() {
       })
     removefriend(friend.login);
     removeChat(friend.login);
-    context?.setBlackList((prev) => [...prev, friend]);
+    context?.setUserBlocked((prev) => [...prev, friend]);
   }
 
   useEffect(() => {
@@ -209,6 +212,8 @@ export function GetDataFriend() {
   }
   
   const deleteFriend = (friend: FriendType) => {
+    if (context?.token)
+      checkIs7rag(context?.token);
     context?.socket?.emit('removeFriend', { login: friend.login });
     removefriend(friend.login);
   }
@@ -295,12 +300,56 @@ const DatSend = () => {
 
 
   const removeInvite = (login: string) => {
+    if (context?.token)
+      checkIs7rag(context?.token);
     context?.socket?.emit('removeInvite', { login: login });
     rmv(login);
     console.log(login);
 
   }
-  if (context?.waitToAccept.length === 0) {
+  if (context?.waitToAccept){
+    if (context?.waitToAccept.length === 0) {
+      return (
+        <p className=' text-center text-4xl mx-auto my-auto text-slate-700 font-semibold font-mono '>
+          You are not Add any one
+  
+        </p>
+      )
+    }
+  
+    else
+      return (
+        <div className="flex flex-col w-full h-full">
+          <div className="w-full bg-gray-300 rounded-t-2xl h-[14%] flex justify-around items-center font-semibold text-sm text-left text-gray-500 z-20">
+            <div>Avatar</div>
+            <div>Name</div>
+            <div>Details</div>
+          </div>
+          <div className="w-full h-[86%] overflow-y-auto scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-300">
+            {
+              context?.waitToAccept.map((friend: FriendType) => {
+                return (
+                  <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
+                    {/* <ModalChat  isOpen={isModalOpen} closeModal={closeModal} name={name} login={login}/> */}
+                    <div className="h-full w-1/3 flex justify-center items-center">
+                      <GetImage name={friend.avatar} />
+                    </div>
+                    <div className="w-1/3 text-center">{friend.username}</div>
+                    <div className="w-1/3 text-center z-20">
+                      <div className="dropdown dropdown-left ">
+                        <button onClick={() => removeInvite(friend.login)} className="btn btn-ghost btn-xs">Remove Invite</button>
+  
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            }
+          </div>
+        </div>
+      )
+  }
+  else{
     return (
       <p className=' text-center text-4xl mx-auto my-auto text-slate-700 font-semibold font-mono '>
         You are not Add any one
@@ -308,38 +357,6 @@ const DatSend = () => {
       </p>
     )
   }
-
-  else
-    return (
-      <div className="flex flex-col w-full h-full">
-        <div className="w-full bg-gray-300 rounded-t-2xl h-[14%] flex justify-around items-center font-semibold text-sm text-left text-gray-500 z-20">
-          <div>Avatar</div>
-          <div>Name</div>
-          <div>Details</div>
-        </div>
-        <div className="w-full h-[86%] overflow-y-auto scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-300">
-          {
-            context?.waitToAccept.map((friend: FriendType) => {
-              return (
-                <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
-                  {/* <ModalChat  isOpen={isModalOpen} closeModal={closeModal} name={name} login={login}/> */}
-                  <div className="h-full w-1/3 flex justify-center items-center">
-                    <GetImage name={friend.avatar} />
-                  </div>
-                  <div className="w-1/3 text-center">{friend.username}</div>
-                  <div className="w-1/3 text-center z-20">
-                    <div className="dropdown dropdown-left ">
-                      <button onClick={() => removeInvite(friend.login)} className="btn btn-ghost btn-xs">Remove Invite</button>
-
-                    </div>
-                  </div>
-                </div>
-              )
-            })
-          }
-        </div>
-      </div>
-    )
 }
 
 
@@ -356,7 +373,10 @@ const DataRecieved = () => {
   };
 
   const AcceptFriend = (friend: FriendType) => {
+    if (context?.token)
+      checkIs7rag(context?.token);
     removefriend(friend.login)
+    
     context?.socket?.emit('acceptFriend',
       {
         login: friend.login,
@@ -370,6 +390,8 @@ const DataRecieved = () => {
   }
 
   const deleteinvit = (friend: FriendType) => {
+    if (context?.token)
+      checkIs7rag(context?.token);
     removefriend(friend.login)
     context?.socket?.emit('acceptFriend', {
       login: friend.login,
@@ -379,7 +401,8 @@ const DataRecieved = () => {
   }
 
 
-  if (context?.pendingInvitation.length === 0)
+  if (context?.pendingInvitation){
+    if (context?.pendingInvitation.length === 0)
     return (
       <p className=' text-center text-4xl mx-auto my-auto text-slate-700 font-semibold font-mono '>
         You don't have any invitation
@@ -400,7 +423,6 @@ const DataRecieved = () => {
             context?.pendingInvitation.map((friend: FriendType) => {
               return (
                 <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
-                  {/* <ModalChat  isOpen={isModalOpen} closeModal={closeModal} name={name} login={login}/> */}
                   <div className="h-full w-1/3 flex justify-center items-center">
                     <GetImage name={friend.avatar} />
 
@@ -422,7 +444,16 @@ const DataRecieved = () => {
         </div>
       </div>
 
-    );
+    );}
+    else{
+      return (
+        <p className=' text-center text-4xl mx-auto my-auto text-slate-700 font-semibold font-mono '>
+          You don't have any invitation
+  
+        </p>
+      )
+
+    }
 }
 
 
@@ -431,11 +462,13 @@ const BlackList = () => {
   const context = useContext(MyContext);
 
   const rmv = (login: string) => {
-    context?.setBlackList(prev =>
+    context?.setUserBlocked(prev =>
       prev.filter(friend => friend.login !== login)
     );
   };
   const removeBlock = (friend: FriendType) => {
+    if (context?.token)
+      checkIs7rag(context?.token);
     context?.socket?.emit('block', {
       blockedLogin: friend.login,
       stillEnemy: false,
@@ -443,41 +476,52 @@ const BlackList = () => {
     rmv(friend.login);
 
   }
-  if (context?.blackList.length === 0)
+  if (context?.userBlocked){
+    if (context?.userBlocked.length === 0)
     return (
       <p className=' text-center text-4xl mx-auto my-auto text-slate-700 font-semibold font-mono '>
         Black List is empty
       </p>
     )
-  else
-    return (
-      <div className="flex flex-col w-full h-full">
-        <div className="w-full bg-gray-300 rounded-t-2xl h-[14%] flex justify-around items-center font-semibold text-sm text-left text-gray-500 z-20">
-          <div>Avatar</div>
-          <div>Name</div>
-          <div>Details</div>
-        </div>
-        <div className="w-full h-[86%] overflow-y-auto scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-300">
-          {
-            context?.blackList.map((friend: FriendType) => {
-              return (
-                <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
-                  <div className="h-full w-1/3 flex justify-center items-center">
-                    <GetImage name={friend.avatar} />
-                  </div>
-                  <div className="w-1/3 text-center">{friend.username}</div>
-                  <div className="w-1/3 text-center z-20">
-                    <div className="dropdown dropdown-left ">
-                      <button onClick={() => removeBlock(friend)} className="btn btn-ghost btn-xs">Remove Block</button>
+    else
+      return (
+        <div className="flex flex-col w-full h-full">
+          <div className="w-full bg-gray-300 rounded-t-2xl h-[14%] flex justify-around items-center font-semibold text-sm text-left text-gray-500 z-20">
+            <div>Avatar</div>
+            <div>Name</div>
+            <div>Details</div>
+          </div>
+          <div className="w-full h-[86%] overflow-y-auto scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-300">
+            {
+              context?.userBlocked.map((friend: userBlockedType ) => {
+                return (
+                  <div key={friend.login} className="h-[16%] max-h-[16%] bg-gray-200 flex justify-around items-center my-2" >
+                    <div className="h-full w-1/3 flex justify-center items-center">
+                      <GetImage name={friend.avatar} />
+                    </div>
+                    <div className="w-1/3 text-center">{friend.username}</div>
+                    <div className="w-1/3 text-center z-20">
+                      <div className="dropdown dropdown-left ">
+                        <button onClick={() => removeBlock(friend)} className="btn btn-ghost btn-xs">Remove Block</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })
-          }
+                )
+              })
+            }
+          </div>
         </div>
-      </div>
-    );
+      );
+
+  }
+  else{
+    return (
+        <p className=' text-center text-4xl mx-auto my-auto text-slate-700 font-semibold font-mono '>
+          Black List is empty
+        </p>
+      )
+
+  }
 }
 
 

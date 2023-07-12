@@ -81,6 +81,7 @@ export default function Profileid() {
         context?.setLosses(response.porcentages.pLose)
         context?.setWins(response.porcentages.pWin)
         context?.setImg(response.avatar);
+        context?.setAcheivement(response.acheivement);
         context?.setFriends(response.friends.friends);
         context?.setWaitToAccept(response.friends.pendingInvitation);
         context?.setPendingInvitation(response.friends.waitToAccept);
@@ -101,6 +102,27 @@ export default function Profileid() {
       };
   
        fetchTokenAndConnectSocket();
+       const fetchBlockusers = async () =>{
+        try{
+          const res = await axios.post('http://localhost:5000/user/blocks',
+          {
+            login : context?.login
+          },{
+            headers : {
+              Authorization : `Bearer ${context?.token}`
+            }
+          }
+          )
+          console.log(' this is all users you are block ', res.data);
+          context?.setUserBlocked(res.data);
+          console.log('and this is all users you are blocked in context ', context?.userBlocked);
+
+        }catch(e){
+          console.log(e)
+        }
+
+       }
+       fetchBlockusers();
 
 
     }, [router.query.id]);

@@ -116,7 +116,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         const index = this.userSockets.get(login).indexOf(id);
         this.userSockets.get(login).splice(index, 1);
         if(this.userSockets.get(login).length == 0){
-            const dto:UpdateUserDto = {login:login, isOnline:false, inGame:undefined, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};   
+            const dto:UpdateUserDto = {login:login, isOnline:false, inGame:undefined, username:undefined, avatar:undefined, enableTwoFa:undefined};   
             const updatedUser = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(updatedUser);
             this.connectedUsers.delete(login);
@@ -173,7 +173,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             });
             if (this.userSockets.get(login).length == 1){
                 // set status online in database
-                const dto:UpdateUserDto = {login:user.login, isOnline:true, inGame:undefined, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+                const dto:UpdateUserDto = {login:user.login, isOnline:true, inGame:undefined, username:undefined, avatar:undefined, enableTwoFa:undefined};
                 const updatedUser = await this.userService.updateUser(dto);
                 this.connectedUsers.set(login,updatedUser);
                 await this.MsgToUpdatedfriends(updatedUser);
@@ -206,7 +206,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                         this.worlds[user.login].clearGame()
                         delete this.worlds[user.login]
                         this.worlds[user.login] = null
-                        const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+                        const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
                         user = await this.userService.updateUser(dto);
                         this.connectedUsers.set(login,user);
                         await this.MsgToUpdatedfriends(user);
@@ -216,7 +216,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                     if (roomJoined && this.worlds[roomJoined].players.player2.client == client.id) {
                         this.worlds[roomJoined].availablePaddles.push("right")
                         this.worlds[roomJoined].players.player2 = { user: null, client: null }
-                        const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+                        const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
                         user = await this.userService.updateUser(dto);
                         this.connectedUsers.set(login,user);
                         await this.MsgToUpdatedfriends(user);
@@ -246,7 +246,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             this.worlds[user.login].clearGame()
             delete this.worlds[user.login]
             this.worlds[user.login] = null
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
             user = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(user);
             this.connectedSocket.delete(client.id);
@@ -259,7 +259,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             this.worlds[roomJoined].players.player2 = { user: null, client: null }
             this.connectedSocket.delete(client.id);
             await this.deleteSocketFromMapUsers(client.id);
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
             user = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(user);
         }
@@ -323,7 +323,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('owner must be connected to the channel to join it');
             }
             client.join(roomId); // add the client to the specified room
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
             const userUpdate = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(userUpdate);
             this.world.handleConnection(client, user);
@@ -379,7 +379,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                         this.worlds[userReceiver.login].clearGame();
                         delete this.worlds[userReceiver.login]
                         this.worlds[userReceiver.login] = null
-                        const dto:UpdateUserDto = {login:login, isOnline:undefined, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};
+                        const dto:UpdateUserDto = {login:login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
                         userSender = await this.userService.updateUser(dto);
                         await this.MsgToUpdatedfriends(userSender);
                     }
@@ -628,7 +628,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:undefined,username:body.username, bioGra:body.bioGra, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
+            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:undefined,username:body.username, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
             if (dto.username !== undefined)
             {
                 const userwithSameUsername = await this.userService.findUserwithSameUsername(dto.username);
@@ -659,7 +659,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const user = this.connectedUsers.get(login);
             if (!user)
                 throw new BadRequestException('no such user');
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:undefined, username:body.username, bioGra:body.bioGra, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
+            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:undefined, username:body.username, avatar:body.avatar, enableTwoFa:body.enableTwoFa};
             if (dto.username !== undefined)
             {
                 const userwithSameUsername = await this.userService.findUserwithSameUsername(dto.username);
@@ -757,6 +757,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 {
                     const msg = {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar}
                     this.sendMsgToUser(otherUser.login,msg, "twoInvite" );
+                    this.sendMsgToUser(user.login,msg, "twoInvite" );
                     // this.server.to(key).emit("twoInvite", {message:`${user.login} had accepte your invitation `, login:user.login,username:user.username,avatar:user.avatar})    
                 }
                 // client.emit('twoInvite',{message:` you and ${body.login} are  friends now`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
@@ -768,8 +769,8 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                     const msg = {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar}
                     this.sendMsgToUser(otherUser.login,msg, "invite" );
                 }
-                // this.server.to(key).emit("invite", {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar})
-                // client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
+                    // this.server.to(key).emit("invite", {message:`${user.login} had invite you to be his friend `, login:user.login,username:user.username,avatar:user.avatar})
+                    // client.emit('invite',{message:` you have invited ${body.login} as a friend`, login:otherUser.login,username:otherUser.username,avatar:otherUser.avatar});
             }
         }
         catch(error){
@@ -854,7 +855,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             const hashedToken:string = await createHash('sha256').update(token).digest('hex');
             this.blackListedJwt.set(hashedToken,user.login);
             // set status offline in database
-            const dto:UpdateUserDto = {login:login, isOnline:false, inGame:false, username:undefined, bioGra:undefined, avatar:undefined, enableTwoFa:undefined};   
+            const dto:UpdateUserDto = {login:login, isOnline:false, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};   
             const updatedUser = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(updatedUser);
             this.sendMsgToUser(login, `${user.login} had log out`, "logout");
