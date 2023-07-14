@@ -55,35 +55,6 @@ const closeModale = () =>{
 
   useEffect(() =>{
     if (context?.socket){
-        context.socket.on('channelRemoved', (pay) =>{
-
-          if (pay){
-            if (context.nameDelete === pay.channelName || context.loginClick === pay.channelName)
-              context.setShowChannel(false);
-            const fetchData = async () => {
-              try {
-                const res = await axios.post(
-                  'http://localhost:5000/chat/memberships',
-                  { login: context?.login },
-                  {
-                    headers: {
-                      Authorization: `Bearer ${context?.token}`,
-                    },
-                  }
-                );
-                // context?.setContactChat(res.data);
-                context?.setChannels(res.data);
-        
-              } catch (error) {
-                console.error('Error fetching data:', error);
-              }
-            };
-          
-            fetchData();
-
-          }
-        })
-       
         context?.socket.on('joinOther', (pay) =>{
           if (pay){
             console.log('her channel name ', pay)
@@ -495,16 +466,42 @@ const closeModale = () =>{
           };
         
           fetchData();
-          
         }
         
       })
-      context.socket.on('deleteAccount', (pay) =>{
+      
+      context.socket.on('staticsGame', (pay) =>{
         if (pay){
-          console.log('Deleting account')
+          console.log('Statics   Game:', pay);
+          context.setLosses(pay.lose);
+          context.setWins(pay.win);
+          const m : string = pay.lvl.toString();
+          context?.setLevel((+m.substring(0,1)))
+          context?.setLevlPer((+(m.substring(2.1))) * 10)
+          const getData = async () =>{
+            const res = await axios.get('http://localhost:5000/user/me', {headers:{
+            Authorization : `Bearer ${context.token}`
+        }})
+            context.setMatch(res.data.matches);
+            
+          }
+          getData();
+
+
+        }
+      })
+      context.socket.on('deleteAccount', (pay) =>{
+        console.log('this is name of channel ', context.nameChannel);
+        if (pay){
+          const namech = localStorage.getItem('ChannelNameee')
+          if (pay.login === context.login)
+            return ;
+          
+          console.log('Deleting account, ', pay);
           if (pay.login === context.login)
             return ;
           if (pay.login === context.nameDelete || pay.login === context.loginClick){
+            console.log('hello this is the samething')
             context.setShowChat(false);
             context.setFetchChannel(true);
           }
@@ -541,20 +538,39 @@ const closeModale = () =>{
               }
             );
             context?.setContactChat(conversations.data);
-              
-            // const res = await axios.post(
-            //   'http://localhost:5000/chat/channel/message/all',
-            //   {channelName: context.loginClick}, 
-            //   {
-            //     headers:{
-            //       Authorization : `Bearer ${context?.token}`,
-            //     },
-            //   }
-            // );
-            // console.log('deleted acount in mssage channel ,', res.data[1])
-            // context?.setChannelHistory(res.data[1]);
+            const channels = await axios.post(
+              'http://localhost:5000/chat/memberships',
+              { login: context?.login },
+              {
+                headers: {
+                  Authorization: `Bearer ${context?.token}`,
+                },
+              }
+            );
+            context?.setChannels(channels.data);
+            if (context.channelHistory[0].channelName === namech){
+              const messages = await axios.post(
+                'http://localhost:5000/chat/channel/message/all',
+                {channelName: namech}, 
+                {
+                  headers:{
+                    Authorization : `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              context?.setChannelHistory(messages.data[1]);
+            }
           }
           fetData();
+          if (namech){
+            pay.channels.map((cha : string) =>{
+              if (namech === cha){
+                context.setShowChannel(false);
+              }
+
+            })
+          }
+          
           
           
         }
@@ -637,9 +653,8 @@ const closeModale = () =>{
         context.socket.off('updatedFriend');
         context.socket.off('firstMsg');
         context.socket.off('errorJoin');
-        context.socket.off('deleteAccount');
         context.socket.off('twoInvite');
-        // context.socket.off('createChannel');
+        context.socket.off('staticsGame');
         // context.socket.off('errorCreateChannel');
         
       }

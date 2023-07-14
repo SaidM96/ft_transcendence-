@@ -110,6 +110,7 @@ export interface adminsChannelType{
   login : string;
   username: string;
 }
+
 export interface membersChannelType{
   avatar: string;
   channelName : string;
@@ -173,6 +174,8 @@ export interface userBlockedType{
 
 
 export interface ContextTypes{
+  nameChannel : string;
+  setnameChannel : Dispatch<SetStateAction<string>>;
   channelHistory : msgChannel[];
   setChannelHistory : Dispatch<SetStateAction<msgChannel[]>>;
   fetchChannel : boolean;
@@ -284,6 +287,7 @@ const MyContext = createContext<ContextTypes | undefined>(undefined);
 // create provider
 
 const MyContextProvider = ({children} : ChildProps) =>{
+  const [nameChannel, setnameChannel] = useState('');
     const [channelHistory, setChannelHistory] = useState<msgChannel[]>([]);
     const [leaderBoard, setLeaderBoard] = useState<LeaderBoardType[]>([])
     const [fetchChannel, setFetchChannel] = useState(false);
@@ -570,7 +574,7 @@ const MyContextProvider = ({children} : ChildProps) =>{
 
   // context value
  
-    const ContextValue = {name,showChat,channelHistory, setChannelHistory,fetchChannel,setFetchChannel,nameDelete,leaderBoard, setLeaderBoard,  setNameDelete, showChannel, setShowChannel, acheivement, setAcheivement, setShowChat ,setName, img, setImg, friends, setFriends,wins, setWins, losses, setLosses,  level, setLevel,LevlPer,setLevlPer,login, setLogin, checkname, 
+    const ContextValue = {name,showChat,nameChannel, setnameChannel,channelHistory, setChannelHistory,fetchChannel,setFetchChannel,nameDelete,leaderBoard, setLeaderBoard,  setNameDelete, showChannel, setShowChannel, acheivement, setAcheivement, setShowChat ,setName, img, setImg, friends, setFriends,wins, setWins, losses, setLosses,  level, setLevel,LevlPer,setLevlPer,login, setLogin, checkname, 
       setCheckname,socket,userBlocked, setUserBlocked,setSocket, chatHistory,setChatHistory,showMsg, setShowMsg, check, setCheck, match, setMatch,token, setToken,blackList,adminsChannel, setAdminChannel, 
       setBlackList,error, setError, messageError, setMessageError, membersChannel, setMembersChannel,userSearch, setUserSearch,channelSearch, setChannelSearch,MessageContent, 
       waitToAccept,profile, setProfile, pendingInvitation, setPendingInvitation, setWaitToAccept, channelInfo, Channels,setClickChannel, setChannelInfo,clickChat, setClickChat,
