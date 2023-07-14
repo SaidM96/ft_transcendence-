@@ -17,6 +17,8 @@ import { ModalChat } from "./Modal";
 import { AlertCircle, CheckCircle } from 'react-feather'
 import { GetAvatarChannel, checkIs7rag } from "./Functions";
 import { library } from "@fortawesome/fontawesome-svg-core";
+import Lottie from "lottie-react";
+import anim from '../image/chatanim.json'
 
 
 interface recvProps {
@@ -220,9 +222,10 @@ const clickInfo = () => { }
 const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) => {
   const context = useContext(MyContext);
   const [msg, setMsg] = useState<msgChannel[]>([]);
+  
 
   useEffect(() => {
-    setMsg(history);
+    context?.setChannelHistory(history);
   }, [history]);
 
   useEffect(() => {
@@ -230,7 +233,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
       context.socket.on(`${context.channelInfo?.channelName}`, (payload: any) => {
         if (payload) {
-          setMsg((prevMsgs) => [...prevMsgs, payload]);
+          context.setChannelHistory((prevMsgs) => [...prevMsgs, payload]);
         }
         
       });
@@ -294,7 +297,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     })
     if (context?.channelInfo)
       removeChannelByName(context?.channelInfo?.channelName)
-    router.reload();
+    context?.setShowChannel(false);
   }
 
   const memberChannel = () => {
@@ -704,8 +707,11 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
   
   return (
-
-    <div className={`${valueCheck === true ? 'hidden' : 'flex'}flex-col h-full overflow-y-auto relative scrollbar scrollbar-thumb-green-400 scrollbar-w-1
+    <>
+    <div className={`w-full h-full flex justify-center ${context?.showChannel ? 'hidden' : 'block'}`}>
+      <Lottie  animationData={anim}  /> 
+    </div>
+    <div className={`${valueCheck === true ? 'hidden' : 'flex'} ${context?.showChannel ? 'block' : 'hidden'} flex-col h-full overflow-y-auto relative scrollbar scrollbar-thumb-green-400 scrollbar-w-1
         scrollbar-track-slate-100 scrollbar- gap-1 bg-gray-300 rounded-2xl `}>
       {
         openModal && <ModalUpdateChannel isOpen={openModal} closeModal={closeMd} />
@@ -727,7 +733,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
       </div>
       <div className="w-full h-[93%] flex flex-col p-2 " >
-        {msg.map((msg: msgChannel) => {
+        {context?.channelHistory.map((msg: msgChannel) => {
           if (msg.login === context?.login)
             return <Sender key={msg.login} msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
           else
@@ -751,6 +757,8 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
         </div>
       </div>
     </div>
+    </>
+
   );
 }
 

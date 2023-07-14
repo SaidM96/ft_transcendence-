@@ -8,7 +8,7 @@ import { ChannelDto, DeleteMemberChannelDto, MemberChannelDto, deleteChannelDto,
 import { ChatService } from './chat/chat.service';
 import { BadRequestException, NotFoundException, UseFilters, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebsocketExceptionsFilter } from './chat/socketException';
-import { FriendDto, UpdateStatus, UpdateUserDto, acceptFriend, findUserDto, invitationDto, newBlockDto, newFriendDto, newUpdateUserDto } from 'src/user/dto/user.dto';
+import { FriendDto, UpdateStatus, UpdateUserDto, acceptFriend, findUserDto, invitationDto, newBlockDto, newFriendDto, newUpdateUserDto, storeMatchDto } from 'src/user/dto/user.dto';
 import { BlockDto } from 'src/user/dto/user.dto';
 import { createHash } from 'crypto';
 import { checkQueue, matterNode, measurements, userInGame } from './Game/game.service';
@@ -83,29 +83,37 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         const allfriends = await this.userService.getUserFriends({login:user.login});
         const convLogins = await this.userService.getLoginsConversationOfUser(user.UserId);
         const blockedby = await this.userService.getHaters({login:user.login});
+        const ownerChannels:string[] = [] 
+        this.existChannels.forEach((value, key) => {
+            if (value.LoginOwner == user.login){
+                ownerChannels.push(key);
+                this.existChannels.delete(key)
+            }
+        });
+        await this.userService.deleteAcoount(user.login);
         convLogins.forEach(login => {
             socketsId = this.userSockets.get(login);
-            this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+            this.server.to(socketsId).emit('deleteAccount',{login:user.login, channels:ownerChannels});
         });
         allfriends.friends.forEach(element => {
             if (!convLogins.includes(element.login)){
                 socketsId = this.userSockets.get(element.login);
-                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login, channels:ownerChannels});
         }});
         allfriends.pendingInvitation.forEach(element => {
             if (!convLogins.includes(element.login)){
                 socketsId = this.userSockets.get(element.login);
-                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login, channels:ownerChannels});
             }});
         allfriends.waitToAccept.forEach(element => {
             if (!convLogins.includes(element.login)){
                 socketsId = this.userSockets.get(element.login);
-                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login, channels:ownerChannels});
             }});
         blockedby.forEach(element => {
             if (!convLogins.includes(element.login)){
                 socketsId = this.userSockets.get(element.login);
-                this.server.to(socketsId).emit('deleteAccount',{login:user.login});
+                this.server.to(socketsId).emit('deleteAccount',{login:user.login, channels:ownerChannels});
             }});
     }
 
@@ -303,9 +311,11 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                     this.world = new matterNode(this.server, roomId, data.obj, queue, client.id);// user.login   
                     this.world.onSettingScores(async (payload: any) => {
                         const { resultMatch } = payload
-                        const kk = await this.userService.storeMatch(resultMatch)
-                        if (kk)
+                        const result = await this.userService.storeMatch(resultMatch);
+                        if (result)
                             client.emit('achiev', {})
+                        this.sendMsgToUser(resultMatch.loginA,result.staticsA,`staticsGame`);
+                        this.sendMsgToUser(resultMatch.loginB,result.staticsB,`staticsGame`);
                         // Handle the hello event here
                     });
                 }
@@ -408,10 +418,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             this.joinSocketsToRoom(login, channel.channelName);
             // client.emit('message',`your Channel: ${channel.channelName} has been created`);
             const msg:string = `your Channel: ${channel.channelName} has been created`
-            this.sendMsgToUser(login, msg,"message");
+            this.sendMsgToUser(login, msg,"createChannel");
         }
         catch(error){
-            client.emit("errorMessage", error);
+            client.emit("errorChannel", error);
         }
     }
 
@@ -458,7 +468,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     }
 
     // add new Member to a channel
-    @SubscribeMessage('joinChannel')
+    @SubscribeMessage('joinChannel')    
     async joinChannel(@ConnectedSocket() client:Socket, @MessageBody() body:newMemberChannelDto){
         try{
             if (!this.existChannels.has(body.channelName))
@@ -845,6 +855,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
     // we need a token jwt of that  user to blacklist it
     @SubscribeMessage('logout')
     async lougOut(@ConnectedSocket() client:Socket){
+        console.log('logout');
         try {
             const login = this.getLoginBySocketId(client.id);
             const user = this.connectedUsers.get(login);
@@ -864,6 +875,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             client.disconnect();
         }
         catch(error){
+            console.log('hello error')
             client.emit('errorMessage', error);
         }
     }
@@ -876,12 +888,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (!user)
                 throw new BadRequestException('no such user');
             await this.emitToAllusers(user);
-            await this.userService.deleteAcoount(login);
             this.sendMsgToUser(login, `${user.login} had delete his Account`, "deleteMyAccount");
         }
         catch(error){
-
-        }
-
+            client.emit('errorMessage', error);
+        }           
     }
 }

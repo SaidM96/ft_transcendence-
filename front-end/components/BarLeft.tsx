@@ -79,7 +79,12 @@ const BarLeft = (props: BarLeftProps) => {
     if (props.name === "Chat")
       router.push('http://localhost:3000/Chat')
     if (props.name === "Game")
-    router.push(`http://localhost:3000/Game/?room=${context?.login}&queue=true`)
+      router.push(`http://localhost:3000/Game/?room=${context?.login}&queue=true`)
+    if (props.name === "Logout"){
+      context?.socket?.emit('logout');
+      localStorage.clear();
+      router.push('/');
+    }
     
   }
 

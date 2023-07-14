@@ -1,4 +1,4 @@
-import GetDataHistory, {GetDataAchievement, GetDataFriend, DatSend, DataRecieved, BlackList} from '@/components/GetData';
+import GetDataHistory, {GetDataAchievement, GetDataFriend, DatSend, DataRecieved, BlackList, LeaderBord} from '@/components/GetData';
 import BarLeft from './BarLeft';
 import { useContext, useEffect, useState } from 'react';
 import { MyContext } from './Context';
@@ -73,6 +73,18 @@ export function DataFunction (nbr : number){
                }
                fetchBlockusers();
               return <BlackList />
+            }
+            else if (nbr == 7){
+              const fetchLeaderBoard = async () =>{
+                const res = await axios.get('http://localhost:5000/user/Leaderboard',{
+                  headers:{
+                    Authorization: `Bearer ${context?.token}`
+                  }
+                })
+                context?.setLeaderBoard(res.data);
+              }
+              fetchLeaderBoard();
+              return <LeaderBord />
             }
             else{
               return <div></div>
@@ -149,3 +161,4 @@ export async function  checkIs7rag(token : string) {
 
 
 }
+

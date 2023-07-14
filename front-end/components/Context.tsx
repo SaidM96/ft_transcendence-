@@ -2,6 +2,7 @@ import React, {useState, useContext, createContext, Dispatch, SetStateAction, Re
 import { StaticImageData } from "next/image";
 import avatar from '../image/avatar.webp';
 import { Socket } from "socket.io-client";
+import { msgChannel } from "./ChannelHistory";
 
 
 
@@ -19,6 +20,15 @@ export interface MatchType {
   winner: boolean;
   avatarA : string;
   avatarB: string;
+}
+
+export interface LeaderBoardType{
+  avatar : string;
+  lvl : number;
+  rank : number;
+  username : string;
+
+
 }
 export interface BanedType{
   avatar: string;
@@ -163,10 +173,22 @@ export interface userBlockedType{
 
 
 export interface ContextTypes{
+  channelHistory : msgChannel[];
+  setChannelHistory : Dispatch<SetStateAction<msgChannel[]>>;
+  fetchChannel : boolean;
+  setFetchChannel : Dispatch<SetStateAction<boolean>>;
+  leaderBoard : LeaderBoardType[];
+  setLeaderBoard : Dispatch<SetStateAction<LeaderBoardType[]>>;
+  nameDelete : string;
+  setNameDelete : Dispatch<SetStateAction<string>>;
+  deleteAcount : boolean;
+  setDeleteAcount : Dispatch<SetStateAction<boolean>>;
   userBlocked : userBlockedType[];
   setUserBlocked : Dispatch<SetStateAction<userBlockedType[]>>;
   acheivement : AchievementType[];
   setAcheivement : Dispatch<SetStateAction<AchievementType[]>>;
+  showChannel : boolean;
+  setShowChannel : Dispatch<SetStateAction<boolean>>;
   showChat : boolean;
   setShowChat : Dispatch<SetStateAction<boolean>>;
   loginClick : string;
@@ -262,6 +284,12 @@ const MyContext = createContext<ContextTypes | undefined>(undefined);
 // create provider
 
 const MyContextProvider = ({children} : ChildProps) =>{
+    const [channelHistory, setChannelHistory] = useState<msgChannel[]>([]);
+    const [leaderBoard, setLeaderBoard] = useState<LeaderBoardType[]>([])
+    const [fetchChannel, setFetchChannel] = useState(false);
+    const [nameDelete, setNameDelete] = useState<string>('');
+    const [showChannel, setShowChannel] = useState(false);
+    const [deleteAcount, setDeleteAcount] = useState(false);
     const [userBlocked, setUserBlocked] = useState<userBlockedType[]>([]);
     const [acheivement, setAcheivement] = useState<AchievementType[]>([])
     const [loginClick, setLoginClick] = useState<string>('');
@@ -305,9 +333,11 @@ const MyContextProvider = ({children} : ChildProps) =>{
     const [chatHistory,setChatHistory ] = useState(0);
     const [showMsg, setShowMsg] = useState('block');
     const [match, setMatch] = useState<MatchType[]>([]);
+    
 
       // load data from localstorage
       useEffect(()=>{
+        
         const getname = localStorage.getItem('name');
         const GetUserSearch = localStorage.getItem('userSearch');
         const getimg = localStorage.getItem('img');
@@ -336,8 +366,14 @@ const MyContextProvider = ({children} : ChildProps) =>{
         const GetClickC = localStorage.getItem('loginClick');
         const Getacheivement = localStorage.getItem('acheivement')
         const GetuserBlocked = localStorage.getItem('userBlocked');
+        const GetnameDelete = localStorage.getItem('nameDelete');
+        const GetchannelHistory = localStorage.getItem('channelHistory');
+        if (GetnameDelete)
+          setNameDelete(GetnameDelete);
         if (GetuserBlocked !== undefined && GetuserBlocked !== null && GetuserBlocked != 'undefined')
           setUserBlocked(JSON.parse(GetuserBlocked));
+        if (GetchannelHistory !== undefined && GetchannelHistory !== null && GetchannelHistory != 'undefined')
+          setChannelHistory(JSON.parse(GetchannelHistory));
         if (GetClickC)
         setLoginClick(GetClickC)
         if (Getacheivement != undefined && Getacheivement !== null && Getacheivement !== "undefined"){
@@ -525,14 +561,20 @@ const MyContextProvider = ({children} : ChildProps) =>{
   useEffect(() =>{
     localStorage.setItem('userBlocked' , JSON.stringify(userBlocked));
   }, [userBlocked])
+  useEffect(() =>{
+    localStorage.setItem('nameDelete', nameDelete);
+  },[nameDelete])
+  useEffect(() =>{
+    localStorage.setItem('channelHistory', JSON.stringify(channelHistory));
+  },[channelHistory])
 
   // context value
  
-    const ContextValue = {name,showChat,acheivement, setAcheivement, setShowChat ,setName, img, setImg, friends, setFriends,wins, setWins, losses, setLosses,  level, setLevel,LevlPer,setLevlPer,login, setLogin, checkname, 
+    const ContextValue = {name,showChat,channelHistory, setChannelHistory,fetchChannel,setFetchChannel,nameDelete,leaderBoard, setLeaderBoard,  setNameDelete, showChannel, setShowChannel, acheivement, setAcheivement, setShowChat ,setName, img, setImg, friends, setFriends,wins, setWins, losses, setLosses,  level, setLevel,LevlPer,setLevlPer,login, setLogin, checkname, 
       setCheckname,socket,userBlocked, setUserBlocked,setSocket, chatHistory,setChatHistory,showMsg, setShowMsg, check, setCheck, match, setMatch,token, setToken,blackList,adminsChannel, setAdminChannel, 
       setBlackList,error, setError, messageError, setMessageError, membersChannel, setMembersChannel,userSearch, setUserSearch,channelSearch, setChannelSearch,MessageContent, 
       waitToAccept,profile, setProfile, pendingInvitation, setPendingInvitation, setWaitToAccept, channelInfo, Channels,setClickChannel, setChannelInfo,clickChat, setClickChat,
-      clickChannel,changeName,loginClick, setLoginClick,channelBanner, setChannelBanner, setChangeName, setChannels,owner, profileuser, setProfileuser,setOwner, admin, setAdmin, setMessageContent,contactChat, enableTwoFa, setEnableTwofa, setContactChat, MessageInfo, setMessageInfo , chn, setChn}
+      clickChannel,changeName,deleteAcount, setDeleteAcount,loginClick, setLoginClick,channelBanner, setChannelBanner, setChangeName, setChannels,owner, profileuser, setProfileuser,setOwner, admin, setAdmin, setMessageContent,contactChat, enableTwoFa, setEnableTwofa, setContactChat, MessageInfo, setMessageInfo , chn, setChn}
 
     return (
         <MyContext.Provider value={ContextValue}>

@@ -1,9 +1,13 @@
 import axios, {AxiosError} from "axios";
+import Router from "next/router";
 import { headers } from "next/dist/client/components/headers";
 import React, {useContext, useEffect, useState} from "react";
 import { MyContext } from "./Context";
 import {ModalError, ModalSearch} from "./Modal";
 import { dataProp } from "./Modal";
+
+
+const router = Router;
 const Search = ({page } : {page : string})=>{
     const context = useContext(MyContext);
     const [inputeValue, setInputValue] = useState('')
@@ -52,7 +56,10 @@ const closeModale = () =>{
   useEffect(() =>{
     if (context?.socket){
         context.socket.on('channelRemoved', (pay) =>{
+
           if (pay){
+            if (context.nameDelete === pay.channelName || context.loginClick === pay.channelName)
+              context.setShowChannel(false);
             const fetchData = async () => {
               try {
                 const res = await axios.post(
@@ -360,6 +367,15 @@ const closeModale = () =>{
             context.setFriends(friend.data.friends);
           }
           getData();
+          const fetchLeaderBoard = async () =>{
+            const res = await axios.get('http://localhost:5000/user/Leaderboard',{
+              headers:{
+                Authorization: `Bearer ${context?.token}`
+              }
+            })
+            context?.setLeaderBoard(res.data);
+          }
+          fetchLeaderBoard();
           
         }
       })
@@ -387,6 +403,12 @@ const closeModale = () =>{
 
         }
       })
+     
+      // context.socket.on('errorCreateChannel',(pay)=>{
+      //   if (pay){
+      //     console.log('this is errorCreateChannel ', pay.message);
+      //   }
+      // })
       
       context.socket.on('blockuser', (pay) =>{
         if (pay) {
@@ -475,8 +497,76 @@ const closeModale = () =>{
           fetchData();
           
         }
-      
+        
       })
+      context.socket.on('deleteAccount', (pay) =>{
+        if (pay){
+          console.log('Deleting account')
+          if (pay.login === context.login)
+            return ;
+          if (pay.login === context.nameDelete || pay.login === context.loginClick){
+            context.setShowChat(false);
+            context.setFetchChannel(true);
+          }
+          const fetData = async () =>{
+            const friend = await axios.post('http://localhost:5000/user/friends',
+            {
+              login : context.login
+            },{
+              headers:{
+               Authorization : `Bearer ${context.token}`
+              }
+            })
+            context.setFriends(friend.data.friends);
+            context.setPendingInvitation(friend.data.waitToAccept);
+            context.setWaitToAccept(friend.data.waitToAccep);
+            const blocks = await axios.post('http://localhost:5000/user/blocks',
+            {
+              login : context?.login
+            },{
+              headers : {
+                Authorization : `Bearer ${context?.token}`
+              }
+            }
+            )
+            context?.setUserBlocked(blocks.data);
+
+            const conversations = await axios.post(
+              'http://localhost:5000/chat/conversations',
+              { login: context?.login },
+              {
+                headers: {
+                  Authorization: `Bearer ${context?.token}`,
+                },
+              }
+            );
+            context?.setContactChat(conversations.data);
+              
+            // const res = await axios.post(
+            //   'http://localhost:5000/chat/channel/message/all',
+            //   {channelName: context.loginClick}, 
+            //   {
+            //     headers:{
+            //       Authorization : `Bearer ${context?.token}`,
+            //     },
+            //   }
+            // );
+            // console.log('deleted acount in mssage channel ,', res.data[1])
+            // context?.setChannelHistory(res.data[1]);
+          }
+          fetData();
+          
+          
+        }
+      })
+      // this for if you are open many window
+      context.socket.on('deleteMyAccount', (pay) =>{
+        if (pay){
+
+          console.log('deleteMyAccount  ', pay);
+        }
+
+      });
       context.socket.on('updateChannel', (pay) =>{
         if (pay){
           // console.log('this is pay ', pay);
@@ -493,8 +583,17 @@ const closeModale = () =>{
                   },
                 }
               );
-              // context?.setContactChat(res.data);
               context?.setChannels(res.data);
+              const resp = await axios.post(
+                'http://localhost:5000/chat/channel/message/all',
+                {channelName: pay.channelName}, 
+                {
+                  headers:{
+                    Authorization : `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              context.setChannelInfo(resp.data[0])
       
             } catch (error) {
               console.error('Error fetching data:', error);
@@ -538,7 +637,10 @@ const closeModale = () =>{
         context.socket.off('updatedFriend');
         context.socket.off('firstMsg');
         context.socket.off('errorJoin');
+        context.socket.off('deleteAccount');
         context.socket.off('twoInvite');
+        // context.socket.off('createChannel');
+        // context.socket.off('errorCreateChannel');
         
       }
     };

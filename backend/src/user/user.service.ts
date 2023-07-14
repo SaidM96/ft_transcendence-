@@ -420,6 +420,24 @@ export class UserService {
         convB.forEach((element) => {
             result.push(element.loginA)
         })
+
+        // 
+        const memberShips = await this.prisma.client.membershipChannel.findMany({
+            where:{
+                userId:userId
+            }
+        })
+        for(let i = 0; i < memberShips.length; i++){
+            const clicka = await this.prisma.client.membershipChannel.findMany({
+                where:{
+                    channelName:memberShips[i].channelName
+                },
+                select:{
+                    login:true
+                }
+            })
+            clicka.forEach(element => { result.push(element.login)})
+        }
         return result;
     }
 
@@ -885,7 +903,7 @@ export class UserService {
         let result:Acheivement[] = [];
         if (matchesA)
             matchesA.forEach((match) => {
-                if (match.winner)
+                if (match.scoreA > match.scoreB)
                     win++;
                 else
                     lose++;
@@ -893,12 +911,15 @@ export class UserService {
             });
         if (matchesB)
             matchesB.forEach((match) => {
-                if (!match.winner)
+                if (match.scoreA < match.scoreB)
                     win++;
                 else
                     lose++;
                 nmMatches++;
             })
+        const pWin =  win / nmMatches * 100;
+        const pLose = lose / nmMatches * 100;
+        const statics:any = {win:pWin, lose:pLose, nmMatches:nmMatches};
         // First Game
         if (matchesA.length + matchesB.length == 1)
         {
@@ -934,15 +955,28 @@ export class UserService {
             if (ach)
                 result.push(ach);
         }
-        return result;
+        return {acheiv:result, statics:statics};
+    }
+    // increase user lvl
+    async increaseUserLvL(login:string, oldLvl:number, idafa:number){
+        const newlvl:number = Number((oldLvl + idafa).toFixed(2));
+        await this.prisma.client.user.update({
+            where:{
+                login:login,
+            },
+            data:{
+                lvl:newlvl
+            }
+        });
     }
     //store New finished match
     async storeMatch(matchDto:storeMatchDto){
         const {loginA, loginB, scoreA, scoreB, winner} = matchDto;
+        console.log(`A: `,loginA, `B: `, loginB)
         const userA = await  this.findUser({login:loginA});
         const userB = await  this.findUser({login:loginB});
         if (loginA === loginB)
-            throw new BadGatewayException("loginA  and loginB  must be different");
+            throw new BadRequestException("loginA  and loginB  must be different");
         await this.prisma.client.match.create({
             data:{
                 userA:{
@@ -960,53 +994,19 @@ export class UserService {
                 winner:winner,
             }
         });
-        if (winner)
+        if (scoreA > scoreB)
         {
-            await this.prisma.client.user.update({
-                where:{
-                    UserId:userA.UserId,
-                },
-                data:{
-                    lvl:userA.lvl + 0.4
-                }
-            });
-            if (userB.lvl > 0)
-            {
-                await this.prisma.client.user.update({
-                    where:{
-                        UserId:userB.UserId,
-                    },
-                    data:{
-                        lvl:userB.lvl + 0.2
-                    },
-                });
-            }
+            await this.increaseUserLvL(loginA,userA.lvl, 0.4);
+            await this.increaseUserLvL(loginB,userB.lvl, 0.2);
         }
         else
         {
-            await this.prisma.client.user.update({
-                where:{
-                    UserId:userB.UserId,
-                },
-                data:{
-                    lvl:userB.lvl + 0.4
-                },
-            });
-            if (userA.lvl > 0)
-            {
-                await this.prisma.client.user.update({
-                    where:{
-                        UserId:userA.UserId,
-                    },
-                    data:{
-                        lvl:userA.lvl + 0.2
-                    },
-                });
-            }
+            await this.increaseUserLvL(loginA,userA.lvl, 0.2);
+            await this.increaseUserLvL(loginB,userB.lvl, 0.4);
         }
-        const achievA = await this.findNewAchievement(userA.login,userA.UserId);
-        const acheivB = await this.findNewAchievement(userB.login, userB.UserId);
-        return {achievA:achievA, acheivB:acheivB};
+        const resA = await this.findNewAchievement(userA.login,userA.UserId);
+        const resB = await this.findNewAchievement(userB.login, userB.UserId);
+        return {achievA:resA.acheiv, acheivB:resB.acheiv,staticsA:resA.statics, staticsB:resB.statics};
     }
 
     // get user's matchs history 
@@ -1041,8 +1041,10 @@ export class UserService {
         }
         const pWin =  win / result.length * 100;
         const pLose = lose / result.length * 100;
-        console.log('pwin:',pWin,'pLose:',pLose, 'win:',win, 'lose:',lose)
-        result.push({pWin:pWin.toFixed(2), pLose:pLose.toFixed(2), numberOfMatches:result.length});
+        if (result.length)
+            result.push({pWin:pWin.toFixed(2), pLose:pLose.toFixed(2), numberOfMatches:result.length});
+        else
+            result.push({pWin:0, pLose:0, numberOfMatches:result.length});
         return result;
     }
 
@@ -1070,6 +1072,9 @@ export class UserService {
 
     async  getLeaderboard() {
         let leaderboard = await this.prisma.client.user.findMany({
+            where:{
+                lvl: {gt:0}
+            },
             select:{
                 login:true,
                 username:true,
