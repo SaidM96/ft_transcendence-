@@ -887,6 +887,7 @@ export class UserService {
     }
 
     async findNewAchievement(login:string, userId:string){
+        const user = await this.findUser({login:login});
         const matchesA = await this.prisma.client.match.findMany({
             where:{
                 userAId:userId,
@@ -917,9 +918,9 @@ export class UserService {
                     lose++;
                 nmMatches++;
             })
-        const pWin =  win / nmMatches * 100;
-        const pLose = lose / nmMatches * 100;
-        const statics:any = {win:pWin, lose:pLose, nmMatches:nmMatches};
+        const pWin:number =  win / nmMatches * 100;
+        const pLose:number = lose / nmMatches * 100;
+        const statics:any = {win:pWin.toFixed(2), lose:pLose.toFixed(2), nmMatches:nmMatches, lvl:user.lvl};
         // First Game
         if (matchesA.length + matchesB.length == 1)
         {
