@@ -13,7 +13,6 @@ services:
         - POSTGRES_DB=ft_database
         - POSTGRES_USER=postgres
         - POSTGRES_PASSWORD=said123
-
     adminer:
       image: adminer
       restart: always
@@ -26,11 +25,13 @@ services:
         context: /goinfre/smia/ft_transcendence-/backend
       ports:
         - "127.0.0.1:5000:5000"
-        - "127.0.0.1:5555:5555" 
+        - "127.0.0.1:3333:3333"
+        - "127.0.0.1:5555:5555"
       depends_on:
         - db
       volumes:
         - ./backend:/app
+        
     # front-end:
     #   container_name: front-end
     #   build:

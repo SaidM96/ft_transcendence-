@@ -1,11 +1,11 @@
 FROM node:18.14-slim
 
-WORKDIR /app
+WORKDIR /backend
 
-COPY .env ./.env
-
+COPY tsconfig.json ./
 COPY package.json package-lock.json* ./
-
+COPY .env ./.env
+COPY . .
 RUN apt-get update && apt-get install -y xdg-utils
 
 RUN npm install
