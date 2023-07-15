@@ -1,14 +1,13 @@
 FROM node:18.14-slim
 
-WORKDIR /front-end
+WORKDIR /app
 
 COPY package.json package-lock.json* ./
-COPY .env ./.env
 
 COPY . .
 
-# RUN npm install -g next
-# RUN npm run build
+RUN npm install
+
 EXPOSE 3000
 
-CMD ["tail", "-f", "/dev/null"]
+CMD ["npm", "run", "dev"]
