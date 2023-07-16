@@ -2,11 +2,13 @@ FROM node:18.14-slim
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+RUN apt-get update -y && apt-get upgrade -y
 
-COPY . .
+COPY package.json ./
 
 RUN npm install
+
+COPY . .
 
 EXPOSE 3000
 

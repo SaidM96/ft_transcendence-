@@ -1,6 +1,6 @@
 FROM node:18.14-slim
 
-WORKDIR /backend
+WORKDIR /app
 
 COPY tsconfig.json ./
 COPY package.json package-lock.json* ./
