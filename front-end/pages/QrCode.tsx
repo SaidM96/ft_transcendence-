@@ -16,7 +16,7 @@ function QrCode() {
     const fetchData = async () => {
       try {
         const res = await axios.post(
-          "http://localhost:5000/auth/QR",
+          `${process.env.AuthQr}`,
           { login: context?.login },
           {
             headers: {
@@ -28,17 +28,15 @@ function QrCode() {
         // http://localhost:5000/auth/2-FA post login code
       } catch (error) {
         // Handle the error here
-        console.error(error);
       }
     };
 
     fetchData();
   }, [context?.token]);
   const handleClick = async (e: any) => {
-    // console.log("handle click kkkkkkkkkk ", code)
     try {
       const res = await axios.post(
-        "http://localhost:5000/auth/2-FA",
+        `${process.env.TwoFa}`,
         {
           code: `${code}`,
           login: context?.login
@@ -51,15 +49,12 @@ function QrCode() {
       );
       // Handle the response data here
       if (res.data)
-        router.push('http://localhost:3000/Dashbord');
+        router.push(`${process.env.Dashbord}`);
       else
         setOpenModal(true)
 
-      console.log("handle res")
-      console.log(res.data)
     }
     catch (error) {
-      console.error(error);
     }
 
   }
@@ -84,7 +79,7 @@ function QrCode() {
         <div className=" basis-1/1 w-full rounded-lg  shadow-lg max-w-[450px] border bg-gray-300 flex  flex-col items-center  justify-center md:basis-1/3 ">
           <div className='my-5 '>
 
-            <label htmlFor="" className="">QR code</label>
+            <label  className="">QR code</label>
             <input type="text" onChange={handleInput} className="max-w-[200px] h-10  bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
           </div>
 

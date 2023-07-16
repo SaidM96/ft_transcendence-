@@ -18,9 +18,13 @@ import { checkIs7rag } from "@/components/Functions";
 
 
 export async function  checkIsFalse(token : string) {
-    const res = await axios.get('http://localhost:5000/user/is7erag', {headers:{
+    const res = await axios.get(`${process.env.is7rag}`, {headers:{
             Authorization : `Bearer ${token}`
         }})
+      if (res.data.message)
+        console.log('is not 7rag')
+      else
+        console.log('7rag');
        return res.data.message;
 }
 
@@ -28,12 +32,11 @@ const router = Router;
 async function fetchdata(tokene :string){
     localStorage.setItem('token', tokene);
     try{
-        const res = await axios.get('http://localhost:5000/user/me', {headers:{
+        const res = await axios.get(`${process.env.ME}`, {headers:{
             Authorization : `Bearer ${tokene}`
         }})
 
         const response = await res.data;
-        console.log('this is me res ', response);
           return response
     }catch(e){
         router.push('/NotExist')}
@@ -48,25 +51,13 @@ export default function Profileid() {
     useEffect(() => {
       const fetchTokenAndConnectSocket = async () => {
         if (router.query.id) {
-
-          if (!checkIsFalse(router.query.id.toString()))
-            console.log('ah rah false')
-          else
-            console.log('not false');
           const token = router.query.id.toString();
   
-          // checkIsFalse(token) ? console.log('true') : console.log(false) 
-          console.log ('this is check false ', checkIsFalse(token))
           const response = await fetchdata(token);
           if (!response)
-            return ;
-          // console.log("2f response is ", response.enableTwoFa)
-        console.log('this is response for for for ', response);
+            return ;  
         context?.setToken(token);
         context?.setName(response.username);
-        console.log('this is level ', response.lvl);
-        console.log('this is wins ', response.porcentages.pLose)
-        console.log('this is los ', response.porcentages.pWin)
         
         context?.setLevel(response.lvl.toFixed(0));
         const m : string = response.lvl.toString();
@@ -81,39 +72,33 @@ export default function Profileid() {
         context?.setPendingInvitation(response.friends.waitToAccept);
         context?.setEnableTwofa(response.enableTwoFa)
         context?.setLogin(response.login);
-        console.log('this is friends ' , context?.friends);
-        console.log('this is pending ', context?.pendingInvitation)
-        console.log('this is wating to accept ', context?.waitToAccept);
 
         context?.setMatch(response.matches);
-        console.log('this is matches ', response.matches);
-        console.log("well the 2f is actually", context?.enableTwoFa)
         if (response.enableTwoFa)
-        router.push('http://localhost:3000/QrCode');
+        router.push(`${process.env.Qrcode}`);
       else
-        router.push('http://localhost:3000/Dashbord');
+        router.push(`${process.env.Dashbord}`);
         // response.enableTwoFa
         }
       };
   
        fetchTokenAndConnectSocket();
        const fetchBlockusers = async () =>{
-        try{
-          const res = await axios.post('http://localhost:5000/user/blocks',
-          {
-            login : context?.login
-          },{
-            headers : {
-              Authorization : `Bearer ${context?.token}`
+        if (context?.login){
+          try{
+            const res = await axios.post(`${process.env.Blocks}`,
+            {
+              login : context?.login
+            },{
+              headers : {
+                Authorization : `Bearer ${localStorage.getItem('token')}`
+              }
             }
+            )
+            context?.setUserBlocked(res.data);
+  
+          }catch(e){
           }
-          )
-          console.log(' this is all users you are block ', res.data);
-          context?.setUserBlocked(res.data);
-          console.log('and this is all users you are blocked in context ', context?.userBlocked);
-
-        }catch(e){
-          console.log(e)
         }
 
        }
@@ -133,22 +118,3 @@ export default function Profileid() {
   
 
 
-// {
-//     UserId: '65eabf7b-3176-4ac5-a594-8856f68db353',
-//     login: 'smia',
-//     username: 'said lbatal',
-//     email: 'smia@student.1337.ma',
-//     avatar: '0',
-//     enableTwoFa: true,
-//     twoFactorSecret: null,
-//     bioGra: ''
-//   }
-
-// {
-//   "FriendshipId": "2c0a1d9f-d58f-43fb-81ed-74b72142598b",
-//   "userAId": "c643911e-fc8d-4e4b-b39b-6b18ce82db06",
-//   "loginA": "mhaddaou",
-//   "userBId": "4d750f18-2b0a-4906-aa40-689960b552cf",
-//   "loginB": "izail",
-//   "isFriends": false
-// }

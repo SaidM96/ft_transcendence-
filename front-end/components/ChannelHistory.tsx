@@ -5,18 +5,12 @@ import defaul from '../image/avatar.webp'
 import Image from "next/image";
 import React, { ChangeEvent, useContext, useEffect, useRef, useState } from "react";
 import { FriendType, MembersType, MyContext, adminsChannelType, membersChannelType, userSearchProps } from "./Context";
-// import { Reciever, Sender } from "./ChatHistory";
 import { ModalUpdateChannel, ModalListBanner } from "./Modal";
-import { Contrail_One } from "next/font/google";
-import History from "./HIstory";
-import Router from "next/router";
 import { useRouter } from "next/router";
 import axios from "axios";
-import { Socket } from "socket.io-client";
 import { ModalChat } from "./Modal";
 import { AlertCircle, CheckCircle } from 'react-feather'
 import { GetAvatarChannel, checkIs7rag } from "./Functions";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import Lottie from "lottie-react";
 import anim from '../image/chatanim.json'
 
@@ -31,7 +25,7 @@ interface recvProps {
 function GetAvatar({ avatar }: { avatar: string }) {
   if (avatar === '0')
     return (
-      <Image src={defaul} alt="ava" />
+      <Image src={defaul} priority alt="ava" />
     );
   else
     return (
@@ -102,7 +96,7 @@ export interface msgChannel {
 function GetAvatarAddFriend({ avatar }: { avatar: string }) {
   if (avatar === '0')
     return (
-      <Image className="w-10 h-10 rounded-full border-4 border-green-600" src={defaul} alt="ava" />
+      <Image className="w-10 h-10 rounded-full border-4 border-green-600" src={defaul} priority alt="ava" />
     );
   else
     return (
@@ -116,7 +110,6 @@ function GetAvatarAddFriend({ avatar }: { avatar: string }) {
 
 const AddMember = () => {
   const context = useContext(MyContext)
-  console.log(context?.friends);
   const [hidden, setHidden] = useState('hidden')
   const [alreadyMember, setAlreadyMember] = useState(false)
   const openModal = () => {
@@ -151,7 +144,7 @@ const AddMember = () => {
 
     const GetData = async () => {
       try{
-        const res = await axios.post('http://localhost:5000/chat/channel/members',
+        const res = await axios.post(`${process.env.Members}`,
         {channelName: context?.channelInfo?.channelName},
         {
           headers:{
@@ -170,7 +163,6 @@ const AddMember = () => {
         }
         
       }catch(e){
-        console.log(e);
       }
       
     }
@@ -178,12 +170,6 @@ const AddMember = () => {
     if (context?.token)
       checkIs7rag(context?.token);
     context?.socket?.emit('inviteMember', { channelName: context.channelInfo?.channelName, login: friend.login })
-    if(context?.socket)
-    context?.socket.on('errorDuplicate', (pay) =>{
-      if (pay){
-        console.log(pay.message, ' this error for duplicate')
-      }
-    })
   }
   return (
     <>
@@ -307,7 +293,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     const GetDat = async () => {
       try {
        
-        const resp = await axios.post('http://localhost:5000/chat/channel/memberShips',
+        const resp = await axios.post(`${process.env.Membership}`,
       {
         channelName : context?.channelInfo?.channelName,
       }, {
@@ -319,7 +305,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
       context?.setMembersChannel(resp.data[1].members);
 
       } catch (e) {
-        console.log(e);
       }
     }
     GetDat();
@@ -417,7 +402,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
     const [check, setCheck] = useState(false);
     const user = context?.adminsChannel.find(user => user.isOwner === true)
-    // console.log(' this is the owner ', user);
 
     const checkis = (login : string) =>{
       context?.friends.map((user) =>{
@@ -510,7 +494,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
               </li>
             );
           }
-          return null; // Add a return statement for cases when the condition is not met
+          return null; 
         })}
       </>
     );
@@ -520,7 +504,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     const [check, setCheck] = useState(false);
     
     if (!context || !context.membersChannel) {
-      return null; // Return null if context or channelUsers is undefined
+      return null; 
     }
     const checkThisUser = (user : adminsChannelType) =>{
       context.adminsChannel.map((admin) =>{
@@ -607,7 +591,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     const fetchData = async () => {
       try {
         const res = await axios.post(
-          'http://localhost:5000/chat/channel/memberShips',
+          `${process.env.Membership}`,
           { channelName: context?.channelInfo?.channelName },
           {
             headers: {
@@ -621,7 +605,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
         }
 
       } catch (error) {
-        console.error('Error fetching data:', error);
       }
     };
 
@@ -637,9 +620,8 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
   }
 
   const ListBan = () =>{
-    console.log('this is list banner ', context?.channelBanner);
     const getData = async () =>{
-      const response = await axios.post('http://localhost:5000/chat/channel/banned', {
+      const response = await axios.post(`${process.env.Banned}`, {
           channelName : context?.channelInfo?.channelName,
         },{
           headers:{
@@ -679,7 +661,6 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
   //send message channel
 
   const send = () => {
-    console.log('send message on this channel  ', context?.channelInfo?.channelName);
     if (inputValue != '') {
       if (context?.token)
       checkIs7rag(context?.token);
@@ -737,12 +718,12 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
       <div className="w-full h-[93%] flex flex-col p-2 " >
         {context?.channelHistory.map((msg: msgChannel) => {
           if (msg.login === context?.login)
-            return <Sender key={msg.login} msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
+            return <Sender key={msg.sendAt} msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
           else
-            return <Reciever key={msg.login} msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
+            return <Reciever key={msg.sendAt} msg={msg.content} time={msg.sendAt} avatar={msg.avatar} name={msg.username} />
         })}
         <div className={`mt-auto pb-1 pl-1 `}>
-          <form
+          <form id="jj"
             onSubmit={handleSubmit}
           >
             <div className="flex items-center">

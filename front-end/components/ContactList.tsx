@@ -1,4 +1,4 @@
-import Link from 'next/link';
+
 import ContactSearch from './ContactSearch';
 import { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
@@ -26,7 +26,7 @@ export default function ContactList({  onContactClick } : any) {
     const fetchData = async () => {
       try {
         const res = await axios.post(
-          'http://localhost:5000/chat/conversations',
+          `${process.env.Conversations}`,
           { login: context?.login },
           {
             headers: {
@@ -37,7 +37,6 @@ export default function ContactList({  onContactClick } : any) {
         context?.setContactChat(res.data);
 
       } catch (error) {
-        console.error('Error fetching data:', error);
       }
     };
   
@@ -47,7 +46,7 @@ export default function ContactList({  onContactClick } : any) {
     const fetchData = async () => {
       try {
         const res = await axios.post(
-          'http://localhost:5000/chat/memberships',
+          `${process.env.Memb}`,
           { login: context?.login },
           {
             headers: {
@@ -59,7 +58,6 @@ export default function ContactList({  onContactClick } : any) {
         context?.setChannels(res.data);
 
       } catch (error) {
-        console.error('Error fetching data:', error);
       }
     };
   
@@ -123,12 +121,14 @@ export default function ContactList({  onContactClick } : any) {
           <div className='  text-center border-b-2 font-mono font-semibold w-full h-[10%]'>Channels</div>
           <div className='w-full h-[90%] overflow-y-auto pt-3'>
           {context?.Channels.map((channel : ChannelsType) => (
-            <button key={channel.channelName} onClick={() => handleClickCh(channel.channelName)} className=" flex flex-col h-14 bg-slate-200 mb-1 w-full px-2 rounded-lg" >
+            <button key={channel.channelName} onClick={() => {
+              handleClickCh(channel.channelName);
+            }} className=" flex flex-col h-14 bg-slate-200 mb-1 w-full px-2 rounded-lg" >
               <div className='flex flex-row items-center p-2 space-x-2'>
               {
                 (() =>{
                   if (channel.avatar.length < 5)
-                    return <Image src={GetImg(channel.avatar)} className="w-10 h-10 rounded-full mr-3" alt="dklfj" width={200} height={200}/>
+                    return <Image src={GetImg(channel.avatar)} className="w-10 h-10 rounded-full mr-3" alt="dklfj" priority width={200} height={200}/>
                   else
                     return <img className="w-10 h-10 rounded-full mr-3" src={channel.avatar} alt='avatar' width={200} height={200}/>
                 }) ()
@@ -153,7 +153,7 @@ export default function ContactList({  onContactClick } : any) {
                         {
                           (() =>{
                             if (contact.avatar.length < 5)
-                              return <Image src={GetImg(contact.avatar)} className="w-10 h-10 rounded-full mr-3" alt="dklfj" width={200} height={200}/>
+                              return <Image src={GetImg(contact.avatar)} className="w-10 h-10 rounded-full mr-3" alt="dklfj" priority width={200} height={200}/>
                             else
                               return <img className="w-10 h-10 rounded-full mr-3" src={contact.avatar} alt='avatar' width={200} height={200}/>
                           }) ()

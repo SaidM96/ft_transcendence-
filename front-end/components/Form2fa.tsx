@@ -8,27 +8,23 @@ const Form2fa = () => {
     const context = useContext(MyContext);
     const [twofac, setTwoFac] = useState(context ? context.enableTwoFa : false )
 
-console.log(context?.enableTwoFa)
 
     useEffect(() => {
         setTwoFac(context ? context.enableTwoFa : false )
     },[context?.enableTwoFa])
 
     async function fetchdata(tokene: string) {
-        console.log("token", tokene)
         try {
-            const res = await axios.get('http://localhost:5000/user/me', {
+            const res = await axios.get(`${process.env.ME}`, {
                 headers: {
                     Authorization: `Bearer ${tokene}`
                 }
             })
             const response = await res.data;
-            console.log("res", res)
 
 
             return response;
         } catch (e) {
-            console.log(e)
         }
     }
     useEffect(() => {
@@ -53,7 +49,6 @@ console.log(context?.enableTwoFa)
             enableTwoFa: !context.enableTwoFa
         })
 
-        console.log("heres the 2f info", userInfo)
     }
         //two-factor authentication
     }

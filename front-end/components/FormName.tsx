@@ -2,10 +2,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { RiSendPlaneFill } from "react-icons/ri";
 import { MyContext } from "./Context";
-import { Socket } from "socket.io-client";
-import InfoContact from "./InfoContact";
-import { SubmitName } from "./InfoContact";
-import { Hidden } from "@mui/material";
 import Modal from "./Modal";
 import { checkIs7rag } from "./Functions";
 
@@ -49,13 +45,11 @@ function containsSpecialChars(str : string) : boolean {
       })
       context?.socket?.on('errorMessageUpdateUsername', (pay : any) =>{
         if (pay){
-          console.log('hada ', pay);
             setMsg(pay.message);
             setColor("bg-orange-400");
             setTitle("Failed")
             setValue('');
             openModal();
-            console.log('fin')
 
         }
       })
@@ -71,7 +65,6 @@ function containsSpecialChars(str : string) : boolean {
       // setNum(true);
       if (!containsSpecialChars(name) && name.length > 7) {
         if (context?.socket) {
-          console.log('dkhelt ....');
           // here when i check is 7rag
           context.token
           checkIs7rag(context?.token)
@@ -119,7 +112,9 @@ function containsSpecialChars(str : string) : boolean {
       <div className='w-full max-w-sm'>
         {/* <InfoContact /> */}
         <div className="flex items-center border-b border-slate-600 py-2">
-          <input
+          
+          <input 
+          name="name"
             value={valueName}
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
@@ -127,7 +122,7 @@ function containsSpecialChars(str : string) : boolean {
             className="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none"
             type="text"
             placeholder={`${name}`}
-            aria-label="Full name"
+            // aria-label="Full name"
           />
 
           {isModalOpen && <Modal isOpen={isModalOpen} closeModal={closeModal} title={title} msg={msg} color={color}/>}

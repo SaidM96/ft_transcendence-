@@ -1,10 +1,11 @@
 import { useRouter } from 'next/router';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { use, useContext, useEffect, useState } from 'react';
 import Statics from '../image/statics.svg'
 import 'react-circular-progressbar/dist/styles.css';
 import LevelStatics, {Stats} from '@/components/Statics'
 import RealFooter from '@/components/RealFooter';
 import Image from 'next/image';
+import NotExist from '../NotExist';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableTennisPaddleBall } from '@fortawesome/free-solid-svg-icons';
 import {DataFunction, CallBarLeft} from '@/components/Functions';
@@ -37,9 +38,30 @@ const GetAvatar = ({name} : {name : string}) =>{
 const Other = () =>{
   const [checkis , setCheckIs] = useState(false);
   const context = useContext(MyContext)
+  const [user, setUser] = useState<string>('');
   const userLogin = useRouter()?.query?.id;
   useEffect(()=>{
     const getData = async () =>{
+      const getUser = async () =>{
+        if (userLogin){
+          try{
+            const res = await axios.post('http://localhost:5000/user/find',
+            {login : userLogin},{
+              headers:{
+                Authorization: `Bearer ${context?.token}`
+              }
+            }
+            )
+            setUser(res.data.login);
+          
+    
+          }catch(e){
+            setUser('none')
+          }
+        }
+    
+      }
+      getUser();
 
       try{
         const res = await axios.post('http://localhost:5000/user/viewProfile', 
@@ -50,40 +72,19 @@ const Other = () =>{
   
           }
         });
-        console.log('this is res profile ', res.data.message);
-        if (res.data.message)
+        if (res.data.message){
+          setUser('is')
           setCheckIs(true);
-        else
-          router.push('/NotExist');
+        }
+        else{
+          setUser('none')
+        }
       }catch(e){
-        console.log(e);
       }
     }
     getData();
   }, [userLogin]);
-  console.log(userLogin);
-  // const [user, setUser] = useState();
-  // const getUser = async () =>{
-  //   if (userLogin){
-  //     try{
-  //       const res = await axios.post('http://localhost:5000/user/find',
-  //       {login : userLogin},{
-  //         headers:{
-  //           Authorization: `Bearer ${context?.token}`
-  //         }
-  //       }
-  //       )
-  //       console.log('here herkldjfkj ')
-  //       console.log(res.data);
-  //       setUser(res.data);
-
-  //     }catch(e){
-  //       console.log(e);
-  //     }
-  //   }
-
-  // }
-  // getUser();
+  
 
 
   const [check, setCheck] = useState(0);
@@ -92,7 +93,6 @@ const Other = () =>{
   const [perLevel,setPerLevel] = useState(0);
 
   const GetData = (check : number) =>{
-    console.log(check , '  this is check')
     if (check === 1){
       if (context?.profile?.matches)
         return (<GetDataHistory matches={context?.profile?.matches} />);
@@ -120,7 +120,6 @@ const Other = () =>{
             }
           })
           // context?.setProfileuser(JSON.stringify(userLogin));
-          console.log("respnse profile  ", res.data);
           if (res.data.inGame)
             setStatus('in Game');
           else{
@@ -132,15 +131,10 @@ const Other = () =>{
           const m : string = res.data.lvl.toString();
           setLevel((+m.substring(0,1)))
           setPerLevel((+(m.substring(2.1))) * 10)
-          console.log('this is all data in profile ', res.data.acheivement);
           // here when i check level 
-          console.log(res.data, '   here all response');
           context?.setProfile(res.data);
-          console.log(res.data.avatar)
-          console.log('context ', context?.profile?.avatar);
           return res.data;
         }catch(e){
-          console.log(e);
         }
       }
         fetchData();
@@ -233,15 +227,18 @@ if (context?.profile && checkis ){
 
   );
 }
+if (user === 'none')
+  return <NotExist />
+
+else{
+  return (
+    <div></div>
+  )
+}
+
+ 
+
 }
 
 export default Other;
 
-// const MyScreen = () =>{
-//     const page = useRouter()?.query?.id ?? "1";
-//     // Default value = "1"
-
-//     return (<>id is: {page}</>);
-// }
-
-// export default MyScreen 

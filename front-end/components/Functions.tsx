@@ -6,7 +6,6 @@ import avatar from '../image/avatar.webp'
 import Image from 'next/image';
 import axios from 'axios';
 import Router from 'next/router';
-import { Content } from 'next/font/google';
 const router = Router
 
 interface PropsCallBarLeft{
@@ -19,28 +18,13 @@ export default function  Functions(){
 export const GetAvatar = ({avat } : {avat : string | undefined}) =>{
   if (avat === '0')
     return (
-      <Image src={avatar} alt="ava" />
+      <Image src={avatar} priority alt="ava" />
     );
   else
       return (
         <img src={avat} alt="ava" />
       );
 }
-
-
- 
-  // const res = await axios.post(
-  //   'http://localhost:5000/chat/channel/message/all',
-  //   {channelName: context.loginClick}, 
-  //   {
-  //     headers:{
-  //       Authorization : `Bearer ${context?.token}`,
-  //     },
-  //   }
-  // );
-  // console.log('deleted acount in mssage channel ,', res.data[1])
-  // context?.setChannelHistory(res.data[1]);
-
 
 
 export function DataFunction (nbr : number){
@@ -67,7 +51,7 @@ export function DataFunction (nbr : number){
             else if (nbr == 6){
               const fetchBlockusers = async () =>{
                 try{
-                  const res = await axios.post('http://localhost:5000/user/blocks',
+                  const res = await axios.post(`${process.env.Blocks}`,
                   {
                     login : context?.login
                   },{
@@ -76,12 +60,9 @@ export function DataFunction (nbr : number){
                     }
                   }
                   )
-                  console.log(' this is all users you are block ', res.data);
                   context?.setUserBlocked(res.data);
-                  console.log('and this is all users you are blocked in context ', context?.userBlocked);
           
                 }catch(e){
-                  console.log(e)
                 }
           
                }
@@ -90,7 +71,7 @@ export function DataFunction (nbr : number){
             }
             else if (nbr == 7){
               const fetchLeaderBoard = async () =>{
-                const res = await axios.get('http://localhost:5000/user/Leaderboard',{
+                const res = await axios.get(`${process.env.Leaderboard}`,{
                   headers:{
                     Authorization: `Bearer ${context?.token}`
                   }
@@ -122,32 +103,11 @@ export function CallBarLeft(props: PropsCallBarLeft){
 
 export function  GetAvatarChannel (){
   const context = useContext(MyContext);
-  // useEffect (() =>{
-  //   const GetData =  async () => {
-  //     try{
-  //       const res = await axios.post(
-  //         'http://localhost:5000/chat/channel/message/all',
-  //         {channelName: context?.channelInfo?.channelName}, 
-  //         {
-  //           headers:{
-  //             Authorization : `Bearer ${context?.token}`,
-  //           },
-  //         }
-  //       );
-  //       context?.setChannelInfo(res.data[0]);
-  //     }catch(e){
-  //       console.log(e);
-  //     }
-  //     }
-  
-  //   GetData();
-    
-  // },[context?.channelInfo?.avatar])
   
 
   if (context?.channelInfo?.avatar === '0')
   return (
-    <Image className="w-12 h-12 rounded-full border-4 border-slate-400 cursor-pointer hover:border-slate-900" src={avatar} alt="ava" />
+    <Image className="w-12 h-12 rounded-full border-4 border-slate-400 cursor-pointer hover:border-slate-900" src={avatar} priority alt="ava" />
   );
 else
   return (
@@ -159,18 +119,13 @@ else
 
 export async function  checkIs7rag(token : string) {
   try{
-    const res = await axios.get('http://localhost:5000/user/is7erag', {headers:{
+    const res = await axios.get(`${process.env.is7rag}`, {headers:{
             Authorization : `Bearer ${token}`
         }})
-        if (res.data.message)
-          console.log('is not 7rag');
-        else{
-          console.log('is 7rag 7rag');
+        if (!res.data.message)
           router.push('/NotExist');
-        }
 
   }catch(e){
-    console.log(e);
   }
 
 

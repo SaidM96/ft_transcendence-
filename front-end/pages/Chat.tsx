@@ -18,7 +18,7 @@ import createSocketConnection from "@/components/socketConnection";
 import { useRouter } from "next/router";
 import ChannelHistor from "@/components/ChannelHistory";
 import History from "@/components/HIstory";
-import { ModalInvite, ModalError } from "@/components/Modal";
+import { ModalGameInvite, ModalError } from "@/components/Modal";
 import { constrainedMemory } from "process";
 import { connect } from "http2";
 const router = Router;
@@ -47,13 +47,12 @@ export default function Chat() {
       context?.socket?.on('channelRemoved', (pay) =>{
 
         if (pay){
-          console.log(context.channelInfo?.channelName, ' this is name of channel ', pay);
           if (pay.channelName == context.channelInfo?.channelName)
             context.setShowChannel(false);
           const fetchData = async () => {
             try {
               const res = await axios.post(
-                'http://localhost:5000/chat/memberships',
+                `${process.env.Memb}`,
                 { login: context?.login },
                 {
                   headers: {
@@ -65,7 +64,6 @@ export default function Chat() {
               context?.setChannels(res.data);
       
             } catch (error) {
-              console.error('Error fetching data:', error);
             }
           };
         
@@ -74,14 +72,19 @@ export default function Chat() {
         }
       })
       
-
       context.socket.on('gameInvitation', (payload: any) => {
-        if (payload && payload.sender) {
-          setGameRoom(payload.sender)
-          setIsModalOpen(true)
           
+       
+        if (payload && payload.sender) {
+          context.setGameInvitation(true)
+          context.setGameHost(payload.sender)
         }
       });
+      return () =>{
+        if (context?.socket){
+          context.socket.off('gameInvitation')
+        }
+      }
     }
     })
     const closeModal = () => {
@@ -95,7 +98,7 @@ export default function Chat() {
       context?.setShowChannel(true);
 
       const res = await axios.post(
-        'http://localhost:5000/chat/channel/message/all',
+        `${process.env.AllMes}`,
         {channelName: login}, 
         {
           headers:{
@@ -103,7 +106,7 @@ export default function Chat() {
           },
         }
       );
-      const response = await axios.post('http://localhost:5000/chat/channel/banned', {
+      const response = await axios.post(`${process.env.Banned}`, {
         channelName : login,
       },{
         headers:{
@@ -112,7 +115,7 @@ export default function Chat() {
       })
       context?.setChannelBanner(response.data);
       // context?.setMembersChannel(response.data);
-      const resp = await axios.post('http://localhost:5000/chat/channel/memberShips',
+      const resp = await axios.post(`${process.env.Membership}`,
       {
         channelName : login,
       }, {
@@ -120,10 +123,8 @@ export default function Chat() {
           Authorization: `Bearer ${context?.token}`
         }
       })
-      console.log('this is users ',  resp.data)
       context?.setAdminChannel(resp.data[0].admins);
       context?.setMembersChannel(resp.data[1].members);
-      console.log('here is memebers channel ', context?.membersChannel);
       setCheck('channel');
       setId(login);
       context?.setChannelInfo(res.data[0]);
@@ -133,11 +134,10 @@ export default function Chat() {
     else {
     context?.setShowChat(true);
    
-    console.log(context?.nameDelete)
-    console.log(context?.loginClick)
+    
       try{
         const res = await axios.post(
-         "http://localhost:5000/chat/findConversation",
+         `${process.env.FindConversation}`,
          { loginA: context?.login, loginB: login },
          {
            headers: {
@@ -145,7 +145,6 @@ export default function Chat() {
            },
          }
        );
-       console.log('this is responese of chat ', res.data);
        setCheck('chat');
        setChatHistory(res.data[1]);
        context?.setMessageInfo(res.data[0]);
@@ -153,21 +152,22 @@ export default function Chat() {
        setId(login);
 
       }catch(e){
-        console.log(e);
       }
-      // setShow("hidden");
     }
+    
   }
 
-  useEffect(() => {
-    context?.setSocket(createSocketConnection(context?.token));
-  }, [context?.token]);
+  useEffect(() =>{
+    if (!context?.socket?.connected){
+      context?.setSocket(createSocketConnection(context?.token))
+      console.log('newconnect')
+    }
+  },[context?.token])
 if (token){
   return (
     <div className="bg-gradient-to-t from-gray-100 to-gray-400 min-h-screen">
       <ModalError />
-       {isModalOpen && <ModalInvite isOpen={isModalOpen} closeModal={closeModal} title="Invitation to Game" msg={`you've been invited to join a game against ${gameRoom}`} color={gameRoom}  />}
-       
+      <ModalGameInvite />       
       <div className="container w-full mx-auto h-screen min-h-[1024px] flex flex-row py-2 gap-2 z-30">
         <Barl page="Chat" />
         <div className="w-full h-full rounded-2xl flex flex-col  gap-2 ">

@@ -52,7 +52,7 @@ const Other = () =>{
     useEffect(() =>{
       const fetchData = async  () =>{
         try{
-          const res = await axios.post('http://localhost:5000/user/profile',{
+          const res = await axios.post(`${process.env.Pprofile}`,{
             login: "izail"
           },
           {
@@ -60,13 +60,9 @@ const Other = () =>{
               Authorization : `Bearer ${context?.token}`
             }
           })
-          console.log("respnse profile  ", res.data);
           context?.setProfile(res.data);
-          console.log(res.data.avatar)
-          console.log('context ', context?.profile?.avatar);
           return res.data;
         }catch(e){
-          console.log(e);
         }
       }
         fetchData();

@@ -73,13 +73,13 @@ const BarLeft = (props: BarLeftProps) => {
 
   const click = () => {
     if (props.name === "Profile")
-      router.push('http://localhost:3000/Dashbord');
+      router.push(`${process.env.Dashbord}`);
     if (props.name === "Setting")
-      router.push('http://localhost:3000/Setting');
+      router.push(`${process.env.Setting}`);
     if (props.name === "Chat")
-      router.push('http://localhost:3000/Chat')
+      router.push(`${process.env.Chat}`);
     if (props.name === "Game")
-      router.push(`http://localhost:3000/Game/?room=${context?.login}&queue=true`)
+      router.push(`${process.env.Game}/?room=${context?.login}&queue=true`)
     if (props.name === "Logout"){
       context?.socket?.emit('logout');
       localStorage.clear();
@@ -101,7 +101,7 @@ const BarLeft = (props: BarLeftProps) => {
   return (
     <button onClick={click} onMouseEnter={handlehover} onMouseLeave={handleLeave} className={`${props.page === props.name ? stylling : stl}   `} >
       <span className="text-left">
-        {img && <Image className={`${props.name === "Profile" ? 'w-8' : 'w-10'}`} alt="user" src={img} />}
+        {img && <Image className={`${props.name === "Profile" ? 'w-8' : 'w-10'}`} alt={props.name} priority src={img} width={200} height={200} />}
       </span>
       <span className="ml-4 text-sm font-normal">{props.name}</span>
     </button>

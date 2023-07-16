@@ -19,9 +19,8 @@ const Search = ({page } : {page : string})=>{
   const handlKeyPres = async (e : React.KeyboardEvent<HTMLInputElement>) =>{
     if (e.key === 'Enter'){
         if (inputeValue != ''){
-            console.log(inputeValue)
             try{
-                const res = await axios.post("http://localhost:5000/user/search",{
+                const res = await axios.post(`${process.env.Search}`,{
                     search : inputeValue,
                 },
                 {
@@ -32,9 +31,7 @@ const Search = ({page } : {page : string})=>{
                 )
                 context?.setUserSearch(res.data[0].userSearch);
                 context?.setChannelSearch(res.data[1].channelSearch);
-                console.log(res.data[1].channelSearch)
             }catch (err : any){
-                console.log('not found')
             }
             openModal();
             
@@ -57,11 +54,10 @@ const closeModale = () =>{
     if (context?.socket){
         context?.socket.on('joinOther', (pay) =>{
           if (pay){
-            console.log('her channel name ', pay)
             const fetchData = async () => {
               try {
                 const res = await axios.post(
-                  'http://localhost:5000/chat/memberships',
+                  `${process.env.Memb}`,
                   { login: context?.login },
                   {
                     headers: {
@@ -73,7 +69,6 @@ const closeModale = () =>{
                 context?.setChannels(res.data);
         
               } catch (error) {
-                console.error('Error fetching data:', error);
               }
             };
           
@@ -95,11 +90,10 @@ const closeModale = () =>{
         
         context?.socket.on('join', (pay)=>{
           if (pay){
-            console.log('her channel name ', pay)
             const fetchData = async () => {
               try {
                 const res = await axios.post(
-                  'http://localhost:5000/chat/memberships',
+                  `${process.env.Memb}`,
                   { login: context?.login },
                   {
                     headers: {
@@ -111,7 +105,6 @@ const closeModale = () =>{
                 context?.setChannels(res.data);
         
               } catch (error) {
-                console.error('Error fetching data:', error);
               }
             };
           
@@ -165,40 +158,20 @@ const closeModale = () =>{
 
   useEffect(() => {
     if (context?.socket) {
-    //   context.socket.on('gameInvitation', (payload: any) => {
-        
-    //     console.log("game invite response ")
-    //     if (payload && payload.sender) {
-    //       setGameRoom(payload.sender)
-    //       setIsModalOpen(true)
-          
-    //     }
-    //     console.log(payload)
-    //   });
+    
       
       
       context.socket.on('invite',(pay : any) =>{
         if (pay){
-          console.log(pay);
           const friend ={
             login : pay.login,
             username : pay.username,
             avatar : pay.avatar
           }
-
-            // context.setPendingInvitation((prev) =>[...prev,friend])
             const getDat = async () =>{
               try{
-                const resp = await axios.post('http://localhost:5000/user/friends', 
-                {login : context?.login}, 
-                {
-                  headers: {
-                    Authorization : `Bearer ${context?.token} `
-
-                  }
-                });
-                console.log(resp);
-                const res= await axios.post('http://localhost:5000/user/friends',
+               
+                const res = await axios.post(`${process.env.Friends}`, 
                 {login : context.login},
                 {
                   headers : {
@@ -207,10 +180,8 @@ const closeModale = () =>{
                 }
                 )
                 context.setPendingInvitation(res.data.waitToAccept);
-                console.log('this fro event invite j',res.data )
 
               }catch(e){
-                console.log(e);
               }
             }
             getDat()
@@ -229,10 +200,9 @@ const closeModale = () =>{
       });
       context.socket.on('twoInvite',(pay : any) =>{
         if (pay){
-          console.log(pay, 'twoInvite');
           const fetchData = async () =>{
             try{
-              const res = await axios.post('http://localhost:5000/user/friends',
+              const res = await axios.post(`${process.env.Friends}`,
               {
                 login : context?.login
               },{
@@ -244,20 +214,9 @@ const closeModale = () =>{
               context.setFriends(res.data.friends);
               context.setWaitToAccept(res.data.pendingInvitation)
               context.setPendingInvitation(res.data.waitToAccept);
-//               friends
-// : 
-// [{…}]
-// pendingInvitation
-// : 
-// []
-// waitToAccept
-// : 
-// []
-              console.log(res.data)
               // context.setF
 
             }catch (error) {
-              console.log(error)
             }
 
           }
@@ -266,12 +225,6 @@ const closeModale = () =>{
           
         }
       })
-
-      // context.socket.on('updatedFriend', (pay) =>{
-      //   if (pay){
-      //     console.log('this is updated ', pay);
-      //   }
-      // })
       context.socket.on('accept',(pay) =>{
         if (pay){
           rmv(pay.login);
@@ -286,7 +239,6 @@ const closeModale = () =>{
           }
         }
       })
-      // context.socket.on('updateUser', )
       context?.socket.on('delete', (pay) =>{
         if (pay){
           rmvFriend(pay.login);
@@ -297,9 +249,10 @@ const closeModale = () =>{
           rmvPend(pay.login)
         }
       })
+      // context.socket.on('updateUser', )
       context.socket.on('updatedFriend', (pay) =>{
         if (pay){
-          console.log('updatedFriend  ', pay);
+          console.log('this is pay update ', pay);
           if (pay.login === context.login)
             return;
           const getData = async () =>{
@@ -336,6 +289,10 @@ const closeModale = () =>{
             context?.setPendingInvitation(friend.data.waitToAccept);
             context?.setWaitToAccept(friend.data.pendingInvitation);
             context.setFriends(friend.data.friends);
+            const history = await axios.get('http://localhost:5000/user/me', {headers:{
+            Authorization : `Bearer ${context.token}`
+        }})
+            context.setMatch(history.data.matches);
           }
           getData();
           const fetchLeaderBoard = async () =>{
@@ -366,7 +323,6 @@ const closeModale = () =>{
               context?.setChannels(res.data);
       
             } catch (error) {
-              console.error('Error fetching data:', error);
             }
           };
         
@@ -374,13 +330,6 @@ const closeModale = () =>{
 
         }
       })
-     
-      // context.socket.on('errorCreateChannel',(pay)=>{
-      //   if (pay){
-      //     console.log('this is errorCreateChannel ', pay.message);
-      //   }
-      // })
-      
       context.socket.on('blockuser', (pay) =>{
         if (pay) {
           const getData = async () =>{
@@ -393,7 +342,6 @@ const closeModale = () =>{
                 Authorization : `Bearer ${context.token}`,
               }
             })
-            console.log('this all  friends  and not friend  ', res.data);
             context.setFriends(res.data.friends);
             context.setWaitToAccept(res.data.pendingInvitationt);
             context.setPendingInvitation(res.data.waitAccept);
@@ -414,17 +362,14 @@ const closeModale = () =>{
               context?.setContactChat(res.data);
       
             } catch (error) {
-              console.error('Error fetching data:', error);
             }
           };
         
           fetchData();
           context?.setShowChat(false);
         }
-        console.log('ths is block ', pay);
       })
       context.socket.on('privateMessage',(pay) =>{
-        console.log('message received');
         const fetchData = async () => {
           try {
             const res = await axios.post(
@@ -439,7 +384,6 @@ const closeModale = () =>{
             context?.setContactChat(res.data);
     
           } catch (error) {
-            console.error('Error fetching data:', error);
           }
         };
       
@@ -461,7 +405,6 @@ const closeModale = () =>{
               context?.setContactChat(res.data);
       
             } catch (error) {
-              console.error('Error fetching data:', error);
             }
           };
         
@@ -472,7 +415,6 @@ const closeModale = () =>{
       
       context.socket.on('staticsGame', (pay) =>{
         if (pay){
-          console.log('Statics   Game:', pay);
           context.setLosses(pay.lose);
           context.setWins(pay.win);
           const m : string = pay.lvl.toString();
@@ -491,17 +433,13 @@ const closeModale = () =>{
         }
       })
       context.socket.on('deleteAccount', (pay) =>{
-        console.log('this is name of channel ', context.nameChannel);
         if (pay){
           const namech = localStorage.getItem('ChannelNameee')
           if (pay.login === context.login)
             return ;
-          
-          console.log('Deleting account, ', pay);
           if (pay.login === context.login)
             return ;
           if (pay.login === context.nameDelete || pay.login === context.loginClick){
-            console.log('hello this is the samething')
             context.setShowChat(false);
             context.setFetchChannel(true);
           }
@@ -575,19 +513,10 @@ const closeModale = () =>{
           
         }
       })
-      // this for if you are open many window
-      context.socket.on('deleteMyAccount', (pay) =>{
-        if (pay){
-
-          console.log('deleteMyAccount  ', pay);
-        }
-
-      });
+      
       context.socket.on('updateChannel', (pay) =>{
         if (pay){
-          // console.log('this is pay ', pay);
           context.setChannelInfo(pay);
-          console.log('this is pass ', context.channelInfo?.ispassword)
           const fetchData = async () => {
             try {
               const res = await axios.post(
@@ -612,7 +541,6 @@ const closeModale = () =>{
               context.setChannelInfo(resp.data[0])
       
             } catch (error) {
-              console.error('Error fetching data:', error);
             }
           };
         
@@ -634,7 +562,6 @@ const closeModale = () =>{
           }
 
         }
-          // console.log(pay);
       })
       
     }
@@ -668,7 +595,7 @@ const closeModale = () =>{
     {isOpen && <ModalSearch isOpen={isOpen} closeModal={closeModale}   />}
                             <div className="relative flex items-center w-full h-20 lg:w-64 group">
                                 <div className="absolute z-50 flex items-center justify-center  w-auto h-10 p-3 pr-2 text-sm text-gray-500 uppercase cursor-pointer sm:hidden">
-                                    <svg fill="none" className="relative w-5 h-5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg fill="none" className="relative w-5 h-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" viewBox="0 0 24 24">
                                         <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z">
                                         </path>
                                     </svg>
@@ -677,12 +604,12 @@ const closeModale = () =>{
                                     <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
                                     </path>
                                 </svg>
-                                <input type="text" value={inputeValue} onKeyPress={handlKeyPres} onChange={handlChange} className={`input input-bordered block w-full ${page === 'Setting' ?'h-[50%]' :'h-ful' } py-1.5 pl-10 pr-4 leading-normal rounded-2xl   ring-opacity-90 bg-gray-100  text-gray-400 aa-input`} placeholder="Search"/>
+                                <input id="search" type="text" value={inputeValue} onKeyPress={handlKeyPres} onChange={handlChange} className={`input input-bordered block w-full ${page === 'Setting' ?'h-[50%]' :'h-ful' } py-1.5 pl-10 pr-4 leading-normal rounded-2xl   ring-opacity-90 bg-gray-100  text-gray-400 aa-input`} placeholder="Search"/>
                                     <div className="absolute right-0 hidden h-auto px-2 py-1 mr-2 text-xs text-gray-400 border border-gray-300 rounded-2xl md:block">
                                         +
                                     </div>
-                                </div>
-                            </div>
+  </div>
+                            </div> 
     );
 }
 export default Search;

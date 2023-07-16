@@ -204,34 +204,37 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             let user = this.connectedUsers.get(login);
             if (!user)
                 throw new NotFoundException(`cant find sender User`);
-                if (user.inGame) {
-                    // should delete instance of game
-                    if (this.worlds[user.login] && this.worlds[user.login].players.player1.client == client.id) {
-                        this.server.to(user.login).emit('gameStatus', { msg: "Host left the game.." });
-                        this.server.to(user.login).emit('ready', { msg: false });
-                        this.worlds[user.login].clearGame()
-                        delete this.worlds[user.login]
-                        this.worlds[user.login] = null
-                        const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
-                        user = await this.userService.updateUser(dto);
-                        this.connectedUsers.set(login,user);
-                        await this.MsgToUpdatedfriends(user);
-                    }
-                    // check if the disconnecting user is part of someone elses room
-                    const roomJoined = userInGame(user.login, this.worlds)
-                    if (roomJoined && this.worlds[roomJoined].players.player2.client == client.id) {
-                        this.worlds[roomJoined].availablePaddles.push("right")
-                        this.worlds[roomJoined].players.player2 = { user: null, client: null }
-                        const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
-                        user = await this.userService.updateUser(dto);
-                        this.connectedUsers.set(login,user);
-                        await this.MsgToUpdatedfriends(user);
-                    }
-                }
-    
+            console.log("socket disconnected", client.id, "user in game:", user.inGame)
+            if (this.worlds[user.login] && this.worlds[user.login].players.player1.client == client.id) {
+                this.server.to(user.login).emit('gameStatus', { msg: "Host left the game.." });
+                this.server.to(user.login).emit('ready', { msg: false });
+                this.worlds[user.login].clearGame()
+                delete this.worlds[user.login]
+                this.worlds[user.login] = null
+                const dto: UpdateUserDto = { login: user.login, isOnline: undefined, inGame: false, username: undefined, avatar: undefined, enableTwoFa: undefined };
+                user = await this.userService.updateUser(dto);
+                await this.MsgToUpdatedfriends(user);
+                this.connectedSocket.delete(client.id);
+                await this.deleteSocketFromMapUsers(client.id);
+                console.log(login, "disconnected by gameDisconnect 1", this.worlds[user.login])
+
+            }
+            // check if the disconnecting user is part of someone elses room
+            const roomJoined = userInGame(user.login, this.worlds)
+            if (roomJoined && this.worlds[roomJoined].players.player2.client == client.id) {
+                this.worlds[roomJoined].availablePaddles.push("right")
+                this.worlds[roomJoined].players.player2 = { user: null, client: null }
+                this.connectedSocket.delete(client.id);
+                await this.deleteSocketFromMapUsers(client.id);
+                const dto: UpdateUserDto = { login: user.login, isOnline: undefined, inGame: false, username: undefined, avatar: undefined, enableTwoFa: undefined };
+                user = await this.userService.updateUser(dto);
+                await this.MsgToUpdatedfriends(user);
+                console.log(login, "disconnected by gameDisconnect 2")
+
+            }
+
             // set status offline in database
             client.emit("message", 'you have disonnected');
-            console.log(`${user.login} had disconected  ${client.id}`);
             this.connectedSocket.delete(client.id);
             await this.deleteSocketFromMapUsers(client.id);
         }
@@ -252,30 +255,35 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             this.worlds[user.login].clearGame()
             delete this.worlds[user.login]
             this.worlds[user.login] = null
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
+            const dto: UpdateUserDto = { login: user.login, isOnline: undefined, inGame: false, username: undefined, avatar: undefined, enableTwoFa: undefined };
             user = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(user);
             this.connectedSocket.delete(client.id);
             await this.deleteSocketFromMapUsers(client.id);
+            console.log(login, "disconnected by gameDisconnect 1", this.worlds[user.login])
+
         }
         // check if the disconnecting user is part of someone elses room
         const roomJoined = userInGame(user.login, this.worlds)
         if (roomJoined && this.worlds[roomJoined].players.player2.client == client.id) {
             this.worlds[roomJoined].availablePaddles.push("right")
             this.worlds[roomJoined].players.player2 = { user: null, client: null }
+            client.leave(roomJoined);
             this.connectedSocket.delete(client.id);
             await this.deleteSocketFromMapUsers(client.id);
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
+            const dto: UpdateUserDto = { login: user.login, isOnline: undefined, inGame: false, username: undefined, avatar: undefined, enableTwoFa: undefined };
             user = await this.userService.updateUser(dto);
             await this.MsgToUpdatedfriends(user);
+            console.log(login, "disconnected by gameDisconnect 2")
+
         }
     }
 
     //
-    async checkQueue(login:string, worlds: {}) {
-        let isBlocked:boolean = false;
+    async checkQueue(login: string, worlds: {}) {
+        let isBlocked: boolean = false;
         for (const user in worlds) {
-            isBlocked = await this.userService.isBlockedMe({loginA:login, loginB:user});
+            isBlocked = await this.userService.isBlockedMe({ loginA: login, loginB: user });
             if (worlds[user] && worlds[user].openGame && worlds[user].availablePaddles.length && !isBlocked)
                 return user
         }
@@ -292,49 +300,61 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException('no such user');
             const roomJoined = userInGame(user.login, this.worlds)
             if (roomJoined) {
+                console.log("already in a game", client.id)
                 client.emit('gameStatus', { msg: "you're already in a game" });
-                throw new BadRequestException('already in game');
             }
+            else{
+
+            console.log(login, "joined oom with client:", client.id)
             roomId = roomId.length ? roomId : user.login
-            if (roomId === user.login) {
-                let queueRoom = null;
-                if (queue) {
-                    queueRoom = await this.checkQueue(login, this.worlds)
-                    if (queueRoom) {
-                        this.world = this.worlds[queueRoom]
-                        roomId = queueRoom
-                    }
-                }
-                if (!queueRoom) {
-                    this.world = new matterNode(this.server, roomId, data.obj, queue, client.id);// user.login   
-                    this.world.onSettingScores(async (payload: any) => {
-                        const { resultMatch } = payload
-                        const result = await this.userService.storeMatch(resultMatch);
-                        if (result)
-                            client.emit('achiev', {})
-                        this.sendMsgToUser(resultMatch.loginA,result.staticsA,`staticsGame`);
-                        this.sendMsgToUser(resultMatch.loginB,result.staticsB,`staticsGame`);
-                        // Handle the hello event here
-                    });
-                }
-                if (!queueRoom) {
-                    this.worlds[roomId] = this.world;
-                    this.world.sendBallPosition();
-                }
-            }
-            else if (this.worlds[roomId]) {
-                this.world = this.worlds[roomId];
-            }
-            else {
+            if (roomId !== user.login && (!this.worlds[roomId] || this.worlds[roomId] == undefined)) {
                 client.emit('ready', { msg: false });
                 client.emit('gameStatus', { msg: "Room host is not connected" });
-                throw new BadRequestException('owner must be connected to the channel to join it');
+                console.log("Room host is not connected")
             }
-            client.join(roomId); // add the client to the specified room
-            const dto:UpdateUserDto = {login:user.login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
-            const userUpdate = await this.userService.updateUser(dto);
-            await this.MsgToUpdatedfriends(userUpdate);
-            this.world.handleConnection(client, user);
+            else {
+                if (roomId === user.login) {
+                    let queueRoom = null;
+                    if (queue) { // if this is a match making request
+                        queueRoom = await this.checkQueue(login, this.worlds)     // check for a game in the queue
+                        if (queueRoom) {        // if theres a game in the queue connect the user to it
+                            this.world = this.worlds[queueRoom]
+                            roomId = queueRoom
+                        }
+                    }
+                    if (!queueRoom) {           // if there is no game in queue, create a new game  with queue option set to true
+                        this.world = new matterNode(this.server, roomId, data.obj, queue, client.id);// user.login   
+                        this.world.onSettingScores(async (payload: any) => {            // score listener is created once only when the host creates the game
+                            const { resultMatch } = payload
+                            const result = await this.userService.storeMatch(resultMatch);
+                            if (result)
+                                client.emit('achiev', {})
+                            this.sendMsgToUser(resultMatch.loginA, result.staticsA, `staticsGame`);
+                            this.sendMsgToUser(resultMatch.loginB, result.staticsB, `staticsGame`);
+                            // Handle the hello event here
+                        });
+
+                        this.worlds[roomId] = this.world;
+                        this.world.sendBallPosition();
+                    }
+                }
+                else if (this.worlds[roomId]) {
+                    this.world = this.worlds[roomId];
+                }
+                else {
+                    client.emit('ready', { msg: false });
+                    client.emit('gameStatus', { msg: "Room host is not connected" });
+                }
+
+                client.join(roomId); // add the client to the specified room
+                console.log("joined game", client.id, login)
+                const dto: UpdateUserDto = { login: user.login, isOnline: undefined, inGame: true, username: undefined, avatar: undefined, enableTwoFa: undefined };
+                const userUpdate = await this.userService.updateUser(dto);
+                await this.MsgToUpdatedfriends(userUpdate);
+                this.world.handleConnection(client, user);
+            }
+        }
+
         }
         catch (error) {
             client.emit("errorMessage", error);
@@ -372,7 +392,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
         try {
             const { host } = body;
             const login = this.getLoginBySocketId(client.id);
-            let  userSender = this.connectedUsers.get(login);
+            let userSender = this.connectedUsers.get(login);
             if (!userSender)
                 throw new NotFoundException(`cant find sender User`);
             const userReceiver = await this.userService.findUser({ login: host });
@@ -382,12 +402,12 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 if (userReceiver.inGame) {
                     // should delete instance of game
                     if (this.worlds[userReceiver.login]) {
-                        this.server.to(userReceiver.login).emit('gameStatus', { msg: "invitation was canceled, fuck off" });
+                        this.server.to(userReceiver.login).emit('gameStatus', { msg: "Invitation was canceled !" });
                         this.server.to(userReceiver.login).emit('ready', { msg: false });
                         this.worlds[userReceiver.login].clearGame();
                         delete this.worlds[userReceiver.login]
                         this.worlds[userReceiver.login] = null
-                        const dto:UpdateUserDto = {login:login, isOnline:undefined, inGame:false, username:undefined, avatar:undefined, enableTwoFa:undefined};
+                        const dto: UpdateUserDto = { login: login, isOnline: undefined, inGame: false, username: undefined, avatar: undefined, enableTwoFa: undefined };
                         userSender = await this.userService.updateUser(dto);
                         await this.MsgToUpdatedfriends(userSender);
                     }

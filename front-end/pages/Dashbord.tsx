@@ -1,5 +1,5 @@
-import React, { use, useContext, useEffect, useState } from 'react';
-import Statics from '../image/statics.svg'
+import React, {  useContext, useEffect, useState } from 'react';
+import Staticsee from '../image/statics.svg'
 import 'react-circular-progressbar/dist/styles.css';
 import LevelStatics, {Stats} from '@/components/Statics'
 import RealFooter from '@/components/RealFooter';
@@ -9,18 +9,12 @@ import { faTableTennisPaddleBall } from '@fortawesome/free-solid-svg-icons';
 import {DataFunction, CallBarLeft} from '@/components/Functions';
 import NavBar from '@/components/NavBar';
 import { MyContext , ContextTypes, FriendType} from '@/components/Context';
-import Modal, { ModalError, ModalInvite } from '@/components/Modal';
-import axios from 'axios';
-import {io} from "socket.io-client";
+import { ModalError, ModalGameInvite } from '@/components/Modal';
 import createSocketConnection from '@/components/socketConnection'
 import { useRouter } from 'next/router';
-import { MesgType } from '@/components/Context';
-import { Sleeping } from 'matter-js';
-import { Socket } from 'dgram';
-// import { initSocketConnection, getSocket } from '@/components/socketConnection';
 
-var i = 0;
-var token : string | null = null;
+// var i = 0;
+// var token : string | null = null;
 
 
 function usleep(milliseconds: number) {
@@ -39,7 +33,6 @@ export default  function Progress() {
   const router = useRouter();
   const [mms, setMesg] = useState('');
   const [name, setName] = useState('');
-    const [gameRoom, setGameRoom] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false);
   
 
@@ -47,14 +40,13 @@ export default  function Progress() {
   useEffect(() =>{
     context?.setLoginClick('');
     context?.setNameDelete('');
-     token = localStorage.getItem('token');
-    // console.log(context?.login, ' this is login in useEffect');
-    token ? router.push('/Dashbord') : router.push('/')
   },[])
 
   useEffect(() =>{
-    context?.setSocket(createSocketConnection(context?.token))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!context?.socket?.connected){
+      context?.setSocket(createSocketConnection(context?.token))
+      console.log('newconnect')
+    }
   },[context?.token])
   
 
@@ -95,17 +87,11 @@ export default  function Progress() {
         
      
       if (payload && payload.sender) {
-        setGameRoom(payload.sender)
-        setIsModalOpen(true)
-        
+        context.setGameInvitation(true)
+        context.setGameHost(payload.sender)
       }
-      console.log(payload)
     });
-    return () =>{
-      if (context?.socket){
-        context.socket.off('gameInvitation')
-      }
-    }
+   
   }, [context?.socket])
 
  
@@ -127,23 +113,23 @@ export default  function Progress() {
     setCheck(3);
   }
   const clickSent = () =>{
-    // console.log('sent')
     setCheck(4);
   }
   const clickRecieved = () =>{
-    // console.log('recieved')
+
     setCheck(5);
   }
   const blockFriend = () => {
     setCheck(6);
   }
-  if (token){
+  // if (token)
+  {
 
     return (
       <div className='bg-gradient-to-t from-gray-100 to-gray-400 min-h-screen ' >
         <ModalError />
+        <ModalGameInvite />
         <div className='flex flex-col container mx-auto h-screen min-h-[1100px] py-2 gap-3  '>
-        {/* {isModalOpen && <Modal isOpen={isModalOpen} closeModal={closeModal} title={name} msg={mms} color="bg-white"/>} */}
         <div className=' h-1/2 flex md:space-x-2'>
           <div className="hidden md:flex md:flex-col min-w-[130px]  md:w-[15%]  bg-gray-200 shadow-2xl shadow-gray-200  rounded-2xl  pt-4   ">
                      <div className=" self-center">
@@ -157,7 +143,7 @@ export default  function Progress() {
             <NavBar page='Dashbord' />
             <div className=' h-[88%] md:h-[86%]  rounded-2xl flex flex-col'>
               <div className='h-1/2 w-full flex justify-center '>
-                <Image className='w-full h-full' src={Statics} alt='static' />
+                <Image className='w-full h-full' src={require('../image/statics.svg')} priority={true} alt='static' placeholder="blur" blurDataURL={'../image/statics.svg'} />
               </div>
               <div className='bg-gray-200 w-full  h-1/2 rounded-2xl px-8 md:px-0  overflow-y-auto scrollbar-thin'>
                 <div className='h-full  w-full flex  flex-col gap-4 md:flex-row md:justify-around md:items-center'>
@@ -187,7 +173,7 @@ export default  function Progress() {
                   </div>
             
           </div>
-          <div className='h-[75%] w-full shadow-lg bg-gray-100  shadow-slate-600 rounded-2xl overflow-x-auto flex'>
+          <div className=' min-h-[500px] h-[75%] w-full shadow-lg bg-gray-100  shadow-slate-600 rounded-2xl overflow-x-auto flex'>
             {DataFunction(check)}
           </div>
         </div>

@@ -155,22 +155,14 @@ const ModalChat: React.FC<ModalChatProps> = ({ isOpen, closeModal, name, login }
           receiver: login,
           content: value.current.value
         })
-        context.socket.on('message', (payload: any) => {
-          console.log("111111111111111");
-          console.log(`Received message: ${payload}`);
-          // SetToMessages(payload);
-          // setMessages([...messages, payload]);
-        });
-
       }
       closeModal();
       
     }
     const fetchData = async () => {
-      console.log("here i'm here");
       try {
         const res = await axios.post(
-          'http://localhost:5000/chat/conversations',
+          `${process.env.Conversations}`,
           { login: context?.login },
           {
             headers: {
@@ -179,10 +171,8 @@ const ModalChat: React.FC<ModalChatProps> = ({ isOpen, closeModal, name, login }
           }
         );
         context?.setContactChat(res.data);
-        console.log(context?.contactChat);
 
       } catch (error) {
-        console.error('Error fetching data:', error);
       }
     };
   
@@ -282,7 +272,6 @@ const ModalUpdateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
         form.append("file", file);
         form.append("upload_preset", "mhaddaou");
         if ((file.type !== "image/jpeg") && (file.type !== "image/png")){
-          console.log('this image is not assests')
           setMsg('This image is not jpeg or PNG');
           setTitle('ERROR !');
           setColor('bg-orange-400');
@@ -411,8 +400,6 @@ const ModalCreateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
   useEffect(() => {
     if (context?.socket)
       context?.socket.on('createChannel', (pay) => {
-        console.log('this is create new channel ', pay)
-        console.log(pay);
         setMsg(pay);
         setColor('bg-green-400');
         setTitle('Success');
@@ -427,9 +414,7 @@ const ModalCreateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
       })
     if (context?.socket)
       context?.socket.on('errorChannel', (pay) => {
-        console.log('this is error new channel ', pay)
 
-        console.log(pay)
         setMsg(pay.message);
         setColor('bg-orange-400');
         setTitle('Failed');
@@ -505,7 +490,6 @@ const ModalCreateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
       }
 
       context?.socket?.emit('newChannel', msg)
-      console.log('i send this ', msg);
       // closeModal()
 
     }
@@ -551,14 +535,12 @@ const ModalCreateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
       var msg: newChannel | string = '';
       
       if (chanref.current) {
-        console.log(chanref.current.value);
         msg = {
           channelName: chanref.current.value,
           isPrivate: check,
           ispassword: pass,
           password: '',
         }
-        console.log('i send this ', msg);
       }
       if (context?.token)
         checkIs7rag(context?.token);
@@ -588,10 +570,17 @@ const ModalCreateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
             <input type="text" ref={chanref} placeholder="Name Channel" className="input input-bordered input-sm w-full max-w-xs" />
           </div>
           <div className="form-control font-semibold font-mono">
-            <label className="label cursor-pointer">
-              <span className="label-text">Password</span>
-              <input type="checkbox" onClick={clickPass} checked={pass} className="checkbox" />
-            </label>
+          <label htmlFor="password" className="label cursor-pointer">
+            <span className="label-text">Password</span>
+            <input
+              type="checkbox"
+              id="password"
+              onClick={clickPass}
+              checked={pass}
+              className="checkbox"
+            />
+          </label>
+
           </div>
           <input type="password" disabled = {!pass} ref={passref}  placeholder="Password" className="input input-bordered input-sm w-full max-w-xs" />
 
@@ -701,17 +690,15 @@ const ModalJoin = (props: ModaleJoin) => {
     if (context?.socket){
       context?.socket.on('errorJoin', (pay) =>{
         if (pay ){
-          console.log('this is error join ' , pay);
           setMsg(pay.message);
           setColor('input-error')
         }
       })
       context.socket.on('join', (pay) =>{
         if (pay){
-          console.log('this for you are join channel pass ', pay);
           const GetDat = async () =>{
             const res = await axios.post(
-              'http://localhost:5000/chat/channel/message/all',
+              `${process.env.AllMes}`,
               {channelName: props.channel.channelName}, 
               {
                 headers:{
@@ -816,19 +803,10 @@ const ModalSearch = (props: ModalSearchProps) => {
     }
     props.closeModal()
     context?.setChn(true);
-    console.log(user.login);
   }
 
 
-  useEffect(() => {
-    if (context?.socket) {
-      context.socket.on('message', (pay) => {
-        if (pay)
-          console.log(pay);
-      })
-
-    }
-  }, [context?.socket])
+ 
   const [name, setName] = useState('');
   const [login, setLogin] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -859,7 +837,6 @@ const ModalSearch = (props: ModalSearchProps) => {
     closeModal: () => void;
   }
   const clickJoin = (channel: channelSearchProps) => {
-    console.log('click')
     setChannel(channel);
     // props.closeModal();
     openModaleJoin();
@@ -868,9 +845,8 @@ const ModalSearch = (props: ModalSearchProps) => {
   const viewProfile = (user : FriendType) =>{
 
    context?.setProfileuser(user.login);
-    console.log(user.login);
     const getData = async () => {
-      const res = await axios.post('http://localhost:5000/user/viewProfile',
+      const res = await axios.post(`${process.env.ViewProfile}`,
         { login: user.login },
         {
           headers: {
@@ -878,11 +854,8 @@ const ModalSearch = (props: ModalSearchProps) => {
 
           }
         });
-      console.log('this is res profile ', res.data.message);
       if (res.data.message)
-        router.push(`http://localhost:3000/Profile/${user.login}`)
-      else
-        console.log('this user is block you ');
+        router.push(`${process.env.Profile}/${user.login}`)
     }
     getData();
   }
@@ -1009,7 +982,7 @@ const ModalGame: React.FC<ModalProps> = ({ isOpen, closeModal, title, msg, color
               </button>
             ) : null
           }
-          <button onClick={()=>{router.push('http://localhost:3000/Dashbord');}} className="px-4 py-2 bg-red-200 text-gray-700 rounded hover:bg-red-300">Leave</button>
+          <button onClick={()=>{router.push(`${process.env.Dashbord}`);}} className="px-4 py-2 bg-red-200 text-gray-700 rounded hover:bg-red-300">Leave</button>
         </div>
       </div>
     </div>
@@ -1020,7 +993,7 @@ const ModalInvite: React.FC<ModalProps> = ({ isOpen, closeModal, title, msg, col
   const context = useContext(MyContext);
   const handleAccept = () => {
     const url = `Game?room=${color}&queue=false`;
-    router.push(`http://localhost:3000/${url}`)
+    router.push(`${process.env.Localhost}/${url}`)
   }
 
   const handleDecline = () => {
@@ -1089,7 +1062,53 @@ const ModalQRcode: React.FC<ModalProps> = ({ isOpen, closeModal, title, msg, col
   );
 };
 
+const ModalGameInvite = () => {
+  const context = useContext(MyContext);
+  const handleAccept = () => {
+    const url = `Game?room=${context?.gameHost}&queue=false`;
+    context?.setGameInvitation(false)
+    router.push(`${process.env.Localhost}/${url}`)
+  }
+  const handleDecline = () => {
+    if (context?.token)
+      checkIs7rag(context?.token);
+    if (context?.socket)
+      context?.socket.emit("cancelGame", {
+        host: context.gameHost
+      })
+    context?.setGameInvitation(false)
+  }
+  return (
+    <div className={`absolute inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50  ${context?.gameInvitation ? 'block' : 'hidden'} `}>
+      <div className={`bg-orange-500 rounded-md flex flex-col w-[400px] h-[200px] p-6`}>
+      <div className="flex justify-center gap-2">
+            <Star fill="gold" color='gold' />
+        <div className="text-center text-xl font-mono font-semibold">Game Invitation</div>
+            <Star fill="gold" color='gold' />
+          </div>
+        <div className="w-full h-[80%] text-center text-lg flex justify-center items-center">
+          <p >
 
+            Play against {context?.gameHost}
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+        
+            <button
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              onClick={handleAccept}
+            >
+              Accept
+            </button>
+        
+          <button onClick={handleDecline} className="px-4 py-2 bg-red-200 text-gray-700 rounded hover:bg-red-300">Decline</button>
+        </div>
+
+      </div>
+    </div>
+  )
+
+}
 
 
 const ModalError = () => {
@@ -1199,7 +1218,6 @@ const ModalDeleteAcount = () => {
           <button className="bg-slate-600 px-2 py-1 rounded-lg text-white" onClick={() => context?.setDeleteAcount(false)}>close</button>
           <button className="bg-red-600 px-2 py-1 rounded-lg text-white" onClick={() =>{
             context?.socket?.emit('deleteAccount');
-            console.log('deleteAccount')
              context?.setDeleteAcount(false)
              router.push('/');
              localStorage.clear();
@@ -1212,4 +1230,4 @@ const ModalDeleteAcount = () => {
 
 }
 export default Modal;
-export { ModalChat, ModalInvite, ModalCreateChannel, ModalUpdateChannel, ModalSearch, ModalGame, ModalJoin, ModalQRcode, ModalError, ModalListBanner , ModalDeleteAcount};
+export { ModalChat, ModalGameInvite, ModalCreateChannel, ModalUpdateChannel, ModalSearch, ModalGame, ModalJoin, ModalQRcode, ModalError, ModalListBanner , ModalDeleteAcount};

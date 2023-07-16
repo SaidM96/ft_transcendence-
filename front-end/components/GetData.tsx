@@ -30,19 +30,12 @@ interface Achievements {
 
 type DataProps = number | undefined;
 
-const getImgSrc = (name: string) => {
-  if (name === 'smia')
-    return smia;
-  else if (name === 'amya')
-    return amya
-  else
-    return avatar;
-}
+
 
 
 const GetImage = ({ name }: { name: string | undefined }) => {
   if (name === '0')
-    return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar} alt="avatar" />
+    return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar} priority alt="avatar" />
   else
     return <img className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={name} alt="avatar" />
 
@@ -54,20 +47,10 @@ const GetImage = ({ name }: { name: string | undefined }) => {
 export default function GetDataHistory({ matches }: { matches: MatchType[] }) {
   const [Img, setImg] = useState<string | StaticImageData>('');
   const context = useContext(MyContext);
-  
-
-
-
- 
-  useEffect(() => {
-    //here for fetching data
-    // and here for setting the tade to usestate data
-    console.log('data');
-  })
 
   const GetImage = ({ name }: { name: string }) => {
     if (name === '0')
-      return <Image className="mask mask-squircle w-12 h-12" src={avatar} alt="avatar" />
+      return <Image className="mask mask-squircle w-12 h-12" src={avatar} priority alt="avatar" />
     else
       return <img className="mask mask-squircle w-12 h-12" src={name} alt="avatar" />
 
@@ -84,30 +67,28 @@ export default function GetDataHistory({ matches }: { matches: MatchType[] }) {
       <>
         <div className="flex flex-col w-full h-full   overflow-y-auto scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-300 ">
 
-          {context?.match.map((match =>{
-            return (
-              <div key={match.loginA} className="flex flex-row min-h-[60px] h-[14%]  mt-2 justify-center space-x-3 md:justify-between items-center bg-gray-300 md:space-x-2 lg:space-x-6 md:px-10 lg:px-32 rounded-lg">
-              <div className="flex  md:space-x-10  w-1/3 h-full items-center">
-                <GetImage name={match.avatarA} />
-                <div className="font-mono font-semibold md:text-[20px]">{match.usernameA}</div>
-              </div>
-              <div className="flex w-1/5 md:w-[90px]    h-full items-center justify-between md:justify-center md:space-x-6 ">
-                <div className={`font-bold text-lg ${match.scoreB > match.scoreA ? 'text-red-500' : 'text-green-600'}`}>{match.scoreA}</div>
-                <div className="font-bold md:text-xl  md:uppercase">vs</div>
-                <div className={`font-bold text-lg ${match.scoreA > match.scoreB ? 'text-red-500' : 'text-green-600'} `}>{match.scoreB}</div>
+        {context?.match.map(match => {
+  return (
+    <div key={match.loginA} className="flex flex-row min-h-[60px] h-[14%] mt-2 justify-center space-x-3 md:justify-between items-center bg-gray-300 md:space-x-2 lg:space-x-6 md:px-10 lg:px-32 rounded-lg">
+      <div className="flex md:space-x-10 w-1/3 h-full items-center">
+        <GetImage name={match.avatarA} />
+        <div className="font-mono font-semibold md:text-[20px]">{match.usernameA}</div>
+      </div>
+      <div className="flex w-1/5 md:w-[90px] h-full items-center justify-between md:justify-center md:space-x-6">
+        <div className={`font-bold text-lg ${match.scoreB > match.scoreA ? 'text-red-500' : 'text-green-600'}`}>{match.scoreA}</div>
+        <div className="font-bold md:text-xl md:uppercase">vs</div>
+        <div className={`font-bold text-lg ${match.scoreA > match.scoreB ? 'text-red-500' : 'text-green-600'} `}>{match.scoreB}</div>
+      </div>
+      <div className="flex justify-around md:justify-between md:space-x-10 w-1/3 h-full items-center">
+        <div className="font-mono font-semibold md:text-[20px] ">{match.usernameB}</div>
+        <div>
+          <GetImage name={match.avatarB} />
+        </div>
+      </div>
+    </div>
+  );
+})}
 
-              </div>
-              <div className="flex justify-around md:justify-between md:space-x-10  w-1/3 h-full items-center ">
-                <div className="font-mono font-semibold md:text-[20px] ">{match.usernameB}</div>
-                <div>
-                  <GetImage name={match.avatarB} />
-
-                </div>
-              </div>
-
-            </div>
-            );
-          }))}
         </div>
 
       </>
@@ -123,7 +104,7 @@ export function LeaderBord () {
 
   const GetPhoto = ({ name }: { name: string }) => {
     if (name === '0')
-      return <Image className="mask mask-squircle w-16 h-16 md:w-20 md:h-20" src={avatar} alt="avatar" />
+      return <Image className="mask mask-squircle w-16 h-16 md:w-20 md:h-20" src={avatar} priority alt="avatar" />
     else
       return <img className="mask mask-squircle w-14 h-14 md:w-16 md:h-16" src={name} alt="avatar" />
 
@@ -131,17 +112,17 @@ export function LeaderBord () {
   const GetPlace = ({rank } : {rank : number}) =>{
     if (rank === 1)
       return (
-      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28" src={first} alt="av" />
+      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28" src={first} priority alt="av" />
 
       );
     else if (rank === 2)
     return (
-      <Image className="pl-2 w-20 h-20 md:w-24 md:h-28" src={second} alt="av" />
+      <Image className="pl-2 w-20 h-20 md:w-24 md:h-28" src={second} priority alt="av" />
 
       );
     else 
     return (
-      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28 " src={third} alt="av" />
+      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28 " src={third} priority alt="av" />
 
       );
    
@@ -150,7 +131,7 @@ export function LeaderBord () {
 
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full  ">
       <div className="w-full h-[10%]"></div>
       <div className="  w-full h-[90%]  border-4 border-cyan-500 relative flex justify-center rounded-t-2xl ">
         <div className="absolute -top-10 w-[40%] h-[80px] bg-slate-100 border-4 border-cyan-400 flex justify-center text-3xl font-extrabold items-center rounded-2xl">LEADERBOARD</div>
@@ -239,10 +220,7 @@ export function GetDataAchievement({achiev} : {achiev : AchievementType[]}) {
 
 export function GetDataFriend() {
   const context = useContext(MyContext);
-
   const router = Router;
-
-  console.log()
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [login, setLogin] = useState('');
   const [name, setName] = useState('');
@@ -279,11 +257,6 @@ export function GetDataFriend() {
     context?.setUserBlocked((prev) => [...prev, friend]);
   }
 
-  useEffect(() => {
-    // Fetch data and set it to the useState 'Data' here
-    console.log('data');
-  });
-
 
   const sendMsg = (login: string, username: string,) => {
 
@@ -292,6 +265,8 @@ export function GetDataFriend() {
     setIsModalOpen(true);
 
   }
+
+
   
   const deleteFriend = (friend: FriendType) => {
     if (context?.token)
@@ -301,9 +276,8 @@ export function GetDataFriend() {
   }
   const viewProfile = (friend: FriendType) => {
     context?.setProfileuser(friend.login);
-    console.log(friend.login);
     const getData = async () => {
-      const res = await axios.post('http://localhost:5000/user/viewProfile',
+      const res = await axios.post(`${process.env.ViewProfile}`,
         { login: friend.login },
         {
           headers: {
@@ -311,11 +285,8 @@ export function GetDataFriend() {
 
           }
         });
-      console.log('this is res profile ', res.data.message);
       if (res.data.message)
-        router.push(`http://localhost:3000/Profile/${friend.login}`)
-      else
-        console.log('this user is block you ');
+        router.push(`${process.env.Profile}/${friend.login}`)
     }
     getData();
   }
@@ -386,7 +357,6 @@ const DatSend = () => {
       checkIs7rag(context?.token);
     context?.socket?.emit('removeInvite', { login: login });
     rmv(login);
-    console.log(login);
 
   }
   if (context?.waitToAccept){
@@ -466,7 +436,6 @@ const DataRecieved = () => {
       })
     context?.setFriends((prev) => [...prev, friend]);
 
-    // console.log('accept friend')
 
 
   }

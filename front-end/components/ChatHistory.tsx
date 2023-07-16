@@ -5,39 +5,27 @@ import Image, { StaticImageData } from "next/image";
 import Lottie from "lottie-react";
 import Avatar from "./Avatar";
 import axios from "axios";
-import mhaddaou from '../image/mhaddaou.jpg'
-import { io } from "socket.io-client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
-import Link from "next/link";
-import InfoContact from "./InfoContact";
 import { MyContext, MesgType } from "./Context";
-import { element } from "prop-types";
-import Notification from './Notification'
-import { Stack } from "@mui/material";
-import Info from "@/components/Info";
-import { useRouter } from 'next/router';
 import Router from "next/router";
 import avatar from '../image/avatar.webp'
-
-import ChannelHistor from "./ChannelHistory";
-import { ModalInvite } from '@/components/Modal';
 import { checkIs7rag } from "./Functions";
 
 const GetImage = ({name } : {name : string | undefined}) =>{
   if (name === '0')
-    return <Image className="mask mask-squircle w-12 h-12" src={avatar} alt="avatar" /> 
+    return <Image className="mask mask-squircle w-12 h-12" src={avatar} priority alt="avatar" /> 
   else
     return <img className="mask mask-squircle w-12 h-12" src={name} alt="avatar"/>
 
 }
 
 
-const AvatarOffline = ({ img }: { img: StaticImageData }) => {
+const AvatarOffline = ({ img }: { img: string | undefined }) => {
   return (
     <div className="avatar offline">
       <div className="w-14 rounded-full">
-        <Image src={img} alt="avatar" />
+        <GetImage name={img} />
       </div>
     </div>
   );
@@ -64,8 +52,27 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
   const context = useContext(MyContext);
   const [newMsg, setNewMsg] = useState<MesgType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [state, setState] = useState(false);
   const [gameRoom, setGameRoom] = useState("")
-  const [userBlock, setUserBlock] = useState('');
+  useEffect(() =>{
+    const checkState = async () =>{
+      try{
+        const res = await axios.post(`${process.env.Pprofile}`,{
+          login: login
+        },
+        {
+          headers:{
+            Authorization : `Bearer ${context?.token}`
+          }
+        })
+        console.log(res.data)
+      }catch(e){
+        checkState();
+      }
+    }
+    checkState();
+    
+  })
 
 
   const Sender = ({ msg }: { msg: string }) => {
@@ -113,14 +120,12 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
   useEffect(() => {
     if (context?.socket) {
       context.socket.on('PrivateMessage', (payload: any) => {
-        console.log('privateMessage is received ' , payload)
         if (payload) {
-          // console.log('this is new message , ', payload)
           setNewMsg((prevMsgs) => [...prevMsgs, payload]);
           const fetchData = async () => {
             try {
               const res = await axios.post(
-                'http://localhost:5000/chat/conversations',
+                `${process.env.Conversations}`,
                 { login: context?.login },
                 {
                   headers: {
@@ -131,7 +136,6 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
               context?.setContactChat(res.data);
       
             } catch (error) {
-              console.error('Error fetching data:', error);
             }
           };
         
@@ -141,13 +145,10 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
 
       context.socket.on('gameInvitation', (payload: any) => {
    
-        console.log("game invite response ")
         if (payload && payload.sender) {
-          setGameRoom(payload.sender)
-          setIsModalOpen(true)
-
+          context.setGameHost(payload.sender)
+          context.setGameInvitation(true)
         }
-        console.log(payload)
       });
     }
   
@@ -169,13 +170,6 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
       sendAt: new Date().toISOString(),
     };
   };
-  // export interface MesgType{
-  //   content : string;
-  //   sendAt: string;
-  //   loginSender: string;
-  //   loginReceiver: string;
-  //   fromUserA: boolean;
-  // }
 
   const sendMsg = () => {
   
@@ -220,21 +214,8 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   
-  const clickchoices = () => {
-    
-  };
-  const btnBlock = () => {
-    // to block
-  };
-    
   const [inputValue, setInputValue] = useState("");
-  const [info, setInfo] = useState('hidden');
-  const clickChoices = () => {
-    if (info === 'hidden')
-      setInfo('block');
-    else
-      setInfo('hidden');
-  };
+
 
 // ...
 
@@ -245,17 +226,10 @@ export default function ChatHistory({ chatHistory, login }: { chatHistory: MesgT
 useEffect(() => {
   const chatContainer = chatContainerRef.current;
   if (chatContainer) {
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    chatContainer.scrollTop = chatContainer.scrollHeight; 
   }
 }, [newMsg]);
 
-// ...
-
-// return (
-//   <div ref={chatContainerRef} style={{ maxHeight: "400px", overflowY: "auto" }}>
-//     {/* Chat history rendering */}
-//   </div>
-// )
 const [hidden, setHidden] = useState('hidden');
 const router = Router
 
@@ -265,6 +239,7 @@ const clickPro = (): void => {
   else
     setHidden('hidden');
 }
+
 const handleGameInvite = () => {
   if (context?.socket) {
 
@@ -277,7 +252,7 @@ const handleGameInvite = () => {
     const handleHref = (link : string) => {
       router.push(link);
     };
-    handleHref(`http://localhost:3000/${url}`)
+    handleHref(`${process.env.Localhost}/${url}`)
    
     
   }
@@ -306,26 +281,15 @@ const blockUser = () =>{
       removefriend(context?.loginClick);
       removeChat(context?.loginClick);
     }
-  
-    // const friend = context?.friends.find((user) => user.login === context.loginClick)
-    // if (friend)
-    //   context?.setUserBlocked((prev) =>[...prev, friend]);
-    //   console.log(friend, ' this is friend that want to block');
-    // context?.setMessageContent([])
-    // setNewMsg([]);
-    // setShowChat(false);
     context?.setShowChat(false);
   
 
 
 }
 const viewProfile = () =>{
-  console.log("viewProfile");
-  console.log(context?.loginClick);
   context?.setProfileuser(context?.loginClick);
-      console.log(context?.loginClick);
       const getData = async () =>{
-        const res = await axios.post('http://localhost:5000/user/viewProfile', 
+        const res = await axios.post(`${process.env.ViewProfile}`, 
         {login : context?.loginClick}, 
         {
           headers: {
@@ -333,13 +297,24 @@ const viewProfile = () =>{
 
           }
         });
-        console.log('this is res profile ', res.data.message);
         if (res.data.message)
-          router.push(`http://localhost:3000/Profile/${context?.loginClick}`)
-        else
-          console.log('this user is block you ');
+          router.push(`${process.env.Profile}/${context?.loginClick}`)
       }
       getData();
+}
+
+const Getstate = () =>{
+  console.log(state, ' this is state');
+  if (state){
+    return( 
+      (context?.login === context?.MessageInfo?.loginA) ? <AvatarOnline img={context?.MessageInfo?.avatarB} /> : <AvatarOnline img={context?.MessageInfo?.avatarA} /> 
+    )
+    }
+  else{
+    return (context?.login === context?.MessageInfo?.loginA ? <AvatarOffline img={context?.MessageInfo?.avatarB} /> : <AvatarOffline img={context?.MessageInfo?.avatarA} /> 
+    )
+  }
+          
 }
 
 
@@ -349,15 +324,13 @@ const viewProfile = () =>{
       <Lottie  animationData={anim}  /> 
     </div>
     <div className={`flex flex-col h-full overflow-y-auto relative scrollbar scrollbar-thumb-green-400 scrollbar-w-1 scrollbar-track-slate-100 scrollbar- gap-1 bg-gray-300 rounded-2xl ${context?.showChat ? 'block' : 'hidden'}`}>
-       {isModalOpen && <ModalInvite isOpen={isModalOpen} closeModal={closeModal} title="Invitation to Game" msg={`you've been invited to join a game against ${gameRoom}`} color={gameRoom}  />}
       <div className={`w-full h-[7%] flex chat chat-start  border-b-2 border-slate-500 items-center ${chatHistory.length === 0 ? "hidden" : ""}`}>
         <div className="w-1/2 pl-6">
-          {context?.login === context?.MessageInfo?.loginA ? <AvatarOnline img={context?.MessageInfo?.avatarB} /> : <AvatarOnline img={context?.MessageInfo?.avatarA} /> }
-          
+          <Getstate />
         </div>
         <div className="w-1/2 pr-6 text-end">
           <div className="dropdown w-20 dropdown-left">
-            <button onClick={clickPro}>
+            <div onClick={clickPro} className=" cursor-pointer">
               <FontAwesomeIcon className="w-8 h-7 text-black" icon={faBars} flip />
               <ul className={`${hidden} bg-white absolute -left-24 z-20 rounded-lg y-2 text-sm text-gray-700  flex flex-col font-mono font-semibold`} aria-labelledby="dropdownLargeButton">
                 <li>
@@ -367,37 +340,28 @@ const viewProfile = () =>{
                   <button onClick={blockUser} className=" hover:text-cyan-700 text-left block px-4 py-2 hover:bg-gray-100 ">block</button>
                 </li>
                 <li>
-                  {/* <Link href="#" className="hover:text-cyan-700 text-left rounded-b-lg block px-4 py-2 hover:bg-gray-100 ">Earnings</Link> */}
-                </li>
-                <li>
                   <button onClick={handleGameInvite} className="hover:text-cyan-700 text-left rounded-b-lg block px-4 py-2 hover:bg-gray-100 ">Invite</button>
                 </li>
 
               </ul>
-            </button>
-            <div className={`${info} w-50 bg-gray-100 rounded-xl mt-20 z-50`}>
-              <div className="m-4">
-                <InfoContact />
-              </div>
-              <button onClick={btnBlock} className="btn flex text-center bg-transparent border-none hover:bg-slate-300 text-slate-600 m-4">block</button>
             </div>
           </div>
         </div>
       </div>
       <div className="w-full h-[93%] flex flex-col p-2 " ref={chatContainerRef}>
       {
-  (chatHistory.length > 0  ) &&
+  (chatHistory.length > 0  ) && Array.isArray(newMsg) && 
   newMsg.map((msg: MesgType) => {
     if (msg.loginSender === context?.login) {
-      return <Sender key={msg.loginSender} msg={msg.content} />;
+      return <Sender key={msg.sendAt} msg={msg.content} />;
     } else {
-      return <Reciever key={msg.loginReceiver}  msg={msg.content} />;
+      return <Reciever key={msg.sendAt}  msg={msg.content} />;
     }
   })
 }
   
         <div className={`mt-auto pb-1 pl-1 ${chatHistory.length === 0 ? "hidden" : ""}`}>
-          <form onSubmit={handleSubmit}>
+          <form id="ll" onSubmit={handleSubmit}>
             <div className="flex items-center">
               <input
                 type="text"
@@ -416,5 +380,3 @@ const viewProfile = () =>{
 
   );
 }
-
-// export {Reciever, Sender};
