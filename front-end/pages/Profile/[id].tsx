@@ -241,4 +241,3 @@ else{
 }
 
 export default Other;
-
