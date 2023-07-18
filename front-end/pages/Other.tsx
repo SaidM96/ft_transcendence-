@@ -33,7 +33,7 @@ const GetAvatar = ({name} : {name : string}) =>{
 
 const Other = () =>{
   const [check, setCheck] = useState(0);
-    const context = useContext(MyContext)
+  const context = useContext(MyContext)
 
   const GetData = (check : number) =>{
     if (check === 1){

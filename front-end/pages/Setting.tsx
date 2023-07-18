@@ -18,7 +18,7 @@ var token : string | null = null;
 
 
   const Setting = () =>{
-
+    const context = useContext(MyContext);
 
     useEffect(() =>{
       
@@ -26,7 +26,7 @@ var token : string | null = null;
       token ? router.push('/Setting') : router.push('/');
     },[])
 
-    const context = useContext(MyContext);
+
     useEffect(() =>{
       if (!context?.socket?.connected)
         context?.setSocket(createSocketConnection(context?.token))

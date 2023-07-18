@@ -39,7 +39,7 @@ export default function HomePage({pro}:any) {
               <Modal />
             </div>
             <div className='md:w-1/2 '>
-              <Image priority={true} src={Game} alt='image' />
+              <Image  src={Game} alt='image' />
             </div>
           </div>
         </section>
@@ -62,7 +62,7 @@ export default function HomePage({pro}:any) {
         </section>
         <footer>
           <div className=' h-full flex justify-center items-center  '>
-            <Image src={First} priority={true} alt='logo' />
+            <Image src={First}  alt='logo' />
           </div>
           <div className='py-8 bg-slate-200 shadow-2xl shadow-black '>
 

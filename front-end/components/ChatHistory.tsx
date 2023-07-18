@@ -14,7 +14,7 @@ import { checkIs7rag } from "./Functions";
 
 const GetImage = ({name } : {name : string | undefined}) =>{
   if (name === '0')
-    return <Image className="mask mask-squircle w-12 h-12" src={avatar} priority={true} alt="avatar" /> 
+    return <Image className="mask mask-squircle w-12 h-12" src={avatar}  alt="avatar" /> 
   else
     return <img className="mask mask-squircle w-12 h-12" src={name} alt="avatar"/>
 

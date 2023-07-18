@@ -35,7 +35,7 @@ type DataProps = number | undefined;
 
 const GetImage = ({ name }: { name: string | undefined }) => {
   if (name === '0')
-    return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar} priority={true} alt="avatar" />
+    return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar}  alt="avatar" />
   else
     return <img className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={name} alt="avatar" />
 
@@ -50,7 +50,7 @@ export default function GetDataHistory({ matches }: { matches: MatchType[] }) {
 
   const GetImage = ({ name }: { name: string }) => {
     if (name === '0')
-      return <Image className="mask mask-squircle w-12 h-12" src={avatar} priority={true} alt="avatar" />
+      return <Image className="mask mask-squircle w-12 h-12" src={avatar}  alt="avatar" />
     else
       return <img className="mask mask-squircle w-12 h-12" src={name} alt="avatar" />
 
@@ -104,7 +104,7 @@ export function LeaderBord () {
 
   const GetPhoto = ({ name }: { name: string }) => {
     if (name === '0')
-      return <Image className="mask mask-squircle w-16 h-16 md:w-20 md:h-20" src={avatar} priority={true} alt="avatar" />
+      return <Image className="mask mask-squircle w-16 h-16 md:w-20 md:h-20" src={avatar}  alt="avatar" />
     else
       return <img className="mask mask-squircle w-14 h-14 md:w-16 md:h-16" src={name} alt="avatar" />
 
@@ -112,17 +112,17 @@ export function LeaderBord () {
   const GetPlace = ({rank } : {rank : number}) =>{
     if (rank === 1)
       return (
-      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28" src={first} priority={true} alt="av" />
+      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28" src={first}  alt="av" />
 
       );
     else if (rank === 2)
     return (
-      <Image className="pl-2 w-20 h-20 md:w-24 md:h-28" src={second} priority={true} alt="av" />
+      <Image className="pl-2 w-20 h-20 md:w-24 md:h-28" src={second}  alt="av" />
 
       );
     else 
     return (
-      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28 " src={third} priority={true} alt="av" />
+      <Image className=" pl-2 w-20 h-20 md:w-24 md:h-28 " src={third}  alt="av" />
 
       );
    

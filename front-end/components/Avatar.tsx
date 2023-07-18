@@ -29,7 +29,7 @@ const Avatar = (props : PropsAvatar) => {
 
   const GetImage = ({ name }: { name: string | undefined }) => {
     if (name === '0')
-      return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar} priority={true} alt="avatar" />
+      return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar}  alt="avatar" />
     else
       return <img className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={name}  alt="avatar" />
   

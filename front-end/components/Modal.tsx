@@ -654,13 +654,15 @@ interface ModaleJoin {
 }
 
 const ModalJoin = (props: ModaleJoin) => {
-  if (!props.isOpen) {
-    return null; // If isOpen is false, don't render the modal
-  }
+
   const context = useContext(MyContext);
   const [hidden, setHidden] = useState('hidden');
   const [msg, setMsg] = useState('');
   const [color, setColor] = useState('')
+
+  if (!props.isOpen) {
+    return null; // If isOpen is false, don't render the modal
+  }
 
   const value = useRef<HTMLInputElement | null>(null);
   const Res = () => {
@@ -1221,6 +1223,8 @@ interface banner{
 }
 
 const ModalListBanner = (props : banner) =>{
+  const context = useContext(MyContext);
+
   if (!props.isOpen)
     return null;
     const GetAvatar = ({ avat }: { avat: string | undefined }) => {
@@ -1233,7 +1237,6 @@ const ModalListBanner = (props : banner) =>{
           <img src={avat} alt="ava" />
         );
     }
-  const context = useContext(MyContext);
   const removeBan = (user : BanedType) =>{
     if (context?.token)
       checkIs7rag(context?.token);

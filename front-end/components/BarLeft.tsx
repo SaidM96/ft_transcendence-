@@ -69,6 +69,7 @@ function getImageHover({ name, page }: PropsImg) {
 const BarLeft = (props: BarLeftProps) => {
   const router = Router;
   const context = useContext(MyContext);
+  const [img, setImg] = useState(getImageSource(props));
 
 
   const click = () => {
@@ -92,7 +93,6 @@ const BarLeft = (props: BarLeftProps) => {
 
   const stylling: string = "flex items-center justify-start w-full p-4 my-2 font-thin text-blue-500 uppercase transition-colors duration-200 border-r-4 border-blue-500 bg-gradient-to-r from-white to-blue-100 ";
   const stl: string = "hover:bg-gradient-to-r   hover:from-white hover:to-blue-100 flex items-center justify-start w-full p-4 my-2 font-thin text-gray-500 uppercase transition-colors duration-200  hover:text-blue-500";
-  const [img, setImg] = useState(getImageSource(props));
   const handlehover = () => {
     setImg(getImageHover(props));
   }

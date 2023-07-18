@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-}
 
-module.exports = {nextConfig,
+module.exports = {
   env: {
     is7rag : 'http://localhost:5000/user/is7erag',
     ME : 'http://localhost:5000/user/me',
@@ -32,16 +29,8 @@ module.exports = {nextConfig,
     TwoFa : 'http://localhost:5000/auth/2-FA',
     Pprofile : 'http://localhost:5000/user/profile',
     FindProfile : 'http://localhost:5000/user/find',
-    Clouad : 'https://api.cloudinary.com/v1_1/daczu80rh/upload',
-
-  },
-
-  images: {
-    unoptimized: true,
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-  },
+    Clouad : 'https://api.cloudinary.com/v1_1/daczu80rh/upload'
+  }
 }
 
  

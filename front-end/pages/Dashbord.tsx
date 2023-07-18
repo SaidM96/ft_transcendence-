@@ -200,7 +200,7 @@ export default  function Progress() {
             <NavBar page='Dashbord' />
             <div className=' h-[88%] md:h-[86%]  rounded-2xl flex flex-col'>
               <div className='h-1/2 w-full flex justify-center '>
-                <Image className='w-full h-full' src={Staticsee} priority={true} alt='static' width={200} height={200}  />
+                <Image className='w-full h-full' src={Staticsee}  alt='static' width={200} height={200}  />
               </div>
               <div className='bg-gray-200 w-full  h-1/2 rounded-2xl px-8 md:px-0  overflow-y-auto scrollbar-thin'>
                 <div className='h-full  w-full flex  flex-col gap-4 md:flex-row md:justify-around md:items-center'>
