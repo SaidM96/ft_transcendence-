@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useContext, useEffect, useRef, useState } from "react";
 import { InfoChannelProp, MyContext, channelSearchProps } from "./Context";
 import { Star, AlertCircle } from 'react-feather'
-import Avatar from '../image/avatar.webp'
+import Avatar from '../image/avatar.jpg'
 import Image, { StaticImageData } from "next/image";
 import { FriendType } from "./Context";
 import { userSearchProps, BanedType } from "./Context";
@@ -279,25 +279,27 @@ const ModalUpdateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
           return;
         }
         const sendImage = async () =>{
-                const res = await axios.post("https://api.cloudinary.com/v1_1/daczu80rh/upload", form);
-                if (res.data){
-                  if (context?.token)
-                    checkIs7rag(context?.token);
-                  context?.socket?.emit('updateChannel',
-                  {
-                    channelName : context.channelInfo?.channelName,
-                    isPrivate : checkPrivate,
-                    ispassword : checkPass,
-                    newPassword : inputPass,
-                    avatar : res.data.secure_url,
-                  })
-                  setInputPass('');
-                  setFile(null);
-                  setTitle('SUCCESS !');
-                  setMsg('avatar and new password and private is changed successfully')
-                  setColor('bg-green-400');
-                  openModalTrue();
-                }
+          try{
+            const res = await axios.post(`${process.env.Clouad}`, form);
+            if (res.data){
+              if (context?.token)
+                checkIs7rag(context?.token);
+              context?.socket?.emit('updateChannel',
+              {
+                channelName : context.channelInfo?.channelName,
+                isPrivate : checkPrivate,
+                ispassword : checkPass,
+                newPassword : inputPass,
+                avatar : res.data.secure_url,
+              })
+              setInputPass('');
+              setFile(null);
+              setTitle('SUCCESS !');
+              setMsg('avatar and new password and private is changed successfully')
+              setColor('bg-green-400');
+              openModalTrue();
+            }
+          }catch(e){}
       
               }
               sendImage();
@@ -697,15 +699,17 @@ const ModalJoin = (props: ModaleJoin) => {
       context.socket.on('join', (pay) =>{
         if (pay){
           const GetDat = async () =>{
-            const res = await axios.post(
-              `${process.env.AllMes}`,
-              {channelName: props.channel.channelName}, 
-              {
-                headers:{
-                  Authorization : `Bearer ${context?.token}`,
-                },
-              }
-            );
+            try{
+              const res = await axios.post(
+                `${process.env.AllMes}`,
+                {channelName: props.channel.channelName}, 
+                {
+                  headers:{
+                    Authorization : `Bearer ${context?.token}`,
+                  },
+                }
+              );
+            }catch(e){}
           }
           props.closeModal();
           props.closeModalSearch()
@@ -846,16 +850,18 @@ const ModalSearch = (props: ModalSearchProps) => {
 
    context?.setProfileuser(user.login);
     const getData = async () => {
-      const res = await axios.post(`${process.env.ViewProfile}`,
-        { login: user.login },
-        {
-          headers: {
-            Authorization: `Bearer ${context?.token} `
-
-          }
-        });
-      if (res.data.message)
-        router.push(`${process.env.Profile}/${user.login}`)
+      try{
+        const res = await axios.post(`${process.env.ViewProfile}`,
+          { login: user.login },
+          {
+            headers: {
+              Authorization: `Bearer ${context?.token} `
+  
+            }
+          });
+        if (res.data.message)
+          router.push(`${process.env.Profile}/${user.login}`)
+      }catch(e){}
     }
     getData();
   }
@@ -1089,7 +1095,7 @@ const ModalGameInvite = () => {
         <div className="w-full h-[80%] text-center text-lg flex justify-center items-center">
           <p >
 
-            Play against {context?.gameHost}
+            Play against {context?.gameHostUsername}
           </p>
         </div>
         <div className="flex justify-end gap-2">

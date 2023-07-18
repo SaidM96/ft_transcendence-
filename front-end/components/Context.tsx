@@ -1,6 +1,5 @@
 import React, { useState, useContext, createContext, Dispatch, SetStateAction, ReactNode, useEffect, use } from "react";
 import { StaticImageData } from "next/image";
-import avatar from '../image/avatar.webp';
 import { Socket } from "socket.io-client";
 import { msgChannel } from "./ChannelHistory";
 import { MatterJsModules } from "@/utils/MatterJsModules";
@@ -178,11 +177,11 @@ export interface gameInvite {
 }
 
 export interface ContextTypes {
-  onligne : string[];
-  setOnligne : Dispatch<SetStateAction<string[]>>;
-  matterjs : MatterJsModules | null;
+  onligne: string[];
+  setOnligne: Dispatch<SetStateAction<string[]>>;
+  matterjs: MatterJsModules | null;
 
-  setMatterjs : Dispatch<SetStateAction<MatterJsModules | null>>
+  setMatterjs: Dispatch<SetStateAction<MatterJsModules | null>>
   nameChannel: string;
   setnameChannel: Dispatch<SetStateAction<string>>;
   channelHistory: msgChannel[];
@@ -283,10 +282,12 @@ export interface ContextTypes {
   setMatch: Dispatch<SetStateAction<MatchType[]>>;
   checkname: number;
   setCheckname: Dispatch<SetStateAction<number>>;
-  gameInvitation : boolean;
-  setGameInvitation : Dispatch<SetStateAction<boolean>>;
-  gameHost : string;
-  setGameHost : Dispatch<SetStateAction<string>>;
+  gameInvitation: boolean;
+  setGameInvitation: Dispatch<SetStateAction<boolean>>;
+  gameHost: string;
+  setGameHost: Dispatch<SetStateAction<string>>;
+  gameHostUsername: string;
+  setGameHostUsername: Dispatch<SetStateAction<string>>;
 }
 
 // types childer
@@ -354,7 +355,7 @@ const MyContextProvider = ({ children }: ChildProps) => {
   const [match, setMatch] = useState<MatchType[]>([]);
   const [gameInvitation, setGameInvitation] = useState(false)
   const [gameHost, setGameHost] = useState("")
-
+  const [gameHostUsername, setGameHostUsername] = useState("")
   // load data from localstorage
   useEffect(() => {
 
@@ -416,8 +417,12 @@ const MyContextProvider = ({ children }: ChildProps) => {
     if (GetChannelSearch !== undefined && GetChannelSearch != null && GetChannelSearch !== "undefined") {
       setChannelSearch(JSON.parse(GetChannelSearch));
     }
+    const getleaderBoard = localStorage.getItem('leaderBoard');
+    if (getleaderBoard !== undefined && getleaderBoard !== null && getleaderBoard !== "undefined"){
+      setLeaderBoard(JSON.parse(getleaderBoard));
+    }
     const getonligne = localStorage.getItem('onligne');
-    if (getonligne !== undefined && getonligne !== null && getonligne !== "undefined"){
+    if (getonligne !== undefined && getonligne !== null && getonligne !== "undefined") {
       setMatterjs(JSON.parse(getonligne));
     }
     if (GetBlock !== undefined && GetBlock !== null) {
@@ -582,16 +587,19 @@ const MyContextProvider = ({ children }: ChildProps) => {
   useEffect(() => {
     localStorage.setItem('onligne', JSON.stringify(onligne));
   }, [onligne])
+  useEffect (() =>{
+    localStorage.setItem('leaderBoard', JSON.stringify(leaderBoard));
+  },[leaderBoard])
 
   // context value
 
   const ContextValue = {
-    name, showChat,onligne, setOnligne, nameChannel, setnameChannel, channelHistory, setChannelHistory, fetchChannel, setFetchChannel, nameDelete, leaderBoard, setLeaderBoard, setNameDelete, showChannel, setShowChannel, acheivement, setAcheivement, setShowChat, setName, img, setImg, friends, setFriends, wins, setWins, losses, setLosses, level, setLevel, LevlPer, setLevlPer, login, setLogin, checkname,
-    setCheckname, socket,matterjs, setMatterjs, userBlocked, setUserBlocked, setSocket, chatHistory, setChatHistory, showMsg, setShowMsg, check, setCheck, match, setMatch, token, setToken, blackList, adminsChannel, setAdminChannel,
+    name, showChat, onligne, setOnligne, nameChannel, setnameChannel, channelHistory, setChannelHistory, fetchChannel, setFetchChannel, nameDelete, leaderBoard, setLeaderBoard, setNameDelete, showChannel, setShowChannel, acheivement, setAcheivement, setShowChat, setName, img, setImg, friends, setFriends, wins, setWins, losses, setLosses, level, setLevel, LevlPer, setLevlPer, login, setLogin, checkname,
+    setCheckname, socket, matterjs, setMatterjs, userBlocked, setUserBlocked, setSocket, chatHistory, setChatHistory, showMsg, setShowMsg, check, setCheck, match, setMatch, token, setToken, blackList, adminsChannel, setAdminChannel,
     setBlackList, error, setError, messageError, setMessageError, membersChannel, setMembersChannel, userSearch, setUserSearch, channelSearch, setChannelSearch, MessageContent,
     waitToAccept, profile, setProfile, pendingInvitation, setPendingInvitation, setWaitToAccept, channelInfo, Channels, setClickChannel, setChannelInfo, clickChat, setClickChat,
     clickChannel, changeName, deleteAcount, setDeleteAcount, loginClick, setLoginClick, channelBanner, setChannelBanner, setChangeName, setChannels, owner, profileuser, setProfileuser, setOwner, admin, setAdmin, setMessageContent, contactChat, enableTwoFa, setEnableTwofa, setContactChat, MessageInfo, setMessageInfo, chn, setChn
-  , gameInvitation, setGameInvitation, gameHost, setGameHost
+    , gameInvitation, setGameInvitation, gameHost, setGameHost, gameHostUsername, setGameHostUsername
   }
 
   return (

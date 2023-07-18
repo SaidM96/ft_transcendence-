@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { User, channel } from '.prisma/client';
-import { Body, Engine, World, Bodies, Events, Composite } from 'matter-js';
+import { Body, Engine, World, Bodies, Events, Runner,Composite } from 'matter-js';
 import WebSocket from 'ws';
 import { BadRequestException } from '@nestjs/common';
 import { EventEmitter } from 'events';
@@ -57,6 +57,7 @@ export function checkQueue(worlds: {}) {
 export class matterNode {
     private engine: Engine;
     private world: World;
+    private runner = Runner.create();
     private ball: any;
     private wall: any;
     private wallLeft: any;
@@ -136,7 +137,8 @@ export class matterNode {
 
         World.add(this.world, [this.ball, this.wall, this.wallLeft, this.leftPaddle, this.rightPaddle]);
         // Start the engine and update the ball's position
-        Engine.run(this.engine);
+        Runner.run(this.runner, this.engine);
+        // Engine.run(this.engine);
         Events.on(this.engine, 'collisionStart', (event) => {
             const pairs = event.pairs;
             for (let i = 0; i < pairs.length; i++) {
@@ -174,7 +176,6 @@ export class matterNode {
 
             if (!this.availablePaddles.length) {
                 if (this.ready) {
-                    console.log("ready")
                     this.server.to(this.roomId).emit('ready', { msg: true });
                     if (this.restart == true) {
                         Body.setPosition(this.ball, { x: this.obj.divWidth / 2, y: this.obj.divHeight / 2 });
@@ -241,7 +242,6 @@ export class matterNode {
 
                 }
                 else {
-                    console.log("not ready")
 
                     this.server.to(this.roomId).emit('ready', { msg: true });
 
@@ -249,7 +249,6 @@ export class matterNode {
                 }
             }
             else {
-                console.log("no room")
 
                 Body.setVelocity(this.ball, { x: 0, y: 0 });
                 Body.setPosition(this.ball, { x: -155, y: this.obj.divHeight / 2 });

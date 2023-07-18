@@ -77,7 +77,8 @@ export default function Chat() {
        
         if (payload && payload.sender) {
           context.setGameInvitation(true)
-          context.setGameHost(payload.sender)
+          context.setGameHost(payload.sender.login)
+          context.setGameHostUsername(payload.sender.username)
         }
       });
       return () =>{
@@ -97,7 +98,7 @@ export default function Chat() {
     if (Channel){
       context?.setShowChannel(true);
 
-      const res = await axios.post(
+     try{ const res = await axios.post(
         `${process.env.AllMes}`,
         {channelName: login}, 
         {
@@ -106,6 +107,8 @@ export default function Chat() {
           },
         }
       );
+      setChatHistory(res.data[1]);
+      context?.setChannelHistory(res.data[1]);
       const response = await axios.post(`${process.env.Banned}`, {
         channelName : login,
       },{
@@ -127,14 +130,11 @@ export default function Chat() {
       context?.setMembersChannel(resp.data[1].members);
       setCheck('channel');
       setId(login);
-      context?.setChannelInfo(res.data[0]);
-      setChatHistory(res.data[1]);
-      context?.setChannelHistory(res.data[1]);
+      context?.setChannelInfo(res.data[0]);}catch(e){}
     }
     else {
     context?.setShowChat(true);
-    console.log(login, ' this is click')
-    localStorage.setItem('state', login);
+    localStorage.setItem('statee', login);
    
     
       try{
@@ -162,7 +162,6 @@ export default function Chat() {
   useEffect(() =>{
     if (!context?.socket?.connected){
       context?.setSocket(createSocketConnection(context?.token))
-      console.log('newconnect')
     }
   },[context?.token])
 if (token){

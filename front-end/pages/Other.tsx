@@ -17,7 +17,7 @@ import { useRouter } from 'next/router';
 import { MesgType } from '@/components/Context';
 import mhaddaou from '../image/mhaddaou.jpg'
 import Sky from '../image/sky.png'
-import avatar from '../image/avatar.webp'
+import avatar from '../image/avatar.jpg'
 import GetDataHistory from '@/components/GetData';
 
 

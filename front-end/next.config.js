@@ -30,11 +30,17 @@ module.exports = {nextConfig,
     Socket : 'http://localhost:3333',
     AuthQr : 'http://localhost:5000/auth/QR',
     TwoFa : 'http://localhost:5000/auth/2-FA',
-    Pprofile : 'http://localhost:5000/user/profile'
+    Pprofile : 'http://localhost:5000/user/profile',
+    FindProfile : 'http://localhost:5000/user/find',
+    Clouad : 'https://api.cloudinary.com/v1_1/daczu80rh/upload',
+
   },
 
   images: {
     unoptimized: true,
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 }
 

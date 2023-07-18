@@ -43,7 +43,8 @@ var token : string | null = null;
        
         if (payload && payload.sender) {
           context.setGameInvitation(true)
-          context.setGameHost(payload.sender)
+          context.setGameHost(payload.sender.login)
+          context.setGameHostUsername(payload.sender.username)
         }
       });
      
@@ -70,7 +71,7 @@ var token : string | null = null;
                         </div>
                     </div>
                 </div>
-                <div className="w-full h-[67%] rounded-2xl bg-gray-300 flex flex-col gap-2 px-4">
+                <div className="w-full h-[67%] min-h-[] rounded-2xl bg-gray-300 flex flex-col gap-2 px-4 pb-8">
                 {/* <InfoContact /> */}
                 
                     <UpdateName />
@@ -89,8 +90,6 @@ var token : string | null = null;
                 <p>note that deleting your account will permanently remove all of your data, including your</p>
                 <p>profile, messages, and any other content you have uploaded. </p>
                 <br></br>
-                {/* <p className="bg-orange-300">Please note that if you delete your account, you will not be able to recover it.</p>
-                <p className="bg-orange-300"> If you have any questions or concerns, please contact our customer support team.</p> */}
             </div>
             <div className="h-1/3 w-full flex justify-end items-center  pr-4 pb-2 ">
             <button onClick={()=> {

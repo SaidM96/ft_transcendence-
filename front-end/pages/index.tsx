@@ -10,6 +10,7 @@ import React from 'react';
 import Footer from '@/components/Footer';
 import HBest from '@/components/HBest';
 import Modal from '@/components/Pop';
+'use client'
 
 
 export default function HomePage({pro}:any) {
@@ -38,7 +39,7 @@ export default function HomePage({pro}:any) {
               <Modal />
             </div>
             <div className='md:w-1/2 '>
-              <Image priority src={Game} alt='image' />
+              <Image priority={true} src={Game} alt='image' />
             </div>
           </div>
         </section>
@@ -61,7 +62,7 @@ export default function HomePage({pro}:any) {
         </section>
         <footer>
           <div className=' h-full flex justify-center items-center  '>
-            <Image src={First} alt='logo' />
+            <Image src={First} priority={true} alt='logo' />
           </div>
           <div className='py-8 bg-slate-200 shadow-2xl shadow-black '>
 

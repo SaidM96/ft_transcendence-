@@ -253,62 +253,65 @@ const closeModale = () =>{
       // {UserId: 'a165ab12-735a-4a2c-a4ed-18b97583d6e0', login: 'mhaddaou', username: 'medhaddaoui', email: 'mhaddaou@student.1337.ma', avatar: 'https://res.cloudinary.com/daczu80rh/image/upload/v1689478024/hastid_gwes2d.jpg', …} ' this is the pay'
       context.socket.on('updatedFriend', (pay) =>{
         if (pay){
-          console.log(pay, ' this is the pay');
           if (pay.isOnline){
             context.setOnligne((prev) => [...prev, pay.login])
-            console.log(context.onligne);
           }
           
           const getData = async () =>{
-            const history = await axios.get(`${process.env.ME}`, {headers:{
-              Authorization : `Bearer ${context.token}`
-          }})
-              context.setMatch(history.data.matches);
-            if (pay.login === context.login)
-              return;
-            const res = await axios.post(
-              `${process.env.FindConversation}`,
-              { loginA: context?.login, loginB: pay.login },
-              {
-                headers: {
-                  Authorization: `Bearer ${context?.token}`,
-                },
-              }
-            );
-            context?.setMessageInfo(res.data[0]);
-            context?.setMessageContent(res.data[1]);
-            const chatconver = await axios.post(
-              `${process.env.Conversations}`,
-              { login: context?.login },
-              {
-                headers: {
-                  Authorization: `Bearer ${context?.token}`,
-                },
-              }
-            );
-            context.setContactChat(chatconver.data);
-            const friend = await axios.post(`${process.env.Friends}`,
-            {
-              login: context.login,
-            },
-            {
-              headers:{
-                Authorization : `Bearer ${context.token}`,
-              }
-            })
-            context?.setPendingInvitation(friend.data.waitToAccept);
-            context?.setWaitToAccept(friend.data.pendingInvitation);
-            context.setFriends(friend.data.friends);
+            try{
+                const history = await axios.get(`${process.env.ME}`, {headers:{
+                  Authorization : `Bearer ${context.token}`
+              }})
+                  context.setMatch(history.data.matches);
+                  if (pay.login === context.login)
+                    return;
+                  const res = await axios.post(
+                    `${process.env.FindConversation}`,
+                    { loginA: context?.login, loginB: pay.login },
+                    {
+                      headers: {
+                        Authorization: `Bearer ${context?.token}`,
+                      },
+                    }
+                  );
+                  context?.setMessageInfo(res.data[0]);
+                  context?.setMessageContent(res.data[1]);
+                  const chatconver = await axios.post(
+                    `${process.env.Conversations}`,
+                    { login: context?.login },
+                    {
+                      headers: {
+                        Authorization: `Bearer ${context?.token}`,
+                      },
+                    }
+                  );
+                  context.setContactChat(chatconver.data);
+                  const friend = await axios.post(`${process.env.Friends}`,
+                  {
+                    login: context.login,
+                  },
+                  {
+                    headers:{
+                      Authorization : `Bearer ${context.token}`,
+                    }
+                  })
+                  context?.setPendingInvitation(friend.data.waitToAccept);
+                  context?.setWaitToAccept(friend.data.pendingInvitation);
+                  context.setFriends(friend.data.friends);
+            }catch(e){}
           
           }
           getData();
           const fetchLeaderBoard = async () =>{
-            const res = await axios.get(`${process.env.Leaderboard}`,{
-              headers:{
-                Authorization: `Bearer ${context?.token}`
-              }
-            })
-            context?.setLeaderBoard(res.data);
+            try{
+              const res = await axios.get(`${process.env.Leaderboard}`,{
+                headers:{
+                  Authorization: `Bearer ${context?.token}`
+                }
+              })
+              context?.setLeaderBoard(res.data);
+              console.log(res.data , ' this is leaderboard inside search')
+            }catch(e){}
           }
           fetchLeaderBoard();
           
@@ -340,18 +343,20 @@ const closeModale = () =>{
       context.socket.on('blockuser', (pay) =>{
         if (pay) {
           const getData = async () =>{
-            const res = await axios.post(`${process.env.Friends}`, 
-            {
-              login: context.login,
-            },
-            {
-              headers:{
-                Authorization : `Bearer ${context.token}`,
-              }
-            })
-            context.setFriends(res.data.friends);
-            context.setWaitToAccept(res.data.pendingInvitationt);
-            context.setPendingInvitation(res.data.waitAccept);
+            try{
+              const res = await axios.post(`${process.env.Friends}`, 
+              {
+                login: context.login,
+              },
+              {
+                headers:{
+                  Authorization : `Bearer ${context.token}`,
+                }
+              })
+              context.setFriends(res.data.friends);
+              context.setWaitToAccept(res.data.pendingInvitationt);
+              context.setPendingInvitation(res.data.waitAccept);
+            }catch(e){}
 
           }
           getData();
@@ -428,10 +433,14 @@ const closeModale = () =>{
           context?.setLevel((+m.substring(0,1)))
           context?.setLevlPer((+(m.substring(2.1))) * 10)
           const getData = async () =>{
-            const res = await axios.get(`${process.env.ME}`, {headers:{
-            Authorization : `Bearer ${context.token}`
-        }})
-            context.setMatch(res.data.matches);
+            try{
+              const res = await axios.get(`${process.env.ME}`, {headers:{
+              Authorization : `Bearer ${context.token}`
+          }})
+              context.setMatch(res.data.matches);
+            }catch(e){
+
+            }
             
           }
           getData();
@@ -451,60 +460,62 @@ const closeModale = () =>{
             context.setFetchChannel(true);
           }
           const fetData = async () =>{
-            const friend = await axios.post(`${process.env.Friends}`,
-            {
-              login : context.login
-            },{
-              headers:{
-               Authorization : `Bearer ${context.token}`
-              }
-            })
-            context.setFriends(friend.data.friends);
-            context.setPendingInvitation(friend.data.waitToAccept);
-            context.setWaitToAccept(friend.data.waitToAccep);
-            const blocks = await axios.post(`${process.env.Blocks}`,
-            {
-              login : context?.login
-            },{
-              headers : {
-                Authorization : `Bearer ${context?.token}`
-              }
-            }
-            )
-            context?.setUserBlocked(blocks.data);
-
-            const conversations = await axios.post(
-              `${process.env.Conversations}`,
-              { login: context?.login },
+            try{
+              const friend = await axios.post(`${process.env.Friends}`,
               {
-                headers: {
-                  Authorization: `Bearer ${context?.token}`,
-                },
-              }
-            );
-            context?.setContactChat(conversations.data);
-            const channels = await axios.post(
-              `${process.env.Memb}`,
-              { login: context?.login },
+                login : context.login
+              },{
+                headers:{
+                 Authorization : `Bearer ${context.token}`
+                }
+              })
+              context.setFriends(friend.data.friends);
+              context.setPendingInvitation(friend.data.waitToAccept);
+              context.setWaitToAccept(friend.data.waitToAccep);
+              const blocks = await axios.post(`${process.env.Blocks}`,
               {
-                headers: {
-                  Authorization: `Bearer ${context?.token}`,
-                },
+                login : context?.login
+              },{
+                headers : {
+                  Authorization : `Bearer ${context?.token}`
+                }
               }
-            );
-            context?.setChannels(channels.data);
-            if (context.channelHistory[0].channelName === namech){
-              const messages = await axios.post(
-                `${process.env.AllMes}`,
-                {channelName: namech}, 
+              )
+              context?.setUserBlocked(blocks.data);
+              const conversations = await axios.post(
+                `${process.env.Conversations}`,
+                { login: context?.login },
                 {
-                  headers:{
-                    Authorization : `Bearer ${context?.token}`,
+                  headers: {
+                    Authorization: `Bearer ${context?.token}`,
                   },
                 }
               );
-              context?.setChannelHistory(messages.data[1]);
-            }
+              context?.setContactChat(conversations.data);
+              const channels = await axios.post(
+                `${process.env.Memb}`,
+                { login: context?.login },
+                {
+                  headers: {
+                    Authorization: `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              context?.setChannels(channels.data);
+              if (context.channelHistory[0].channelName === namech){
+                const messages = await axios.post(
+                  `${process.env.AllMes}`,
+                  {channelName: namech}, 
+                  {
+                    headers:{
+                      Authorization : `Bearer ${context?.token}`,
+                    },
+                  }
+                );
+                context?.setChannelHistory(messages.data[1]);
+              }
+            }catch(e){}
+
           }
           fetData();
           if (namech){

@@ -2,7 +2,7 @@ import GetDataHistory, {GetDataAchievement, GetDataFriend, DatSend, DataRecieved
 import BarLeft from './BarLeft';
 import { useContext, useEffect, useState } from 'react';
 import { MyContext } from './Context';
-import avatar from '../image/avatar.webp'
+import avatar from '../image/avatar.jpg'
 import Image from 'next/image';
 import axios from 'axios';
 import Router from 'next/router';
@@ -18,7 +18,7 @@ export default function  Functions(){
 export const GetAvatar = ({avat } : {avat : string | undefined}) =>{
   if (avat === '0')
     return (
-      <Image src={avatar} priority alt="ava" />
+      <Image src={avatar} priority={true} alt="ava" />
     );
   else
       return (
@@ -70,15 +70,6 @@ export function DataFunction (nbr : number){
               return <BlackList />
             }
             else if (nbr == 7){
-              const fetchLeaderBoard = async () =>{
-                const res = await axios.get(`${process.env.Leaderboard}`,{
-                  headers:{
-                    Authorization: `Bearer ${context?.token}`
-                  }
-                })
-                context?.setLeaderBoard(res.data);
-              }
-              fetchLeaderBoard();
               return <LeaderBord />
             }
             else{
@@ -107,7 +98,7 @@ export function  GetAvatarChannel (){
 
   if (context?.channelInfo?.avatar === '0')
   return (
-    <Image className="w-12 h-12 rounded-full border-4 border-slate-400 cursor-pointer hover:border-slate-900" src={avatar} priority alt="ava" />
+    <Image className="w-12 h-12 rounded-full border-4 border-slate-400 cursor-pointer hover:border-slate-900" src={avatar} priority={true} alt="ava" />
   );
 else
   return (

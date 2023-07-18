@@ -12,9 +12,10 @@ import { MyContext , ContextTypes, FriendType} from '@/components/Context';
 import { ModalError, ModalGameInvite } from '@/components/Modal';
 import createSocketConnection from '@/components/socketConnection'
 import { useRouter } from 'next/router';
+import GetDataHistory, { BlackList, DatSend, DataRecieved, GetDataAchievement, GetDataFriend, LeaderBord } from '@/components/GetData';
+import axios from 'axios';
 
-// var i = 0;
-// var token : string | null = null;
+
 
 
 function usleep(milliseconds: number) {
@@ -40,12 +41,14 @@ export default  function Progress() {
   useEffect(() =>{
     context?.setLoginClick('');
     context?.setNameDelete('');
+    const token = localStorage.getItem('token')
+    if (!token)
+      router.push('/');
   },[])
 
   useEffect(() =>{
     if (!context?.socket?.connected){
       context?.setSocket(createSocketConnection(context?.token))
-      console.log('newconnect')
     }
   },[context?.token])
   
@@ -66,7 +69,50 @@ export default  function Progress() {
 
   const [isPageReloaded, setIsPageReloaded] = useState(false);
 
- 
+  const GetDaate = () => {
+    // Assuming 'check' and 'context' are declared and accessible from the component
+  
+    useEffect(() => {
+      if (check === 6 && context?.login && context?.token) {
+        fetchBlockusers();
+      }
+    }, [check, context]);
+  
+    const fetchBlockusers = async () => {
+      try {
+        const res = await axios.post(
+          `${process.env.Blocks}`,
+          {
+            login: context?.login,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${context?.token}`,
+            },
+          }
+        );
+        context?.setUserBlocked(res.data);
+      } catch (e) {}
+    };
+  
+    if (check === 1 && context?.match) {
+      return <GetDataHistory matches={context?.match} />;
+    } else if (check === 2 && context?.acheivement) {
+      return <GetDataAchievement achiev={context?.acheivement} />;
+    } else if (check === 3) {
+      return <GetDataFriend />;
+    } else if (check === 4) {
+      return <DatSend />;
+    } else if (check === 5) {
+      return <DataRecieved />;
+    } else if (check === 6) {
+      return <BlackList />;
+    } else if (check === 7) {
+      return <LeaderBord />;
+    } else {
+      return <div></div>;
+    }
+  };
 
 
   
@@ -88,7 +134,8 @@ export default  function Progress() {
      
       if (payload && payload.sender) {
         context.setGameInvitation(true)
-        context.setGameHost(payload.sender)
+        context.setGameHost(payload.sender.login)
+        context.setGameHostUsername(payload.sender.username)
       }
     });
    
@@ -122,7 +169,9 @@ export default  function Progress() {
   const blockFriend = () => {
     setCheck(6);
   }
-  // if (token)
+  
+
+  if (context?.token)
   {
 
     return (
@@ -143,7 +192,7 @@ export default  function Progress() {
             <NavBar page='Dashbord' />
             <div className=' h-[88%] md:h-[86%]  rounded-2xl flex flex-col'>
               <div className='h-1/2 w-full flex justify-center '>
-                <Image className='w-full h-full' src={require('../image/statics.svg')} priority={true} alt='static' placeholder="blur" blurDataURL={'../image/statics.svg'} />
+                <Image className='w-full h-full' src={Staticsee} priority={true} alt='static' width={200} height={200}  />
               </div>
               <div className='bg-gray-200 w-full  h-1/2 rounded-2xl px-8 md:px-0  overflow-y-auto scrollbar-thin'>
                 <div className='h-full  w-full flex  flex-col gap-4 md:flex-row md:justify-around md:items-center'>
@@ -174,7 +223,8 @@ export default  function Progress() {
             
           </div>
           <div className=' min-h-[500px] h-[75%] w-full shadow-lg bg-gray-100  shadow-slate-600 rounded-2xl overflow-x-auto flex'>
-            {DataFunction(check)}
+            {/* {DataFunction(check)} */}
+            <GetDaate />
           </div>
         </div>
         </div>
@@ -182,4 +232,5 @@ export default  function Progress() {
       </div>
     );
   }
+    // router.push('/')
 }

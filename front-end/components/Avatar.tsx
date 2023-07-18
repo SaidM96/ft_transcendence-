@@ -6,7 +6,7 @@ import Image, { StaticImageData } from 'next/image';
 import Profile from './Profile';
 import { CallBarLeft } from './Functions';
 import { MyContext } from './Context';
-import avatar from '../image/avatar.webp'
+import avatar from '../image/avatar.jpg'
 import smia from '../image/smia.jpg'
 
 
@@ -29,7 +29,7 @@ const Avatar = (props : PropsAvatar) => {
 
   const GetImage = ({ name }: { name: string | undefined }) => {
     if (name === '0')
-      return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar} priority alt="avatar" />
+      return <Image className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={avatar} priority={true} alt="avatar" />
     else
       return <img className="mask mask-squircle w-8 h-8 sm:w-12 sm:h-12" src={name}  alt="avatar" />
   

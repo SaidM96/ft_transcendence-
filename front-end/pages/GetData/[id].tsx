@@ -18,14 +18,13 @@ import { checkIs7rag } from "@/components/Functions";
 
 
 export async function  checkIsFalse(token : string) {
+  try{
     const res = await axios.get(`${process.env.is7rag}`, {headers:{
             Authorization : `Bearer ${token}`
         }})
-      if (res.data.message)
-        console.log('is not 7rag')
-      else
-        console.log('7rag');
+      
        return res.data.message;
+  }catch(e){}
 }
 
 const router = Router;
@@ -96,7 +95,12 @@ export default function Profileid() {
             }
             )
             context?.setUserBlocked(res.data);
-  
+            const lead = await axios.get(`${process.env.Leaderboard}`,{
+              headers:{
+                Authorization: `Bearer ${context?.token}`
+              }
+            })
+            context?.setLeaderBoard(lead.data);
           }catch(e){
           }
         }

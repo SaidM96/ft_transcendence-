@@ -1,7 +1,7 @@
 import { faBars, faEllipsisVertical, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FiSend } from "react-icons/fi";
-import defaul from '../image/avatar.webp'
+import defaul from '../image/avatar.jpg'
 import Image from "next/image";
 import React, { ChangeEvent, useContext, useEffect, useRef, useState } from "react";
 import { FriendType, MembersType, MyContext, adminsChannelType, membersChannelType, userSearchProps } from "./Context";
@@ -25,7 +25,7 @@ interface recvProps {
 function GetAvatar({ avatar }: { avatar: string }) {
   if (avatar === '0')
     return (
-      <Image src={defaul} priority alt="ava" />
+      <Image src={defaul} priority={true} alt="ava" />
     );
   else
     return (
@@ -96,7 +96,7 @@ export interface msgChannel {
 function GetAvatarAddFriend({ avatar }: { avatar: string }) {
   if (avatar === '0')
     return (
-      <Image className="w-10 h-10 rounded-full border-4 border-green-600" src={defaul} priority alt="ava" />
+      <Image className="w-10 h-10 rounded-full border-4 border-green-600" src={defaul} priority={true} alt="ava" />
     );
   else
     return (
@@ -621,14 +621,16 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
 
   const ListBan = () =>{
     const getData = async () =>{
-      const response = await axios.post(`${process.env.Banned}`, {
-          channelName : context?.channelInfo?.channelName,
-        },{
-          headers:{
-            Authorization: `Bearer ${context?.token}`,
-          }
-        })
-        context?.setChannelBanner(response.data);
+      try{
+        const response = await axios.post(`${process.env.Banned}`, {
+            channelName : context?.channelInfo?.channelName,
+          },{
+            headers:{
+              Authorization: `Bearer ${context?.token}`,
+            }
+          })
+          context?.setChannelBanner(response.data);
+      }catch(e){}
     }
     getData();
     openBanner();
