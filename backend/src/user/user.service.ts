@@ -1,6 +1,6 @@
 import { BlockDto, FriendDto, LoginDto, UpdateStatus, UpdateUserDto, findUserDto, findUserOrChannel, invitationDto, storeMatchDto, usernameDto } from './dto/user.dto';
 import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Acheivement } from '@prisma/client';
+import { Acheivement, MembershipChannel } from '@prisma/client';
 import { PrismaService,  } from 'prisma/prisma.service';
 import { Achievements } from './achievement.service';
 import { JwtService } from '@nestjs/jwt';
@@ -68,7 +68,7 @@ export class UserService {
                 users.splice(i, 1); // remove that user from list search cause he is a friemd of or blocked
         }
         result.push({userSearch:users});
-        const channel = await this.prisma.client.channel.findMany({
+        let channel = await this.prisma.client.channel.findMany({
             where:{
                 channelName:{
                     contains: dto.search.toLowerCase(),
@@ -77,14 +77,14 @@ export class UserService {
             }
         });
         for(let i = 0;i < channel.length ; ++i){
-            const memberShip = await this.prisma.client.membershipChannel.findFirst({
+            const memberShip:MembershipChannel = await this.prisma.client.membershipChannel.findFirst({
                 where:{
                     channelId:channel[i].ChannelId,
                     login:userLogin,
                 }
             })
-            if (memberShip)
-                channel.splice(i, 1); 
+            if (memberShip && !memberShip.isBlacklist)
+                channel.splice(i, 1);
         }
         result.push({channelSearch:channel});
         return result;
@@ -1109,14 +1109,14 @@ export class UserService {
 
     async deleteAcoount(login:string){
         const user = await this.findUser({login:login});
-        await this.prisma.client.channel.deleteMany({
-            where:{
-                LoginOwner:login,
-            },
-        });
         await this.prisma.client.msgChannel.deleteMany({
             where:{
                 login:login,
+            },
+        });
+        await this.prisma.client.channel.deleteMany({
+            where:{
+                LoginOwner:login,
             },
         });
         await this.prisma.client.user.delete({

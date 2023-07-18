@@ -310,7 +310,6 @@ const closeModale = () =>{
                 }
               })
               context?.setLeaderBoard(res.data);
-              console.log(res.data , ' this is leaderboard inside search')
             }catch(e){}
           }
           fetchLeaderBoard();

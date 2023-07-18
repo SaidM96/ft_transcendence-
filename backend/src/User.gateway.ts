@@ -147,7 +147,6 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (socket)
             {
                 this.handleDisconnect(socket);
-                console.log(`client deleted: ${i}`);
                 i++;
             }
         });
