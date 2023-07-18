@@ -147,6 +147,7 @@ const ModalChat: React.FC<ModalChatProps> = ({ isOpen, closeModal, name, login }
     return null; // If isOpen is false, don't render the modal
   }
   const sendMsg = () => {
+    console.log('here when i send message')
     if (value.current) {
       if (context?.socket) {
         if (context?.token)
@@ -156,27 +157,27 @@ const ModalChat: React.FC<ModalChatProps> = ({ isOpen, closeModal, name, login }
           content: value.current.value
         })
       }
+      const fetchData = async () => {
+        try {
+          const res = await axios.post(
+            `${process.env.Conversations}`,
+            { login: context?.login },
+            {
+              headers: {
+                Authorization: `Bearer ${context?.token}`,
+              },
+            }
+          );
+          context?.setContactChat(res.data);
+  
+        } catch (error) {
+        }
+      };
+    
+      fetchData();
       closeModal();
       
     }
-    const fetchData = async () => {
-      try {
-        const res = await axios.post(
-          `${process.env.Conversations}`,
-          { login: context?.login },
-          {
-            headers: {
-              Authorization: `Bearer ${context?.token}`,
-            },
-          }
-        );
-        context?.setContactChat(res.data);
-
-      } catch (error) {
-      }
-    };
-  
-    fetchData();
   }
 
   return (
@@ -572,13 +573,13 @@ const ModalCreateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
             <input type="text" ref={chanref} placeholder="Name Channel" className="input input-bordered input-sm w-full max-w-xs" />
           </div>
           <div className="form-control font-semibold font-mono">
-          <label htmlFor="password" className="label cursor-pointer">
+          <label htmlFor="checkbox" className="label cursor-pointer">
             <span className="label-text">Password</span>
             <input
               type="checkbox"
               id="password"
               onClick={clickPass}
-              checked={pass}
+              defaultChecked={pass}
               className="checkbox"
             />
           </label>
@@ -591,7 +592,13 @@ const ModalCreateChannel: React.FC<ModalChannel> = ({ isOpen, closeModal }) => {
           <div className="form-control font-semibold font-mono">
             <label className="label cursor-pointer">
               <span className="label-text">Private Channel</span>
-              <input type="checkbox" onClick={clickcheck} checked={check} className="checkbox" />
+              {/* <input type="checkbox" onClick={clickcheck} checked={check} className="checkbox" /> */}
+              <input
+                type="checkbox"
+                onClick={clickcheck}         
+                defaultChecked={check}
+                className="checkbox"
+              />
             </label>
           </div>
         </div>
@@ -840,10 +847,76 @@ const ModalSearch = (props: ModalSearchProps) => {
     channel: channelSearchProps;
     closeModal: () => void;
   }
+  const [modalpass, setModalpass] = useState(false);
+  const [channelClick, setChannelClick] = useState<channelSearchProps | null>(null);
+
+
+
+  const ModalPass = () =>{
+    const [pass, setPass] = useState("");
+
+    const value = useRef();
+    const clickJoin = () =>{
+      if (context?.token)
+        checkIs7rag(context?.token);
+      context?.socket?.emit('joinChannel', { channelName: channelClick?.channelName, password: pass })
+      props.closeModal();
+    }
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+    };
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setPass(event.target.value);
+    };
+   
+
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50  ">
+        <div className="w-[20%] h-[30%] rounded-2xl bg-white  ">
+          <div className="w-full h-1/3 flex justify-center pt-4 text-xl font-semibold"> This channel with password</div>
+          <div className="w-full h-1/3 flex justify-center"> 
+          <form id="passchannel" onSubmit={handleSubmit}>
+            <div className="flex items-center">
+              <input
+                type="password"
+                value={pass}
+                onChange={handleInputChange}
+                placeholder="Type Password"
+                className="input input-bordered input-md"
+              />
+            </div>
+          </form>
+          </div>
+          <div className="w-full h-1/3 flex justify-end  items-end pb-3 pr-6 gap-6">
+            <button className="bg-slate-500 px-3 py-1 rounded-lg text-white text-lg" onClick={() =>setModalpass(false)}>close</button>
+            <button className="bg-slate-500 px-3 py-1 rounded-lg text-white text-lg" onClick={clickJoin} >join</button>
+          </div>
+        
+        </div>
+      </div>
+    )
+  } 
   const clickJoin = (channel: channelSearchProps) => {
-    setChannel(channel);
+    setChannelClick(channel);
+    // setChannel(channel);
     // props.closeModal();
-    openModaleJoin();
+    // openModaleJoin();
+    // context?.token?.emit('joinChannel', {})
+    if (channel.ispassword){
+
+      // props.closeModal();
+      setModalpass(true);
+    }
+    else{
+      props.closeModal();
+      if (context?.token)
+        checkIs7rag(context?.token);
+      context?.socket?.emit('joinChannel', { channelName: channel.channelName })
+    }
+    
+    
+
   }
   const [channel, setChannel] = useState<channelSearchProps>()
   const viewProfile = (user : FriendType) =>{
@@ -870,6 +943,8 @@ const ModalSearch = (props: ModalSearchProps) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50  ">
       <ModalChat isOpen={isModalOpen} closeModal={closeModal} name={name} login={login} />
       {channel && <ModalJoin isOpen={openModalJoin} closeModal={closeModalJoin} channel={channel} closeModalSearch={props.closeModal} />}
+      {modalpass && <ModalPass />}
+
 
       <div className={`bg-white p-6 rounded-md w-[700px] h-[700px] flex flex-col gap-1`}>
         <div className="w-full h-[5%]">

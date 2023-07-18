@@ -564,12 +564,13 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
             if (!user)
                 throw new BadRequestException('no such user');
             const dto: leaveChannel = { channelName: body.channelName, login: user.login };
-            this.chatService.leaveChannel(dto);
+            await this.chatService.leaveChannel(dto);
             const channel = await this.chatService.findChannel({ channelName: body.channelName });
             this.existChannels.set(channel.channelName, channel);
             this.leaveRoom(login, body.channelName);
             const msg: any = { message: `you have leaved ${dto.channelName}` };
-            this.sendMsgToUser(login, msg, "message");
+            this.sendMsgToUser(login, msg, "leaveChannel");
+            this.server.to(channel.channelName).emit("someoneLeaveChannel", {channelName:channel.channelName, loginLeaved:login});
         }
         catch (error) {
             client.emit('errorMessage', error);

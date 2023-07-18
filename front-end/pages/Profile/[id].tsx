@@ -8,7 +8,7 @@ import Image from 'next/image';
 import NotExist from '../NotExist';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableTennisPaddleBall } from '@fortawesome/free-solid-svg-icons';
-import {DataFunction, CallBarLeft} from '@/components/Functions';
+import { CallBarLeft} from '@/components/Functions';
 import NavBar from '@/components/NavBar';
 import { MyContext , ContextTypes} from '@/components/Context';
 import Modal from '@/components/Modal';
@@ -18,7 +18,7 @@ import createSocketConnection from '@/components/socketConnection'
 import { MesgType } from '@/components/Context';
 import mhaddaou from '../image/mhaddaou.jpg'
 import Sky from '../../image/sky.png'
-import avatar from '../../image/avatar.webp'
+import avatar from '../../image/avatar.jpg'
 import GetDataHistory ,{GetDataAchievement} from '@/components/GetData';
 import Router from 'next/router';
 const router = Router;
@@ -45,18 +45,19 @@ const Other = () =>{
       const getUser = async () =>{
         if (userLogin){
           try{
-            const res = await axios.post(`${process.env.FindProfile}`,
-            {login : userLogin},{
-              headers:{
-                Authorization: `Bearer ${context?.token}`
-              }
-            }
-            )
-            setUser(res.data.login);
-          
-    
-          }catch(e){
-            setUser('none')
+              if (context?.token && userLogin)
+                {const res = await axios.post(`${process.env.FindProfile}`,
+                {login : userLogin},{
+                  headers:{
+                    Authorization: `Bearer ${context?.token}`
+                  }
+                }
+                )
+                setUser(res.data.login);}
+              
+        
+              }catch(e){
+                setUser('none')
           }
         }
     
@@ -64,7 +65,9 @@ const Other = () =>{
       getUser();
 
       try{
-        const res = await axios.post(`${process.env.ViewProfile}`, 
+        if (context?.token && userLogin)
+        {
+          const res = await axios.post(`${process.env.ViewProfile}`, 
         {login : userLogin}, 
         {
           headers: {
@@ -78,7 +81,7 @@ const Other = () =>{
         }
         else{
           setUser('none')
-        }
+        }}
       }catch(e){
       }
     }
@@ -111,7 +114,8 @@ const Other = () =>{
     useEffect(() =>{
       const fetchData = async  () =>{
         try{
-          const res = await axios.post(`${process.env.Pprofile}`,{
+          if (context?.token && context.profileuser)
+          {const res = await axios.post(`${process.env.Pprofile}`,{
             login: context?.profileuser
           },
           {
@@ -133,7 +137,7 @@ const Other = () =>{
           setPerLevel((+(m.substring(2.1))) * 10)
           // here when i check level 
           context?.setProfile(res.data);
-          return res.data;
+          return res.data;}
         }catch(e){
         }
       }

@@ -5,9 +5,13 @@ import React, {useContext, useEffect, useState} from "react";
 import { MyContext } from "./Context";
 import {ModalError, ModalSearch} from "./Modal";
 import { dataProp } from "./Modal";
-
-
 const router = Router;
+
+
+
+
+
+
 const Search = ({page } : {page : string})=>{
     const context = useContext(MyContext);
     const [inputeValue, setInputValue] = useState('')
@@ -19,6 +23,7 @@ const Search = ({page } : {page : string})=>{
   const handlKeyPres = async (e : React.KeyboardEvent<HTMLInputElement>) =>{
     if (e.key === 'Enter'){
         if (inputeValue != ''){
+          localStorage.setItem('search', inputeValue);
             try{
                 const res = await axios.post(`${process.env.Search}`,{
                     search : inputeValue,
@@ -187,6 +192,30 @@ const closeModale = () =>{
             getDat()
         }
       })
+      context.socket.on('leaveChannel', (pay) =>{
+        if (pay){
+          context.setShowChannel(false);
+          const fetchData = async () => {
+            try {
+              const res = await axios.post(
+                `${process.env.Memb}`,
+                { login: context?.login },
+                {
+                  headers: {
+                    Authorization: `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              // context?.setContactChat(res.data);
+              context?.setChannels(res.data);
+      
+            } catch (error) {
+            }
+          };
+        
+          fetchData();
+        }
+      })
       context.socket.on('errorJoin',(pay : any) =>{
           if (pay){
             if (pay.message !== 'jwt must be provided'){
@@ -198,6 +227,26 @@ const closeModale = () =>{
   
           }
       });
+      context.socket.on('someoneLeaveChannel', (pay) =>{
+        if (pay){
+          const getData = async()=> {
+            try{
+              
+              const resp = await axios.post(`${process.env.Membership}`,
+              {
+                channelName : context.channelInfo?.channelName,
+              }, {
+                headers:{
+                  Authorization: `Bearer ${context?.token}`
+                }
+              })
+              context?.setAdminChannel(resp.data[0].admins);
+              context?.setMembersChannel(resp.data[1].members);
+            }catch(e){}
+          }
+          getData();
+        }
+      })
       context.socket.on('twoInvite',(pay : any) =>{
         if (pay){
           const fetchData = async () =>{
@@ -310,6 +359,7 @@ const closeModale = () =>{
                 }
               })
               context?.setLeaderBoard(res.data);
+
             }catch(e){}
           }
           fetchLeaderBoard();
@@ -599,7 +649,8 @@ const closeModale = () =>{
         context.socket.off('errorJoin');
         context.socket.off('twoInvite');
         context.socket.off('staticsGame');
-        // context.socket.off('errorCreateChannel');
+        context.socket.off('leaveChannel');
+        context.socket.off('someoneLeaveChannel');
         
       }
     };

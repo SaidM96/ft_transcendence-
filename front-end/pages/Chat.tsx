@@ -9,7 +9,7 @@ import RealFooter from "@/components/RealFooter";
 import Barl from "@/components/Barl";
 import NavBar from "@/components/NavBar";
 import Router from "next/router";
-import { MyContext } from "@/components/Context";
+import { MyContext, adminsChannelType } from "@/components/Context";
 import { useContext } from "react";
 import { MesgType } from "@/components/Context";
 import { msgPropType } from "@/components/Context";
@@ -47,6 +47,7 @@ export default function Chat() {
       context?.socket?.on('channelRemoved', (pay) =>{
 
         if (pay){
+
           if (pay.channelName == context.channelInfo?.channelName)
             context.setShowChannel(false);
           const fetchData = async () => {
@@ -62,6 +63,20 @@ export default function Chat() {
               );
               // context?.setContactChat(res.data);
               context?.setChannels(res.data);
+              if (localStorage.getItem('search'))
+                {
+
+                  const res = await axios.post(`${process.env.Search}`,{
+                    search : localStorage.getItem('search'),
+                },
+                {
+                    headers:{
+                        Authorization : `Bearer ${context?.token}`
+                    }
+                }
+                )
+                context?.setUserSearch(res.data[0].userSearch);
+                context?.setChannelSearch(res.data[1].channelSearch);}
       
             } catch (error) {
             }
@@ -71,6 +86,24 @@ export default function Chat() {
   
         }
       })
+      const fetchDat = async () => {
+        try {
+          const res = await axios.post(
+            `${process.env.Conversations}`,
+            { login: context?.login },
+            {
+              headers: {
+                Authorization: `Bearer ${context?.token}`,
+              },
+            }
+          );
+          context?.setContactChat(res.data);
+  
+        } catch (error) {
+        }
+      };
+    
+      fetchDat();
       
       context.socket.on('gameInvitation', (payload: any) => {
           
@@ -126,7 +159,19 @@ export default function Chat() {
           Authorization: `Bearer ${context?.token}`
         }
       })
+
       context?.setAdminChannel(resp.data[0].admins);
+      const checkIsAdmin = () =>{ 
+        const ad = resp.data[0].admins.find((user : adminsChannelType) =>  localStorage.getItem('login') == user.login)
+        if (ad){
+          context?.setAdm(true);
+        }
+        else{
+          context?.setAdm(false);
+        }
+
+      }
+      checkIsAdmin();
       context?.setMembersChannel(resp.data[1].members);
       setCheck('channel');
       setId(login);

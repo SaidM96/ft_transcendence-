@@ -260,10 +260,9 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     context?.socket?.emit('leaveChannel', {
       channelName: context.channelInfo?.channelName,
     })
-    if (context?.channelInfo)
-      removeChannelByName(context?.channelInfo?.channelName);
-    router.reload();
-
+    // if (context?.channelInfo)
+    //   removeChannelByName(context?.channelInfo?.channelName);
+    // router.reload();
   }
 
   // for check when use delete  or leave channel 
@@ -586,31 +585,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
     )
   }
 
-  const [isAdmin, setIsAdmin] = useState(false)
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.post(
-          `${process.env.Membership}`,
-          { channelName: context?.channelInfo?.channelName },
-          {
-            headers: {
-              Authorization: `Bearer ${context?.token}`,
-            },
-          }
-        );
-        if (res.data) {
-          const isadmin = res.data[0].admins.some((obj : any) => obj.login === context?.login);
-          setIsAdmin(isadmin)
-        }
-
-      } catch (error) {
-      }
-    };
-
-    fetchData();
-  }, []);
-
+  
   const [modalBanner, setModalBanner] = useState(false);
   const openBanner = () =>{
     setModalBanner(true);
@@ -644,10 +619,10 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
         <FontAwesomeIcon tabIndex={0} className="w-7 h-6 text-slate-700 hover:text-blue-900 cursor-pointer" onClick={clickInfo} icon={faBars} flip />
         <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
           <li><button onClick={memberChannel}>Members Channel</button></li>
-          {isAdmin && <li><button onClick={openMd}>Update Channel</button></li>}
-          {isAdmin && <li><button onClick={ListBan}>List Banned</button></li>}
+          {context?.adm && <li><button onClick={openMd}>Update Channel</button></li>}
+          {context?.adm && <li><button onClick={ListBan}>List Banned</button></li>}
           <li><button onClick={leaveChannel}>Leave Channel</button></li>
-          {isAdmin && <li><button onClick={deleteChannel}>Delete Channel</button></li>}
+          {context?.adm && <li><button onClick={deleteChannel}>Delete Channel</button></li>}
 
         </ul>
       </div>
@@ -712,7 +687,7 @@ const ChannelHistor = ({ history, id }: { history: msgChannel[], id: string }) =
         </div>
 
         <div className="flex items-center gap-10 z-50" >
-          {isAdmin && <AddMember />}
+          {context?.adm && <AddMember />}
           <Info />
         </div>
 

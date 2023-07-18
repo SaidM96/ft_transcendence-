@@ -6,7 +6,7 @@ import RealFooter from '@/components/RealFooter';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableTennisPaddleBall } from '@fortawesome/free-solid-svg-icons';
-import {DataFunction, CallBarLeft} from '@/components/Functions';
+import { CallBarLeft} from '@/components/Functions';
 import NavBar from '@/components/NavBar';
 import { MyContext , ContextTypes, FriendType} from '@/components/Context';
 import { ModalError, ModalGameInvite } from '@/components/Modal';
@@ -30,6 +30,58 @@ function usleep(milliseconds: number) {
 
 export default  function Progress() {
   const context = useContext(MyContext);
+  const[check, setCheck] = useState(0);
+  function DataFunction (nbr : number){
+      return (
+          (()=>{
+              if (nbr == 1){
+                if (context?.match)
+                return <GetDataHistory matches={context?.match} />;
+              }
+              else if (nbr == 2 && context?.acheivement){
+                return <GetDataAchievement achiev={context?.acheivement} />
+              }
+              else if (nbr == 3){
+  
+                return <GetDataFriend />
+              }
+              else if (nbr == 4){
+                return <DatSend />
+              }
+              else if (nbr == 5){
+                return <DataRecieved />
+              }
+              else if (nbr == 6){
+                const fetchBlockusers = async () =>{
+                  try{
+                    const res = await axios.post(`${process.env.Blocks}`,
+                    {
+                      login : context?.login
+                    },{
+                      headers : {
+                        Authorization : `Bearer ${context?.token}`
+                      }
+                    }
+                    )
+                    context?.setUserBlocked(res.data);
+            
+                  }catch(e){
+                  }
+            
+                 }
+                 fetchBlockusers();
+                return <BlackList />
+              }
+              else if (nbr == 7){
+                return <LeaderBord />
+              }
+              else{
+                return <div></div>
+              }
+            })()
+      )
+  }
+
 
   const router = useRouter();
   const [mms, setMesg] = useState('');
@@ -69,50 +121,7 @@ export default  function Progress() {
 
   const [isPageReloaded, setIsPageReloaded] = useState(false);
 
-  const GetDaate = () => {
-    // Assuming 'check' and 'context' are declared and accessible from the component
-  
-    useEffect(() => {
-      if (check === 6 && context?.login && context?.token) {
-        fetchBlockusers();
-      }
-    }, [check, context]);
-  
-    const fetchBlockusers = async () => {
-      try {
-        const res = await axios.post(
-          `${process.env.Blocks}`,
-          {
-            login: context?.login,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${context?.token}`,
-            },
-          }
-        );
-        context?.setUserBlocked(res.data);
-      } catch (e) {}
-    };
-  
-    if (check === 1 && context?.match) {
-      return <GetDataHistory matches={context?.match} />;
-    } else if (check === 2 && context?.acheivement) {
-      return <GetDataAchievement achiev={context?.acheivement} />;
-    } else if (check === 3) {
-      return <GetDataFriend />;
-    } else if (check === 4) {
-      return <DatSend />;
-    } else if (check === 5) {
-      return <DataRecieved />;
-    } else if (check === 6) {
-      return <BlackList />;
-    } else if (check === 7) {
-      return <LeaderBord />;
-    } else {
-      return <div></div>;
-    }
-  };
+
 
 
   
@@ -124,7 +133,6 @@ export default  function Progress() {
   
 
 
-  const[check, setCheck] = useState(0);
   const [msg, setMsg] = useState("");
 
   useEffect(() =>{
@@ -223,8 +231,8 @@ export default  function Progress() {
             
           </div>
           <div className=' min-h-[500px] h-[75%] w-full shadow-lg bg-gray-100  shadow-slate-600 rounded-2xl overflow-x-auto flex'>
-            {/* {DataFunction(check)} */}
-            <GetDaate />
+            {DataFunction(check)}
+            {/* <GetDaate /> */}
           </div>
         </div>
         </div>

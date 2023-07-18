@@ -527,7 +527,22 @@ const BlackList = () => {
       blockedLogin: friend.login,
       stillEnemy: false,
     })
-    rmv(friend.login);
+    // rmv(friend.login);
+    const getData = async () =>{
+      try{
+        const res = await axios.post(`${process.env.Blocks}`,
+            {
+              login : context?.login
+            },{
+              headers : {
+                Authorization : `Bearer ${localStorage.getItem('token')}`
+              }
+            }
+            )
+            context?.setUserBlocked(res.data);
+      }catch(e){}
+    }
+    getData();
 
   }
   if (context?.userBlocked){
@@ -556,7 +571,7 @@ const BlackList = () => {
                     <div className="w-1/3 text-center">{friend.username}</div>
                     <div className="w-1/3 text-center z-20">
                       <div className="dropdown dropdown-left ">
-                        <button onClick={() => removeBlock(friend)} className="btn btn-ghost btn-xs">Remove Block</button>
+                      <button onClick={() => removeBlock(friend)} className="btn btn-ghost btn-xs">Remove Block</button>
                       </div>
                     </div>
                   </div>

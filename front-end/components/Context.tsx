@@ -180,7 +180,8 @@ export interface ContextTypes {
   onligne: string[];
   setOnligne: Dispatch<SetStateAction<string[]>>;
   matterjs: MatterJsModules | null;
-
+  adm : boolean;
+  setAdm : Dispatch<SetStateAction<boolean>>;
   setMatterjs: Dispatch<SetStateAction<MatterJsModules | null>>
   nameChannel: string;
   setnameChannel: Dispatch<SetStateAction<string>>;
@@ -301,6 +302,7 @@ const MyContext = createContext<ContextTypes | undefined>(undefined);
 // create provider
 
 const MyContextProvider = ({ children }: ChildProps) => {
+  const [adm , setAdm] = useState(false);
   const [onligne, setOnligne] = useState<string[]>([]);
   const [nameChannel, setnameChannel] = useState('');
   const [matterjs, setMatterjs] = useState<MatterJsModules | null>(null)
@@ -438,6 +440,10 @@ const MyContextProvider = ({ children }: ChildProps) => {
     const GetChangeName = localStorage.getItem('changeName');
     if (GetChangeName) {
       setChangeName(GetChangeName === "true");
+    }
+    const Getadm = localStorage.getItem('adm');
+    if (Getadm) {
+      setAdm(Getadm === "true");
     }
     if (GetClickCha)
       setClickChannel(GetClickCha === "true");
@@ -590,6 +596,9 @@ const MyContextProvider = ({ children }: ChildProps) => {
   useEffect (() =>{
     localStorage.setItem('leaderBoard', JSON.stringify(leaderBoard));
   },[leaderBoard])
+  useEffect(() =>{
+    localStorage.setItem('adm', String(adm));
+  },[adm])
 
   // context value
 
@@ -597,7 +606,7 @@ const MyContextProvider = ({ children }: ChildProps) => {
     name, showChat, onligne, setOnligne, nameChannel, setnameChannel, channelHistory, setChannelHistory, fetchChannel, setFetchChannel, nameDelete, leaderBoard, setLeaderBoard, setNameDelete, showChannel, setShowChannel, acheivement, setAcheivement, setShowChat, setName, img, setImg, friends, setFriends, wins, setWins, losses, setLosses, level, setLevel, LevlPer, setLevlPer, login, setLogin, checkname,
     setCheckname, socket, matterjs, setMatterjs, userBlocked, setUserBlocked, setSocket, chatHistory, setChatHistory, showMsg, setShowMsg, check, setCheck, match, setMatch, token, setToken, blackList, adminsChannel, setAdminChannel,
     setBlackList, error, setError, messageError, setMessageError, membersChannel, setMembersChannel, userSearch, setUserSearch, channelSearch, setChannelSearch, MessageContent,
-    waitToAccept, profile, setProfile, pendingInvitation, setPendingInvitation, setWaitToAccept, channelInfo, Channels, setClickChannel, setChannelInfo, clickChat, setClickChat,
+    waitToAccept, profile, setProfile,adm, setAdm, pendingInvitation, setPendingInvitation, setWaitToAccept, channelInfo, Channels, setClickChannel, setChannelInfo, clickChat, setClickChat,
     clickChannel, changeName, deleteAcount, setDeleteAcount, loginClick, setLoginClick, channelBanner, setChannelBanner, setChangeName, setChannels, owner, profileuser, setProfileuser, setOwner, admin, setAdmin, setMessageContent, contactChat, enableTwoFa, setEnableTwofa, setContactChat, MessageInfo, setMessageInfo, chn, setChn
     , gameInvitation, setGameInvitation, gameHost, setGameHost, gameHostUsername, setGameHostUsername
   }
