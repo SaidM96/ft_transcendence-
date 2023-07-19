@@ -25,7 +25,7 @@ interface recvProps {
 function GetAvatar({ avatar }: { avatar: string }) {
   if (avatar === '0')
     return (
-      <Image src={defaul} priority={true} alt="ava" />
+      <Image src={defaul}  alt="ava" />
     );
   else
     return (
@@ -96,7 +96,7 @@ export interface msgChannel {
 function GetAvatarAddFriend({ avatar }: { avatar: string }) {
   if (avatar === '0')
     return (
-      <Image className="w-10 h-10 rounded-full border-4 border-green-600" src={defaul} priority={true} alt="ava" />
+      <Image className="w-10 h-10 rounded-full border-4 border-green-600" src={defaul}  alt="ava" />
     );
   else
     return (
