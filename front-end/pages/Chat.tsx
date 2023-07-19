@@ -103,7 +103,7 @@ export default function Chat() {
         }
       };
     
-      fetchDat();
+      // fetchDat();
       
       context.socket.on('gameInvitation', (payload: any) => {
           

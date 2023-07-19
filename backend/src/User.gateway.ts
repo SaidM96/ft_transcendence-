@@ -335,6 +335,7 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                                     client.emit('achiev', {})
                                 this.sendMsgToUser(resultMatch.loginA, result.staticsA, `staticsGame`);
                                 this.sendMsgToUser(resultMatch.loginB, result.staticsB, `staticsGame`);
+                                
                                 // Handle the hello event here
                             });
 
@@ -723,8 +724,10 @@ export class UserGateWay implements OnGatewayConnection, OnGatewayDisconnect, On
                 throw new BadRequestException(`cant send any msg to ${receiver}`);
             if (this.connectedUsers.has(userReceiver.login)) {
                 const message: any = { sender: userSender.login, senderUsername: userSender.username, senderAvatar: userSender.avatar, receiver: userReceiver.login, receiverUsername: userReceiver.username, receiverAvatar: userReceiver.avatar, content: content, sendAt: res.msg.sendAt };
-                if (res.isFirst) // first msg
+                if (res.isFirst){
+                    this.sendMsgToUser(login, `ched ched first msg in conversation`, "firstMsg");
                     this.sendMsgToUser(userReceiver.login, `ched ched first msg in conversation`, "firstMsg");
+                }
                 this.sendMsgToUser(userReceiver.login, message, "PrivateMessage");
             }
         }

@@ -192,6 +192,29 @@ const closeModale = () =>{
             getDat()
         }
       })
+      context.socket.on('firstMsg',(pay) =>{
+        if (pay){
+          const fetchDat = async () => {
+            try {
+              const res = await axios.post(
+                `${process.env.Conversations}`,
+                { login: context?.login },
+                {
+                  headers: {
+                    Authorization: `Bearer ${context?.token}`,
+                  },
+                }
+              );
+              context?.setContactChat(res.data);
+      
+            } catch (error) {
+            }
+          };
+        
+          fetchDat();
+
+        }
+      })
       context.socket.on('leaveChannel', (pay) =>{
         if (pay){
           context.setShowChannel(false);
@@ -493,6 +516,23 @@ const closeModale = () =>{
             
           }
           getData();
+          const fetchLeaderBoard = async () =>{
+            try{
+              const res = await axios.get(`${process.env.Leaderboard}`,{
+                headers:{
+                  Authorization: `Bearer ${context?.token}`
+                }
+                
+              })
+              context?.setLeaderBoard(res.data);
+              const resp = await axios.get(`${process.env.ME}`, {headers:{
+                Authorization : `Bearer ${context?.token}`
+            }})
+            context?.setAcheivement(resp.data.acheivement);
+
+            }catch(e){}
+          }
+          fetchLeaderBoard();
 
 
         }
@@ -651,6 +691,7 @@ const closeModale = () =>{
         context.socket.off('staticsGame');
         context.socket.off('leaveChannel');
         context.socket.off('someoneLeaveChannel');
+        context.socket.off('firstMsg');
         
       }
     };
